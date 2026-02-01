@@ -1,0 +1,13 @@
+Barterzone.ui.Transition$FlipPanel
+Barterzone.ui.Transition$FlipAnimationPanel
+Barterzone.ui.Transition$SwapPanel
+Barterzone.ui.Transition
+loginandsignup.TransitionHelper$3
+loginandsignup.TransitionHelper$1
+loginandsignup.TransitionHelper$2
+Barterzone.ui.Transition$5
+Barterzone.ui.Transition$1
+Barterzone.ui.Transition$2
+loginandsignup.TransitionHelper
+Barterzone.ui.Transition$3
+Barterzone.ui.Transition$4
