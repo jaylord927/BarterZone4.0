@@ -10,7 +10,7 @@ public class myitemsframe extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        myitems = new javax.swing.JPanel();
+        myitemspanel = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         searchfield = new javax.swing.JTextField();
         searchbutton = new javax.swing.JButton();
@@ -21,7 +21,7 @@ public class myitemsframe extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         Profile = new javax.swing.JLabel();
         dashboard = new javax.swing.JLabel();
-        myitems2 = new javax.swing.JLabel();
+        myitems = new javax.swing.JLabel();
         finditems = new javax.swing.JLabel();
         trades = new javax.swing.JLabel();
         messages = new javax.swing.JLabel();
@@ -33,18 +33,18 @@ public class myitemsframe extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        myitems.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        myitemspanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel1.setText("My Trading Items ");
-        myitems.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 10, -1, -1));
+        myitemspanel.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 10, -1, -1));
 
         searchfield.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 searchfieldActionPerformed(evt);
             }
         });
-        myitems.add(searchfield, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 10, 230, 50));
+        myitemspanel.add(searchfield, new org.netbeans.lib.awtextra.AbsoluteConstraints(320, 10, 230, 50));
 
         searchbutton.setBackground(new java.awt.Color(12, 192, 223));
         searchbutton.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -55,10 +55,10 @@ public class myitemsframe extends javax.swing.JFrame {
                 searchbuttonActionPerformed(evt);
             }
         });
-        myitems.add(searchbutton, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 10, 100, 50));
+        myitemspanel.add(searchbutton, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 10, 100, 50));
 
         jLabel4.setText("Search:");
-        myitems.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 20, 50, 30));
+        myitemspanel.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(280, 20, 50, 30));
 
         myitemstable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -80,7 +80,7 @@ public class myitemsframe extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(myitemstable);
 
-        myitems.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 70, 640, 250));
+        myitemspanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 70, 640, 250));
 
         tradermenu.setBackground(new java.awt.Color(12, 192, 223));
         tradermenu.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -119,20 +119,20 @@ public class myitemsframe extends javax.swing.JFrame {
         });
         tradermenu.add(dashboard, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 80, 100, 40));
 
-        myitems2.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        myitems2.setText("My Items");
-        myitems2.addMouseListener(new java.awt.event.MouseAdapter() {
+        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        myitems.setText("My Items");
+        myitems.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                myitems2MouseClicked(evt);
+                myitemsMouseClicked(evt);
             }
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                myitems2MouseEntered(evt);
+                myitemsMouseEntered(evt);
             }
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                myitems2MouseExited(evt);
+                myitemsMouseExited(evt);
             }
         });
-        tradermenu.add(myitems2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 100, 40));
+        tradermenu.add(myitems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 100, 40));
 
         finditems.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         finditems.setText("Find Items");
@@ -226,7 +226,7 @@ public class myitemsframe extends javax.swing.JFrame {
                 .addGap(0, 0, 0)
                 .addComponent(tradermenu, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(myitems, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(myitemspanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(header, javax.swing.GroupLayout.PREFERRED_SIZE, 653, javax.swing.GroupLayout.PREFERRED_SIZE))))
@@ -237,7 +237,7 @@ public class myitemsframe extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addComponent(header, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(myitems, javax.swing.GroupLayout.PREFERRED_SIZE, 427, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(myitemspanel, javax.swing.GroupLayout.PREFERRED_SIZE, 427, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
@@ -291,26 +291,6 @@ public class myitemsframe extends javax.swing.JFrame {
 
         // TODO add your handling code here:
     }//GEN-LAST:event_dashboardMouseExited
-
-    private void myitems2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitems2MouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_myitems2MouseClicked
-
-    private void myitems2MouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitems2MouseEntered
-        myitems.setForeground(new java.awt.Color(255, 255, 255));
-        myitems.setBackground(new java.awt.Color(8, 145, 178));
-        myitems.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-
-        // TODO add your handling code here:
-    }//GEN-LAST:event_myitems2MouseEntered
-
-    private void myitems2MouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitems2MouseExited
-        myitems.setForeground(new java.awt.Color(0, 0, 0));
-        myitems.setBackground(new java.awt.Color(12, 192, 223));
-        myitems.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-
-        // TODO add your handling code here:
-    }//GEN-LAST:event_myitems2MouseExited
 
     private void finditemsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_finditemsMouseClicked
         // TODO add your handling code here:
@@ -408,6 +388,26 @@ public class myitemsframe extends javax.swing.JFrame {
         logout.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));    // TODO add your handling code here:
     }//GEN-LAST:event_logoutMouseExited
 
+    private void myitemsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitemsMouseExited
+        myitems.setForeground(new java.awt.Color(0, 0, 0));
+        myitems.setBackground(new java.awt.Color(12, 192, 223));
+        myitems.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+
+        // TODO add your handling code here:
+    }//GEN-LAST:event_myitemsMouseExited
+
+    private void myitemsMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitemsMouseEntered
+        myitems.setForeground(new java.awt.Color(255, 255, 255));
+        myitems.setBackground(new java.awt.Color(8, 145, 178));
+        myitems.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+        // TODO add your handling code here:
+    }//GEN-LAST:event_myitemsMouseEntered
+
+    private void myitemsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitemsMouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_myitemsMouseClicked
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Profile;
@@ -423,8 +423,8 @@ public class myitemsframe extends javax.swing.JFrame {
     private javax.swing.JLabel logo;
     private javax.swing.JLabel logout;
     private javax.swing.JLabel messages;
-    private javax.swing.JPanel myitems;
-    private javax.swing.JLabel myitems2;
+    private javax.swing.JLabel myitems;
+    private javax.swing.JPanel myitemspanel;
     private javax.swing.JTable myitemstable;
     private javax.swing.JButton searchbutton;
     private javax.swing.JTextField searchfield;

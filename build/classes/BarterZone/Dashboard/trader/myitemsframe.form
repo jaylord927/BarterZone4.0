@@ -27,7 +27,7 @@
               <EmptySpace min="0" pref="0" max="-2" attributes="0"/>
               <Component id="tradermenu" min="-2" pref="146" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="myitems" max="32767" attributes="0"/>
+                  <Component id="myitemspanel" max="32767" attributes="0"/>
                   <Group type="102" attributes="0">
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                       <Component id="header" min="-2" pref="653" max="-2" attributes="0"/>
@@ -42,13 +42,13 @@
           <Group type="102" attributes="0">
               <Component id="header" min="-2" pref="73" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
-              <Component id="myitems" min="-2" pref="427" max="-2" attributes="0"/>
+              <Component id="myitemspanel" min="-2" pref="427" max="-2" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Container class="javax.swing.JPanel" name="myitems">
+    <Container class="javax.swing.JPanel" name="myitemspanel">
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout">
         <Property name="useNullLayout" type="boolean" value="false"/>
@@ -247,7 +247,7 @@
             </Constraint>
           </Constraints>
         </Component>
-        <Component class="javax.swing.JLabel" name="myitems2">
+        <Component class="javax.swing.JLabel" name="myitems">
           <Properties>
             <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
               <Font name="Segoe UI" size="14" style="1"/>
@@ -255,9 +255,9 @@
             <Property name="text" type="java.lang.String" value="My Items"/>
           </Properties>
           <Events>
-            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="myitems2MouseClicked"/>
-            <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="myitems2MouseEntered"/>
-            <EventHandler event="mouseExited" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="myitems2MouseExited"/>
+            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="myitemsMouseClicked"/>
+            <EventHandler event="mouseEntered" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="myitemsMouseEntered"/>
+            <EventHandler event="mouseExited" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="myitemsMouseExited"/>
           </Events>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
