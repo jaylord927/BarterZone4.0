@@ -265,7 +265,7 @@ public class Login extends javax.swing.JFrame {
 
                     } catch (Exception e) {
                         try {
-                            BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard();
+                            BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard(userId, userFullName);
                             adminFrame.setVisible(true);
                             adminFrame.pack();
                             adminFrame.setLocationRelativeTo(null);
@@ -285,10 +285,11 @@ public class Login extends javax.swing.JFrame {
                     }
 
                 } else if ("trader".equalsIgnoreCase(userType)) {
-                    landing landingFrame = new landing(userId, userFullName);
-                    landingFrame.setVisible(true);
-                    landingFrame.pack();
-                    landingFrame.setLocationRelativeTo(null);
+                    // TRADER LOGIN - Go directly to trader dashboard
+                    BarterZone.Dashboard.trader.trader_dashboard traderDashboard = new BarterZone.Dashboard.trader.trader_dashboard(userId, userFullName);
+                    traderDashboard.setVisible(true);
+                    traderDashboard.pack();
+                    traderDashboard.setLocationRelativeTo(null);
                     this.dispose();
 
                 } else {
@@ -309,6 +310,7 @@ public class Login extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+    
 
 
     }//GEN-LAST:event_loginActionPerformed

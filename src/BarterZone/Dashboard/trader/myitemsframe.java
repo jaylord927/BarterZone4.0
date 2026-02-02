@@ -200,7 +200,7 @@ public class myitemsframe extends javax.swing.JFrame {
         header.setBackground(new java.awt.Color(12, 192, 223));
         header.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        logo.setText("jLabel3");
+        logo.setText("LOGO");
         header.add(logo, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 90, 50));
 
         logout.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N

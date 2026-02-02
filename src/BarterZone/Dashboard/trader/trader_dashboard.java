@@ -2,8 +2,14 @@ package BarterZone.Dashboard.trader;
 
 public class trader_dashboard extends javax.swing.JFrame {
 
-    public trader_dashboard() {
+    private int traderId;
+    private String traderName;
+
+    public trader_dashboard(int traderId, String traderName) {
+        this.traderId = traderId;
+        this.traderName = traderName;
         initComponents();
+        setTitle("Trader Dashboard - " + traderName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -38,7 +44,7 @@ public class trader_dashboard extends javax.swing.JFrame {
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel3.setText("Trader Menu");
-        tradermenu.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 120, 40));
+        tradermenu.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 20, 120, 40));
 
         Profile.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         Profile.setText("Profile");
@@ -167,7 +173,7 @@ public class trader_dashboard extends javax.swing.JFrame {
                 logoutMouseExited(evt);
             }
         });
-        header.add(logout, new org.netbeans.lib.awtextra.AbsoluteConstraints(590, 10, 100, 40));
+        header.add(logout, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 40, 100, 30));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -175,6 +181,7 @@ public class trader_dashboard extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(tradermenu, javax.swing.GroupLayout.PREFERRED_SIZE, 146, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
                 .addComponent(header, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGap(3, 3, 3))
         );
@@ -188,7 +195,9 @@ public class trader_dashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void ProfileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ProfileMouseClicked
-        // TODO add your handling code here:
+        BarterZone.Dashboard.session.userProfile profileFrame = new BarterZone.Dashboard.session.userProfile(traderId, "trader");
+        profileFrame.setVisible(true);
+        profileFrame.setLocationRelativeTo(null);
     }//GEN-LAST:event_ProfileMouseClicked
 
     private void ProfileMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ProfileMouseEntered

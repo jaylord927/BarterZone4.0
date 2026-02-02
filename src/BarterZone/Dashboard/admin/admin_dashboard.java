@@ -6,22 +6,23 @@ import loginandsignup.Login;
 
 public class admin_dashboard extends javax.swing.JFrame {
 
-    public admin_dashboard() {
+    private int adminId;
+    private String adminName;
+
+    public admin_dashboard(int adminId, String adminName) {
+        this.adminId = adminId;
+        this.adminName = adminName;
         initComponents();
-
-        database.config.config dbConfig = new database.config.config();
-        dbConfig.loadAllUsersToTable(tableusers);
-
+        setTitle("Admin Dashboard - " + adminName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
-
     }
 
-    private void loadAllUsersToTable(javax.swing.JTable table) {
+    private void loadAllUsersToTable() {
         database.config.config dbConfig = new database.config.config();
         String sql = "SELECT user_id, user_fullname, user_username, user_email, user_type, user_status FROM tbl_users";
-        dbConfig.displayData(sql, table);
+        dbConfig.displayData(sql, tableusers);
     }
 
     @SuppressWarnings("unchecked")
@@ -34,6 +35,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         manageusers = new javax.swing.JLabel();
         manageannouncement = new javax.swing.JLabel();
         managereports = new javax.swing.JLabel();
+        adminprofile = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tableusers = new javax.swing.JTable();
 
@@ -42,14 +44,14 @@ public class admin_dashboard extends javax.swing.JFrame {
         header.setBackground(new java.awt.Color(12, 192, 223));
         header.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        jLabel3.setFont(new java.awt.Font("Segoe UI", 1, 20)); // NOI18N
         jLabel3.setText("Admin Menu");
         jLabel3.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jLabel3MouseClicked(evt);
             }
         });
-        header.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, 150, 60));
+        header.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 0, 140, 60));
 
         logout.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
         logout.setText("Logout");
@@ -79,7 +81,7 @@ public class admin_dashboard extends javax.swing.JFrame {
                 manageusersMouseExited(evt);
             }
         });
-        header.add(manageusers, new org.netbeans.lib.awtextra.AbsoluteConstraints(190, 20, 130, 30));
+        header.add(manageusers, new org.netbeans.lib.awtextra.AbsoluteConstraints(240, 20, 130, 30));
 
         manageannouncement.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
         manageannouncement.setText("Manage Announcement");
@@ -94,7 +96,7 @@ public class admin_dashboard extends javax.swing.JFrame {
                 manageannouncementMouseExited(evt);
             }
         });
-        header.add(manageannouncement, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 20, 180, 30));
+        header.add(manageannouncement, new org.netbeans.lib.awtextra.AbsoluteConstraints(390, 20, 180, 30));
 
         managereports.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
         managereports.setText("Manage Reports");
@@ -109,7 +111,22 @@ public class admin_dashboard extends javax.swing.JFrame {
                 managereportsMouseExited(evt);
             }
         });
-        header.add(managereports, new org.netbeans.lib.awtextra.AbsoluteConstraints(530, 20, 130, 30));
+        header.add(managereports, new org.netbeans.lib.awtextra.AbsoluteConstraints(580, 20, 130, 30));
+
+        adminprofile.setFont(new java.awt.Font("Segoe UI", 1, 15)); // NOI18N
+        adminprofile.setText("Profile");
+        adminprofile.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                adminprofileMouseClicked(evt);
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                adminprofileMouseEntered(evt);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                adminprofileMouseExited(evt);
+            }
+        });
+        header.add(adminprofile, new org.netbeans.lib.awtextra.AbsoluteConstraints(170, 20, 70, 30));
 
         tableusers.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -131,9 +148,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(header, javax.swing.GroupLayout.DEFAULT_SIZE, 800, Short.MAX_VALUE)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jScrollPane1)
-                .addGap(0, 0, 0))
+            .addComponent(jScrollPane1)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -180,7 +195,7 @@ public class admin_dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_logoutMouseExited
 
     private void manageusersMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_manageusersMouseClicked
-        // TODO add your handling code here:
+        loadAllUsersToTable();
     }//GEN-LAST:event_manageusersMouseClicked
 
     private void manageusersMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_manageusersMouseEntered
@@ -243,8 +258,27 @@ public class admin_dashboard extends javax.swing.JFrame {
 
     }//GEN-LAST:event_tableusersMouseClicked
 
+    private void adminprofileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_adminprofileMouseClicked
+        BarterZone.Dashboard.session.userProfile profileFrame = new BarterZone.Dashboard.session.userProfile(adminId, "admin");
+        profileFrame.setVisible(true);
+        profileFrame.setLocationRelativeTo(null);
+    }//GEN-LAST:event_adminprofileMouseClicked
+
+    private void adminprofileMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_adminprofileMouseEntered
+        adminprofile.setForeground(new java.awt.Color(255, 255, 255));
+        adminprofile.setBackground(new java.awt.Color(8, 145, 178));
+        adminprofile.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+    }//GEN-LAST:event_adminprofileMouseEntered
+
+    private void adminprofileMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_adminprofileMouseExited
+        adminprofile.setForeground(new java.awt.Color(0, 0, 0));
+        adminprofile.setBackground(new java.awt.Color(12, 192, 223));
+        adminprofile.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));        // TODO add your handling code here:
+    }//GEN-LAST:event_adminprofileMouseExited
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel adminprofile;
     private javax.swing.JPanel header;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;

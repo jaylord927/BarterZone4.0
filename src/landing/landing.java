@@ -15,16 +15,14 @@ public class landing extends javax.swing.JFrame {
     private int traderId = -1;
     private String traderName = "";
 
-    // Default constructor for non-logged in users
     public landing() {
         initComponents();
         setButtonsForGuest();
         setSize(800, 500);
         setResizable(false);
-        setLocationRelativeTo(null); 
+        setLocationRelativeTo(null);
     }
 
-    // Constructor for logged in traders
     public landing(int traderId, String traderName) {
         this.traderId = traderId;
         this.traderName = traderName;
@@ -155,11 +153,25 @@ public class landing extends javax.swing.JFrame {
 
     private void signupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signupActionPerformed
 
-        SignUp signupFrame = new SignUp();
-        signupFrame.setVisible(true);
-        signupFrame.pack();
-        signupFrame.setLocationRelativeTo(null);
-        this.dispose();
+        if (traderId == -1) {
+            SignUp signupFrame = new SignUp();
+            signupFrame.setVisible(true);
+            signupFrame.pack();
+            signupFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to logout?",
+                    "Confirm Logout",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                Login loginFrame = new Login();
+                loginFrame.setVisible(true);
+                loginFrame.setLocationRelativeTo(null);
+                this.dispose();
+            }
+        }
 
 
     }//GEN-LAST:event_signupActionPerformed
@@ -167,31 +179,25 @@ public class landing extends javax.swing.JFrame {
     private void loginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginActionPerformed
 
         if (traderId == -1) {
-            // Guest - show login
             Login loginFrame = new Login();
             loginFrame.setVisible(true);
             loginFrame.pack();
             loginFrame.setLocationRelativeTo(null);
             this.dispose();
         } else {
-            // Logged in - show trader dashboard
             openTraderDashboard();
         }
     }//GEN-LAST:event_loginActionPerformed
 
     private void openTraderDashboard() {
-    // Open your existing trader dashboard
-    BarterZone.Dashboard.trader.trader_dashboard traderDashboard = new BarterZone.Dashboard.trader.trader_dashboard();
-    traderDashboard.setVisible(true);
-    
-    // You might want to pass trader info to the dashboard
-    // You'll need to modify trader_dashboard constructor to accept trader info
-    this.dispose();
-    
-    
-}
-    
-    
+        BarterZone.Dashboard.trader.trader_dashboard traderDashboard = new BarterZone.Dashboard.trader.trader_dashboard(traderId, traderName);
+        traderDashboard.setVisible(true);
+        traderDashboard.setLocationRelativeTo(null);
+        this.dispose();
+
+    }
+
+
     private void searchbuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchbuttonActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_searchbuttonActionPerformed
