@@ -17,6 +17,9 @@ public class myitemsframe extends javax.swing.JFrame {
         jLabel4 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         myitemstable = new javax.swing.JTable();
+        jPanel2 = new javax.swing.JPanel();
+        welcomebacktext = new javax.swing.JLabel();
+        activeandpending = new javax.swing.JLabel();
         tradermenu = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         Profile = new javax.swing.JLabel();
@@ -33,6 +36,11 @@ public class myitemsframe extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
+        myitemspanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                myitemspanelMouseEntered(evt);
+            }
+        });
         myitemspanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
@@ -80,7 +88,23 @@ public class myitemsframe extends javax.swing.JFrame {
         });
         jScrollPane1.setViewportView(myitemstable);
 
-        myitemspanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 70, 640, 250));
+        myitemspanel.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 130, 640, 90));
+
+        jPanel2.setBackground(new java.awt.Color(12, 192, 223));
+        jPanel2.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(12, 192, 223), 5, true));
+        jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        welcomebacktext.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        welcomebacktext.setForeground(new java.awt.Color(255, 255, 255));
+        welcomebacktext.setText("Welcome back, Trader! ");
+        jPanel2.add(welcomebacktext, new org.netbeans.lib.awtextra.AbsoluteConstraints(120, 10, 300, 30));
+
+        activeandpending.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
+        activeandpending.setForeground(new java.awt.Color(255, 255, 255));
+        activeandpending.setText("active pending function");
+        jPanel2.add(activeandpending, new org.netbeans.lib.awtextra.AbsoluteConstraints(130, 50, 300, 30));
+
+        myitemspanel.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 330, -1, -1));
 
         tradermenu.setBackground(new java.awt.Color(12, 192, 223));
         tradermenu.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -244,7 +268,8 @@ public class myitemsframe extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void searchfieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchfieldActionPerformed
-        // TODO add your handling code here:
+        System.out.println("hello world");
+
     }//GEN-LAST:event_searchfieldActionPerformed
 
     private void searchbuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchbuttonActionPerformed
@@ -261,15 +286,16 @@ public class myitemsframe extends javax.swing.JFrame {
 
     private void ProfileMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ProfileMouseEntered
         Profile.setForeground(new java.awt.Color(255, 255, 255));
-        Profile.setBackground(new java.awt.Color(8, 145, 178));
+        Profile.setBackground(new java.awt.Color(8, 145, 178, 180));
+        Profile.setOpaque(false);
         Profile.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
     }//GEN-LAST:event_ProfileMouseEntered
 
     private void ProfileMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ProfileMouseExited
         Profile.setForeground(new java.awt.Color(0, 0, 0));
-        Profile.setBackground(new java.awt.Color(12, 192, 223));
+        Profile.setBackground(new java.awt.Color(12, 192, 223, 255));
+        Profile.setOpaque(true);
         Profile.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
-        // TODO add your ha ndling code here:
     }//GEN-LAST:event_ProfileMouseExited
 
     private void dashboardMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_dashboardMouseClicked
@@ -364,9 +390,9 @@ public class myitemsframe extends javax.swing.JFrame {
 
     private void logoutMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_logoutMouseClicked
         int confirm = javax.swing.JOptionPane.showConfirmDialog(this,
-            "Are you sure you want to logout?",
-            "Confirm Logout",
-            javax.swing.JOptionPane.YES_NO_OPTION);
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                javax.swing.JOptionPane.YES_NO_OPTION);
 
         if (confirm == javax.swing.JOptionPane.YES_OPTION) {
             loginandsignup.Login loginFrame = new loginandsignup.Login();
@@ -408,10 +434,16 @@ public class myitemsframe extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_myitemsMouseClicked
 
+    private void myitemspanelMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitemspanelMouseEntered
+        myitemspanel.setForeground(new java.awt.Color(0, 0, 0));
+        myitemspanel.setBackground(new java.awt.Color(12, 192, 223));
+        myitemspanel.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));    }//GEN-LAST:event_myitemspanelMouseEntered
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Profile;
     private javax.swing.JLabel Reports;
+    private javax.swing.JLabel activeandpending;
     private javax.swing.JLabel dashboard;
     private javax.swing.JLabel finditems;
     private javax.swing.JPanel header;
@@ -419,6 +451,7 @@ public class myitemsframe extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JLabel logo;
     private javax.swing.JLabel logout;
@@ -430,5 +463,6 @@ public class myitemsframe extends javax.swing.JFrame {
     private javax.swing.JTextField searchfield;
     private javax.swing.JPanel tradermenu;
     private javax.swing.JLabel trades;
+    private javax.swing.JLabel welcomebacktext;
     // End of variables declaration//GEN-END:variables
 }

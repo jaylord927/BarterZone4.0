@@ -1,8 +1,8 @@
 package BarterZone.Dashboard.admin;
 
+import BarterZone.loginandsignup.login;
 import database.config.config;
 import javax.swing.JOptionPane;
-import loginandsignup.Login;
 
 public class admin_dashboard extends javax.swing.JFrame {
 
@@ -173,7 +173,7 @@ public class admin_dashboard extends javax.swing.JFrame {
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            Login loginFrame = new Login();
+            login loginFrame = new login();
             loginFrame.setVisible(true);
             loginFrame.setLocationRelativeTo(null);
             this.dispose();
@@ -195,7 +195,11 @@ public class admin_dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_logoutMouseExited
 
     private void manageusersMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_manageusersMouseClicked
-        loadAllUsersToTable();
+//        loadAllUsersToTable();
+        manageusers manageusersFrame = new manageusers(adminId, adminName);
+        manageusersFrame.setVisible(true);
+        manageusersFrame.setLocationRelativeTo(null);
+//        this.dispose();
     }//GEN-LAST:event_manageusersMouseClicked
 
     private void manageusersMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_manageusersMouseEntered

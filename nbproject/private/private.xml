@@ -3,14 +3,24 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/user/BarterZone4.0/src/BarterZone/Dashboard/trader/myitemsframe.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/BarterZone/Dashboard/trader/trader_dashboard.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/BarterZone/App.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/landing/landing.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/loginandsignup/Login.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/BarterZone/Dashboard/admin/admin_dashboard.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/loginandsignup/SignUp.java</file>
-            <file>file:/C:/user/BarterZone4.0/src/BarterZone/Dashboard/session/userProfile.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/myitems1.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/trader_dashboard.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/loginandsignup/login.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/loginandsignup/signup.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/resources/IconLoader.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/trades.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/resources/images/landing.png</file>
+            <file>file:/E:/website/BarterZone4.0/src/landing/landing.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/database/config/config.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/myitems.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/manageusers.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/App.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/finditems.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/admin_dashboard.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/session/userProfile.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/myitemsframe.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/ui/Transition.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/resources/IconManager.java</file>
         </group>
     </open-files>
 </project-private>

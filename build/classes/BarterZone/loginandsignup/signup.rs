@@ -1,0 +1,8 @@
+BarterZone.loginandsignup.SignupPanel$1
+BarterZone.loginandsignup.SignupPanel$3
+BarterZone.loginandsignup.SignupPanel$2
+BarterZone.loginandsignup.SignupPanel
+BarterZone.loginandsignup.SignupPanel$5
+BarterZone.loginandsignup.SignupPanel$4
+BarterZone.loginandsignup.SignupPanel$7
+BarterZone.loginandsignup.SignupPanel$6

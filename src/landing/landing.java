@@ -1,8 +1,9 @@
 package landing;
 
-import Barterzone.ui.Transition;
-import loginandsignup.Login;
-import loginandsignup.SignUp;
+import BarterZone.Dashboard.trader.myitems;
+import BarterZone.loginandsignup.login;
+import BarterZone.loginandsignup.signup;
+//import Barterzone.ui.Transition;
 //import BarterZone.Dashboard.trader;
 import database.config.config;
 import java.sql.Connection;
@@ -142,8 +143,12 @@ public class landing extends javax.swing.JFrame {
     }//GEN-LAST:event_SearchbuttonActionPerformed
 
     private void igiveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_igiveActionPerformed
+        myitems myItemsFrame = new myitems(traderId, traderName);
+        myItemsFrame.setVisible(true);
+        myItemsFrame.setLocationRelativeTo(null);
+        this.dispose();
 
-// TODO add your handling code here:
+
     }//GEN-LAST:event_igiveActionPerformed
 
     private void iwantActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_iwantActionPerformed
@@ -154,7 +159,7 @@ public class landing extends javax.swing.JFrame {
     private void signupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signupActionPerformed
 
         if (traderId == -1) {
-            SignUp signupFrame = new SignUp();
+            signup signupFrame = new signup();
             signupFrame.setVisible(true);
             signupFrame.pack();
             signupFrame.setLocationRelativeTo(null);
@@ -166,7 +171,7 @@ public class landing extends javax.swing.JFrame {
                     JOptionPane.YES_NO_OPTION);
 
             if (confirm == JOptionPane.YES_OPTION) {
-                Login loginFrame = new Login();
+                login loginFrame = new login();
                 loginFrame.setVisible(true);
                 loginFrame.setLocationRelativeTo(null);
                 this.dispose();
@@ -179,7 +184,7 @@ public class landing extends javax.swing.JFrame {
     private void loginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginActionPerformed
 
         if (traderId == -1) {
-            Login loginFrame = new Login();
+            login loginFrame = new login();
             loginFrame.setVisible(true);
             loginFrame.pack();
             loginFrame.setLocationRelativeTo(null);
