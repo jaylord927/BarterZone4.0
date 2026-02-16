@@ -528,6 +528,9 @@ public class trader_dashboard extends javax.swing.JFrame {
 
         panelprofile.setBackground(new java.awt.Color(12, 192, 223));
         panelprofile.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                panelprofileMouseClicked(evt);
+            }
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 panelprofileMouseEntered(evt);
             }
@@ -725,7 +728,7 @@ public class trader_dashboard extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(180, 180, 180)
                         .addComponent(dashboardpanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(216, 216, 216))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -845,6 +848,14 @@ public class trader_dashboard extends javax.swing.JFrame {
     private void panelmessagesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmessagesMouseClicked
         // TODO add your handling code here:
     }//GEN-LAST:event_panelmessagesMouseClicked
+
+    private void panelprofileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelprofileMouseClicked
+        profile profileFrame = new profile(traderId, traderName);
+        profileFrame.setVisible(true);
+        profileFrame.setLocationRelativeTo(null);
+        this.dispose();
+
+    }//GEN-LAST:event_panelprofileMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

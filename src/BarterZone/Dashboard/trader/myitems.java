@@ -1328,7 +1328,10 @@ public class myitems extends javax.swing.JFrame {
     }
 
     private void openProfile() {
-        JOptionPane.showMessageDialog(this, "Profile feature coming soon!", "Info", JOptionPane.INFORMATION_MESSAGE);
+        profile profileFrame = new profile(traderId, traderName);
+        profileFrame.setVisible(true);
+        profileFrame.setLocationRelativeTo(null);
+        this.dispose();
     }
 
     private void logout() {

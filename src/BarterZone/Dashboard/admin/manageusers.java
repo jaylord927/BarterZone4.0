@@ -106,18 +106,18 @@ public class manageusers extends javax.swing.JFrame {
         jPanel2.removeAll();
         jPanel2.setLayout(null);
 
-        // Create main content panel
+        // Create main content panel - adjusted to fit exactly within 800x500
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(null);
         contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBounds(0, 0, 620, 450);
+        contentPanel.setBounds(0, 0, 800, 450); // Full width
 
-        // Search and Filter Panel
+        // Search and Filter Panel - adjusted width
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(null);
         searchPanel.setBackground(new Color(245, 245, 245));
         searchPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
-        searchPanel.setBounds(10, 10, 600, 70);
+        searchPanel.setBounds(10, 10, 780, 70); // Wider panel
 
         javax.swing.JLabel searchLabel = new javax.swing.JLabel("🔍 Search Users:");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
@@ -127,19 +127,19 @@ public class manageusers extends javax.swing.JFrame {
 
         searchField = new javax.swing.JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchField.setBounds(15, 35, 250, 30);
+        searchField.setBounds(15, 35, 300, 30); // Wider search field
         searchField.setBorder(new LineBorder(new Color(12, 192, 223)));
         searchPanel.add(searchField);
 
         javax.swing.JLabel filterLabel = new javax.swing.JLabel("Filter by:");
         filterLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        filterLabel.setBounds(280, 40, 60, 20);
+        filterLabel.setBounds(330, 40, 60, 20);
         searchPanel.add(filterLabel);
 
         String[] filterTypes = {"All Users", "Active Only", "Inactive Only"};
         userTypeFilter = new javax.swing.JComboBox<>(filterTypes);
         userTypeFilter.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        userTypeFilter.setBounds(340, 38, 120, 25);
+        userTypeFilter.setBounds(390, 38, 120, 25);
         userTypeFilter.setBackground(Color.WHITE);
         userTypeFilter.setBorder(new LineBorder(new Color(12, 192, 223)));
         userTypeFilter.addActionListener(e -> applyFilters());
@@ -149,7 +149,7 @@ public class manageusers extends javax.swing.JFrame {
         refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         refreshButton.setBackground(new Color(12, 192, 223));
         refreshButton.setForeground(Color.WHITE);
-        refreshButton.setBounds(480, 35, 100, 30);
+        refreshButton.setBounds(530, 35, 100, 30); // Adjusted position
         refreshButton.setBorder(null);
         refreshButton.setFocusPainted(false);
         refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -159,30 +159,34 @@ public class manageusers extends javax.swing.JFrame {
         });
         searchPanel.add(refreshButton);
 
-        // Summary Cards Panel
+        // Add Last Updated to search panel
+        lastUpdatedLabel.setBounds(650, 40, 150, 20);
+        searchPanel.add(lastUpdatedLabel);
+
+        // Summary Cards Panel - adjusted width
         JPanel summaryPanel = new JPanel();
         summaryPanel.setLayout(null);
         summaryPanel.setBackground(new Color(245, 245, 245));
         summaryPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
-        summaryPanel.setBounds(10, 90, 600, 70);
+        summaryPanel.setBounds(10, 90, 780, 70); // Wider panel
 
         // Total Traders Card
         JPanel totalTradersCard = new JPanel();
         totalTradersCard.setLayout(null);
         totalTradersCard.setBackground(new Color(0, 102, 102));
-        totalTradersCard.setBounds(10, 10, 140, 50);
+        totalTradersCard.setBounds(10, 10, 180, 50); // Wider card
         totalTradersCard.setBorder(new LineBorder(Color.WHITE, 2));
         
-        javax.swing.JLabel totalTradersTitle = new javax.swing.JLabel("TRADERS");
-        totalTradersTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        javax.swing.JLabel totalTradersTitle = new javax.swing.JLabel("TOTAL TRADERS");
+        totalTradersTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         totalTradersTitle.setForeground(Color.WHITE);
-        totalTradersTitle.setBounds(10, 5, 80, 15);
+        totalTradersTitle.setBounds(10, 5, 120, 15);
         totalTradersCard.add(totalTradersTitle);
         
         totalTradersLabel = new javax.swing.JLabel("0");
-        totalTradersLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        totalTradersLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         totalTradersLabel.setForeground(Color.WHITE);
-        totalTradersLabel.setBounds(100, 15, 40, 30);
+        totalTradersLabel.setBounds(130, 15, 50, 30);
         totalTradersCard.add(totalTradersLabel);
         summaryPanel.add(totalTradersCard);
 
@@ -190,19 +194,19 @@ public class manageusers extends javax.swing.JFrame {
         JPanel activeTradersCard = new JPanel();
         activeTradersCard.setLayout(null);
         activeTradersCard.setBackground(new Color(46, 125, 50));
-        activeTradersCard.setBounds(160, 10, 90, 50);
+        activeTradersCard.setBounds(200, 10, 130, 50); // Wider card
         activeTradersCard.setBorder(new LineBorder(Color.WHITE, 2));
         
         javax.swing.JLabel activeTradersTitle = new javax.swing.JLabel("ACTIVE");
-        activeTradersTitle.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        activeTradersTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         activeTradersTitle.setForeground(Color.WHITE);
-        activeTradersTitle.setBounds(10, 5, 50, 15);
+        activeTradersTitle.setBounds(10, 5, 70, 15);
         activeTradersCard.add(activeTradersTitle);
         
         activeTradersLabel = new javax.swing.JLabel("0");
-        activeTradersLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        activeTradersLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         activeTradersLabel.setForeground(Color.WHITE);
-        activeTradersLabel.setBounds(60, 15, 30, 25);
+        activeTradersLabel.setBounds(85, 15, 40, 25);
         activeTradersCard.add(activeTradersLabel);
         summaryPanel.add(activeTradersCard);
 
@@ -210,19 +214,19 @@ public class manageusers extends javax.swing.JFrame {
         JPanel totalAdminsCard = new JPanel();
         totalAdminsCard.setLayout(null);
         totalAdminsCard.setBackground(new Color(12, 192, 223));
-        totalAdminsCard.setBounds(270, 10, 140, 50);
+        totalAdminsCard.setBounds(340, 10, 180, 50); // Wider card
         totalAdminsCard.setBorder(new LineBorder(Color.WHITE, 2));
         
-        javax.swing.JLabel totalAdminsTitle = new javax.swing.JLabel("ADMINS");
-        totalAdminsTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        javax.swing.JLabel totalAdminsTitle = new javax.swing.JLabel("TOTAL ADMINS");
+        totalAdminsTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         totalAdminsTitle.setForeground(Color.WHITE);
-        totalAdminsTitle.setBounds(10, 5, 80, 15);
+        totalAdminsTitle.setBounds(10, 5, 120, 15);
         totalAdminsCard.add(totalAdminsTitle);
         
         totalAdminsLabel = new javax.swing.JLabel("0");
-        totalAdminsLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        totalAdminsLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         totalAdminsLabel.setForeground(Color.WHITE);
-        totalAdminsLabel.setBounds(100, 15, 40, 30);
+        totalAdminsLabel.setBounds(130, 15, 50, 30);
         totalAdminsCard.add(totalAdminsLabel);
         summaryPanel.add(totalAdminsCard);
 
@@ -230,29 +234,25 @@ public class manageusers extends javax.swing.JFrame {
         JPanel activeAdminsCard = new JPanel();
         activeAdminsCard.setLayout(null);
         activeAdminsCard.setBackground(new Color(46, 125, 50));
-        activeAdminsCard.setBounds(420, 10, 90, 50);
+        activeAdminsCard.setBounds(530, 10, 130, 50); // Wider card
         activeAdminsCard.setBorder(new LineBorder(Color.WHITE, 2));
         
         javax.swing.JLabel activeAdminsTitle = new javax.swing.JLabel("ACTIVE");
-        activeAdminsTitle.setFont(new Font("Segoe UI", Font.BOLD, 10));
+        activeAdminsTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         activeAdminsTitle.setForeground(Color.WHITE);
-        activeAdminsTitle.setBounds(10, 5, 50, 15);
+        activeAdminsTitle.setBounds(10, 5, 70, 15);
         activeAdminsCard.add(activeAdminsTitle);
         
         activeAdminsLabel = new javax.swing.JLabel("0");
-        activeAdminsLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        activeAdminsLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         activeAdminsLabel.setForeground(Color.WHITE);
-        activeAdminsLabel.setBounds(60, 15, 30, 25);
+        activeAdminsLabel.setBounds(85, 15, 40, 25);
         activeAdminsCard.add(activeAdminsLabel);
         summaryPanel.add(activeAdminsCard);
 
-        // Last Updated
-        lastUpdatedLabel.setBounds(520, 45, 150, 20);
-        summaryPanel.add(lastUpdatedLabel);
-
-        // Create Tabbed Pane for Traders and Admins
+        // Create Tabbed Pane for Traders and Admins - adjusted height and width
         tabbedPane = new javax.swing.JTabbedPane();
-        tabbedPane.setBounds(10, 170, 600, 220);
+        tabbedPane.setBounds(10, 170, 780, 200); // Wider and shorter to leave space for buttons
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
         tabbedPane.setBackground(new Color(245, 245, 245));
         tabbedPane.setForeground(new Color(0, 102, 102));
@@ -264,7 +264,7 @@ public class manageusers extends javax.swing.JFrame {
         
         setupTradersTable();
         tradersScrollPane = new JScrollPane(tradersTable);
-        tradersScrollPane.setBounds(10, 10, 565, 160);
+        tradersScrollPane.setBounds(10, 10, 745, 140); // Adjusted size
         tradersScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
         tradersScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         tradersPanel.add(tradersScrollPane);
@@ -278,36 +278,38 @@ public class manageusers extends javax.swing.JFrame {
         
         setupAdminsTable();
         adminsScrollPane = new JScrollPane(adminsTable);
-        adminsScrollPane.setBounds(10, 10, 565, 160);
+        adminsScrollPane.setBounds(10, 10, 745, 140); // Adjusted size
         adminsScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
         adminsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         adminsPanel.add(adminsScrollPane);
         
         tabbedPane.addTab("Administrators", adminsPanel);
 
-        // Action Buttons Panel
+        // Action Buttons Panel - properly sized at bottom
         JPanel actionPanel = new JPanel();
         actionPanel.setLayout(null);
         actionPanel.setBackground(new Color(245, 245, 245));
         actionPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
-        actionPanel.setBounds(10, 400, 600, 40);
+        actionPanel.setBounds(10, 380, 780, 60); // Larger panel to fit buttons
 
+        // Add New Admin Button
         addAdminButton = new javax.swing.JButton("➕ Add New Admin");
-        addAdminButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        addAdminButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         addAdminButton.setBackground(new Color(0, 102, 102));
         addAdminButton.setForeground(Color.WHITE);
-        addAdminButton.setBounds(10, 5, 150, 30);
+        addAdminButton.setBounds(10, 10, 150, 40); // Taller button
         addAdminButton.setBorder(null);
         addAdminButton.setFocusPainted(false);
         addAdminButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addAdminButton.addActionListener(e -> showAddAdminDialog());
         actionPanel.add(addAdminButton);
 
+        // Deactivate User Button
         deactivateUserButton = new javax.swing.JButton("🔴 Deactivate User");
-        deactivateUserButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        deactivateUserButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         deactivateUserButton.setBackground(new Color(204, 0, 0));
         deactivateUserButton.setForeground(Color.WHITE);
-        deactivateUserButton.setBounds(170, 5, 140, 30);
+        deactivateUserButton.setBounds(170, 10, 150, 40); // Taller button
         deactivateUserButton.setBorder(null);
         deactivateUserButton.setFocusPainted(false);
         deactivateUserButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -315,11 +317,12 @@ public class manageusers extends javax.swing.JFrame {
         deactivateUserButton.addActionListener(e -> deactivateUser());
         actionPanel.add(deactivateUserButton);
 
+        // Activate User Button
         activateUserButton = new javax.swing.JButton("🟢 Activate User");
-        activateUserButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        activateUserButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         activateUserButton.setBackground(new Color(46, 125, 50));
         activateUserButton.setForeground(Color.WHITE);
-        activateUserButton.setBounds(320, 5, 130, 30);
+        activateUserButton.setBounds(330, 10, 140, 40); // Taller button
         activateUserButton.setBorder(null);
         activateUserButton.setFocusPainted(false);
         activateUserButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -327,11 +330,12 @@ public class manageusers extends javax.swing.JFrame {
         activateUserButton.addActionListener(e -> activateUser());
         actionPanel.add(activateUserButton);
 
+        // View Details Button
         viewDetailsButton = new javax.swing.JButton("👤 View Details");
-        viewDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        viewDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         viewDetailsButton.setBackground(new Color(12, 192, 223));
         viewDetailsButton.setForeground(Color.WHITE);
-        viewDetailsButton.setBounds(460, 5, 120, 30);
+        viewDetailsButton.setBounds(480, 10, 140, 40); // Taller button
         viewDetailsButton.setBorder(null);
         viewDetailsButton.setFocusPainted(false);
         viewDetailsButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -339,6 +343,23 @@ public class manageusers extends javax.swing.JFrame {
         viewDetailsButton.addActionListener(e -> viewUserDetails());
         actionPanel.add(viewDetailsButton);
 
+        // Refresh Stats Button - additional button if needed
+        javax.swing.JButton quickRefreshButton = new javax.swing.JButton("⟳ Refresh Stats");
+        quickRefreshButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        quickRefreshButton.setBackground(new Color(12, 192, 223));
+        quickRefreshButton.setForeground(Color.WHITE);
+        quickRefreshButton.setBounds(630, 10, 140, 40); // Taller button
+        quickRefreshButton.setBorder(null);
+        quickRefreshButton.setFocusPainted(false);
+        quickRefreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        quickRefreshButton.addActionListener(e -> {
+            loadAllData();
+            updateSummaryCards();
+            JOptionPane.showMessageDialog(this, "Statistics refreshed!", "Refresh", JOptionPane.INFORMATION_MESSAGE);
+        });
+        actionPanel.add(quickRefreshButton);
+
+        // Add all panels to content panel
         contentPanel.add(searchPanel);
         contentPanel.add(summaryPanel);
         contentPanel.add(tabbedPane);
@@ -346,7 +367,6 @@ public class manageusers extends javax.swing.JFrame {
 
         // Add content panel to jPanel2
         jPanel2.add(contentPanel);
-        contentPanel.setBounds(0, 0, 620, 450);
 
         jPanel2.revalidate();
         jPanel2.repaint();
@@ -363,7 +383,7 @@ public class manageusers extends javax.swing.JFrame {
 
         tradersTable = new javax.swing.JTable(tradersTableModel);
         tradersTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tradersTable.setRowHeight(25);
+        tradersTable.setRowHeight(28); // Slightly taller rows
         tradersTable.setShowGrid(true);
         tradersTable.setGridColor(new Color(12, 192, 223));
         tradersTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -378,12 +398,12 @@ public class manageusers extends javax.swing.JFrame {
         tradersTable.getColumnModel().getColumn(0).setMaxWidth(0);
         tradersTable.getColumnModel().getColumn(0).setWidth(0);
 
-        // Set column widths
-        tradersTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-        tradersTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-        tradersTable.getColumnModel().getColumn(3).setPreferredWidth(150);
-        tradersTable.getColumnModel().getColumn(4).setPreferredWidth(70);
-        tradersTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        // Set column widths - adjusted for better fit
+        tradersTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+        tradersTable.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tradersTable.getColumnModel().getColumn(3).setPreferredWidth(180);
+        tradersTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        tradersTable.getColumnModel().getColumn(5).setPreferredWidth(150);
 
         tradersTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
@@ -416,7 +436,7 @@ public class manageusers extends javax.swing.JFrame {
 
         adminsTable = new javax.swing.JTable(adminsTableModel);
         adminsTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        adminsTable.setRowHeight(25);
+        adminsTable.setRowHeight(28); // Slightly taller rows
         adminsTable.setShowGrid(true);
         adminsTable.setGridColor(new Color(12, 192, 223));
         adminsTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -431,12 +451,12 @@ public class manageusers extends javax.swing.JFrame {
         adminsTable.getColumnModel().getColumn(0).setMaxWidth(0);
         adminsTable.getColumnModel().getColumn(0).setWidth(0);
 
-        // Set column widths
-        adminsTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-        adminsTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-        adminsTable.getColumnModel().getColumn(3).setPreferredWidth(150);
-        adminsTable.getColumnModel().getColumn(4).setPreferredWidth(70);
-        adminsTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        // Set column widths - adjusted for better fit
+        adminsTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+        adminsTable.getColumnModel().getColumn(2).setPreferredWidth(120);
+        adminsTable.getColumnModel().getColumn(3).setPreferredWidth(180);
+        adminsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        adminsTable.getColumnModel().getColumn(5).setPreferredWidth(150);
 
         adminsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
