@@ -820,7 +820,7 @@ public class trader_dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_panellogoutMouseExited
 
     private void panelmyitemsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmyitemsMouseClicked
-        System.out.println("My Items clicked! traderId: " + traderId + ", traderName: " + traderName);
+//        System.out.println("test   traderId: " + traderId + ", traderName: " + traderName);
         myitems myItemsFrame = new myitems(traderId, traderName);
         myItemsFrame.setVisible(true);
         myItemsFrame.setLocationRelativeTo(null);

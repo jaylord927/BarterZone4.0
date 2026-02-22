@@ -4,8 +4,7 @@ import BarterZone.resources.IconManager;
 import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Image;
-import java.io.File;
+import java.awt.Cursor;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -16,35 +15,47 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.RowFilter;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
-public class myitems extends javax.swing.JFrame {
+public class messages extends javax.swing.JFrame {
 
     private int traderId;
     private String traderName;
     private config db;
-    private DefaultTableModel tableModel;
-    private TableRowSorter<TableModel> rowSorter;
-    private int selectedItemId = -1;
-    private int lastSelectedRow = -1;
     private IconManager iconManager;
 
+    private DefaultTableModel conversationsTableModel;
+    private javax.swing.JTable conversationsTable;
+    private JScrollPane conversationsScrollPane;
+
+    private DefaultTableModel messagesTableModel;
+    private javax.swing.JTable messagesTable;
+    private JScrollPane messagesScrollPane;
+
     private javax.swing.JTextField searchField;
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton editButton;
-    private javax.swing.JButton deleteButton;
-    private javax.swing.JButton removeButton;
+    private javax.swing.JTextField messageInputField;
+    private javax.swing.JButton sendButton;
+    private javax.swing.JButton newMessageButton;
+    private javax.swing.JButton refreshButton;
+    private javax.swing.JLabel selectedConversationLabel;
+    private javax.swing.JTextArea messagePreviewArea;
+    private JScrollPane previewScrollPane;
+
+    private int selectedConversationId = -1;
+    private int selectedOtherTraderId = -1;
+    private String selectedOtherTraderName = "";
 
     private Color hoverColor = new Color(70, 210, 235);
     private Color defaultColor = new Color(12, 192, 223);
     private Color activeColor = new Color(0, 150, 180);
     private JPanel activePanel = null;
 
-    public myitems(int traderId, String traderName) {
+    public messages(int traderId, String traderName) {
         this.traderId = traderId;
         this.traderName = traderName;
         this.db = new config();
@@ -53,15 +64,15 @@ public class myitems extends javax.swing.JFrame {
 
         loadAndResizeIcons();
 
-        setActivePanel(panelmyitems);
+        setActivePanel(panelmessages);
 
         setupCustomComponents();
-        loadItems();
+        loadConversations();
         setupLiveSearch();
 
         setupSidebarHoverEffects();
 
-        setTitle("My Items - " + traderName);
+        setTitle("Messages - " + traderName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -114,12 +125,14 @@ public class myitems extends javax.swing.JFrame {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (panel == paneldashboard) {
                     openDashboard();
+                } else if (panel == panelmyitems) {
+                    openMyItems();
                 } else if (panel == panelfinditems) {
                     openFindItems();
                 } else if (panel == paneltrades) {
                     openTrades();
                 } else if (panel == panelmessages) {
-                    openMessages();
+                    refreshMessages();
                 } else if (panel == panelreports) {
                     openReports();
                 } else if (panel == panelprofile) {
@@ -163,93 +176,127 @@ public class myitems extends javax.swing.JFrame {
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy");
         CurrentDate.setText(sdf.format(new Date()));
 
+        jPanel2.removeAll();
+        jPanel2.setLayout(null);
+
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(null);
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBounds(0, 0, 620, 450);
 
-        JPanel searchPanel = new JPanel();
-        searchPanel.setLayout(null);
-        searchPanel.setBackground(new Color(245, 245, 245));
-        searchPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        searchPanel.setBounds(10, 10, 600, 50);
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(null);
+        topPanel.setBackground(new Color(245, 245, 245));
+        topPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        topPanel.setBounds(10, 10, 600, 60);
 
-        javax.swing.JLabel searchLabel = new javax.swing.JLabel("Search Items:");
+        javax.swing.JLabel searchLabel = new javax.swing.JLabel("Search Conversations:");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        searchLabel.setBounds(10, 15, 100, 20);
-        searchPanel.add(searchLabel);
+        searchLabel.setForeground(new Color(0, 102, 102));
+        searchLabel.setBounds(15, 10, 180, 25);
+        topPanel.add(searchLabel);
 
         searchField = new javax.swing.JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchField.setBounds(120, 12, 200, 26);
-        searchField.setBorder(new LineBorder(new Color(200, 200, 200)));
-        searchPanel.add(searchField);
+        searchField.setBounds(15, 35, 300, 25);
+        searchField.setBorder(new LineBorder(new Color(12, 192, 223)));
+        topPanel.add(searchField);
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(null);
-        buttonPanel.setBackground(new Color(245, 245, 245));
-        buttonPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        buttonPanel.setBounds(10, 70, 600, 50);
+        newMessageButton = new javax.swing.JButton("New Message");
+        newMessageButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        newMessageButton.setBackground(new Color(0, 102, 102));
+        newMessageButton.setForeground(Color.WHITE);
+        newMessageButton.setBounds(330, 30, 130, 30);
+        newMessageButton.setBorder(null);
+        newMessageButton.setFocusPainted(false);
+        newMessageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        newMessageButton.addActionListener(e -> showNewMessageDialog());
+        topPanel.add(newMessageButton);
 
-        addButton = new javax.swing.JButton("Add Item");
-        addButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        addButton.setBackground(new Color(0, 102, 102));
-        addButton.setForeground(Color.WHITE);
-        addButton.setBounds(10, 10, 100, 30);
-        addButton.setBorder(null);
-        addButton.setFocusPainted(false);
-        addButton.addActionListener(e -> openAddItem());
-        buttonPanel.add(addButton);
+        refreshButton = new javax.swing.JButton("Refresh");
+        refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        refreshButton.setBackground(new Color(12, 192, 223));
+        refreshButton.setForeground(Color.WHITE);
+        refreshButton.setBounds(470, 30, 100, 30);
+        refreshButton.setBorder(null);
+        refreshButton.setFocusPainted(false);
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        refreshButton.addActionListener(e -> refreshMessages());
+        topPanel.add(refreshButton);
 
-        editButton = new javax.swing.JButton("Edit Item");
-        editButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        editButton.setBackground(new Color(255, 153, 0));
-        editButton.setForeground(Color.WHITE);
-        editButton.setBounds(120, 10, 100, 30);
-        editButton.setBorder(null);
-        editButton.setFocusPainted(false);
-        editButton.addActionListener(e -> openEditItem());
-        buttonPanel.add(editButton);
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(null);
+        leftPanel.setBackground(new Color(245, 245, 245));
+        leftPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        leftPanel.setBounds(10, 80, 250, 270);
 
-        deleteButton = new javax.swing.JButton("Delete Item");
-        deleteButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        deleteButton.setBackground(new Color(204, 0, 0));
-        deleteButton.setForeground(Color.WHITE);
-        deleteButton.setBounds(230, 10, 110, 30);
-        deleteButton.setBorder(null);
-        deleteButton.setFocusPainted(false);
-        deleteButton.addActionListener(e -> deleteSelectedItem());
-        buttonPanel.add(deleteButton);
+        javax.swing.JLabel conversationsTitle = new javax.swing.JLabel("Conversations");
+        conversationsTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        conversationsTitle.setForeground(new Color(0, 102, 102));
+        conversationsTitle.setBounds(10, 5, 200, 20);
+        leftPanel.add(conversationsTitle);
 
-        removeButton = new javax.swing.JButton("Remove Selection");
-        removeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        removeButton.setBackground(new Color(102, 102, 102));
-        removeButton.setForeground(Color.WHITE);
-        removeButton.setBounds(350, 10, 140, 30);
-        removeButton.setBorder(null);
-        removeButton.setFocusPainted(false);
-        removeButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        removeButton.addActionListener(e -> clearSelection());
-        buttonPanel.add(removeButton);
+        setupConversationsTable();
+        conversationsScrollPane = new JScrollPane(conversationsTable);
+        conversationsScrollPane.setBounds(10, 30, 230, 230);
+        conversationsScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        conversationsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        leftPanel.add(conversationsScrollPane);
 
-        JPanel tablePanel = new JPanel();
-        tablePanel.setLayout(null);
-        tablePanel.setBackground(new Color(245, 245, 245));
-        tablePanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        tablePanel.setBounds(10, 130, 600, 310);
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(null);
+        rightPanel.setBackground(new Color(245, 245, 245));
+        rightPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        rightPanel.setBounds(270, 80, 340, 360);
 
-        setupTable();
+        selectedConversationLabel = new javax.swing.JLabel("Select a conversation");
+        selectedConversationLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        selectedConversationLabel.setForeground(new Color(0, 102, 102));
+        selectedConversationLabel.setBounds(10, 5, 300, 20);
+        rightPanel.add(selectedConversationLabel);
 
-        jScrollPane1.setBounds(10, 10, 580, 290);
-        jScrollPane1.setBorder(null);
-        tablePanel.add(jScrollPane1);
+        setupMessagesTable();
+        messagesScrollPane = new JScrollPane(messagesTable);
+        messagesScrollPane.setBounds(10, 30, 320, 220);
+        messagesScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        messagesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        rightPanel.add(messagesScrollPane);
 
-        contentPanel.add(searchPanel);
-        contentPanel.add(buttonPanel);
-        contentPanel.add(tablePanel);
+        messagePreviewArea = new javax.swing.JTextArea();
+        messagePreviewArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        messagePreviewArea.setLineWrap(true);
+        messagePreviewArea.setWrapStyleWord(true);
+        messagePreviewArea.setEditable(false);
+        messagePreviewArea.setBackground(new Color(245, 245, 245));
+        previewScrollPane = new JScrollPane(messagePreviewArea);
+        previewScrollPane.setBounds(10, 255, 320, 50);
+        previewScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        previewScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        rightPanel.add(previewScrollPane);
 
-        jPanel2.removeAll();
-        jPanel2.setLayout(null);
+        messageInputField = new javax.swing.JTextField();
+        messageInputField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        messageInputField.setBounds(10, 310, 230, 30);
+        messageInputField.setBorder(new LineBorder(new Color(12, 192, 223)));
+        messageInputField.setEnabled(false);
+        rightPanel.add(messageInputField);
+
+        sendButton = new javax.swing.JButton("SEND");
+        sendButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        sendButton.setBackground(new Color(0, 102, 102));
+        sendButton.setForeground(Color.WHITE);
+        sendButton.setBounds(250, 310, 80, 30);
+        sendButton.setBorder(null);
+        sendButton.setFocusPainted(false);
+        sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        sendButton.setEnabled(false);
+        sendButton.addActionListener(e -> sendMessage());
+        rightPanel.add(sendButton);
+
+        contentPanel.add(topPanel);
+        contentPanel.add(leftPanel);
+        contentPanel.add(rightPanel);
+
         jPanel2.add(contentPanel);
         contentPanel.setBounds(0, 0, 620, 450);
 
@@ -257,196 +304,381 @@ public class myitems extends javax.swing.JFrame {
         jPanel2.repaint();
     }
 
-    private void setupTable() {
-        String[] columns = {"ID", "Item Name", "Brand", "Condition", "Date Bought", "Description", "Status", "Photo"};
-        tableModel = new DefaultTableModel(columns, 0) {
+    private void setupConversationsTable() {
+        String[] columns = {"Conversation ID", "With", "Last Message", "Date", "Other ID"};
+        conversationsTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        myitemstable.setModel(tableModel);
-        myitemstable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        myitemstable.setRowHeight(60);
-        myitemstable.setShowGrid(true);
-        myitemstable.setGridColor(new Color(230, 230, 230));
-        myitemstable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        myitemstable.getTableHeader().setBackground(new Color(12, 192, 223));
-        myitemstable.getTableHeader().setForeground(Color.WHITE);
-        myitemstable.getTableHeader().setBorder(null);
-        myitemstable.setSelectionBackground(new Color(184, 239, 255));
-        myitemstable.setRowHeight(60);
+        conversationsTable = new javax.swing.JTable(conversationsTableModel);
+        conversationsTable.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        conversationsTable.setRowHeight(30);
+        conversationsTable.setShowGrid(true);
+        conversationsTable.setGridColor(new Color(12, 192, 223));
+        conversationsTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        conversationsTable.getTableHeader().setBackground(new Color(0, 102, 102));
+        conversationsTable.getTableHeader().setForeground(Color.WHITE);
+        conversationsTable.setSelectionBackground(new Color(184, 239, 255));
+        conversationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        myitemstable.getColumnModel().getColumn(0).setMinWidth(0);
-        myitemstable.getColumnModel().getColumn(0).setMaxWidth(0);
-        myitemstable.getColumnModel().getColumn(0).setWidth(0);
+        conversationsTable.getColumnModel().getColumn(0).setMinWidth(0);
+        conversationsTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        conversationsTable.getColumnModel().getColumn(0).setWidth(0);
 
-        myitemstable.getColumnModel().getColumn(7).setCellRenderer(new ImageRenderer());
-        myitemstable.getColumnModel().getColumn(7).setPreferredWidth(80);
-        myitemstable.getColumnModel().getColumn(7).setMinWidth(80);
-        myitemstable.getColumnModel().getColumn(7).setMaxWidth(80);
+        conversationsTable.getColumnModel().getColumn(4).setMinWidth(0);
+        conversationsTable.getColumnModel().getColumn(4).setMaxWidth(0);
+        conversationsTable.getColumnModel().getColumn(4).setWidth(0);
 
-        TableColumn column1 = myitemstable.getColumnModel().getColumn(1);
-        column1.setPreferredWidth(120);
-        column1.setMinWidth(100);
-        
-        TableColumn column2 = myitemstable.getColumnModel().getColumn(2);
-        column2.setPreferredWidth(100);
-        column2.setMinWidth(80);
-        
-        TableColumn column3 = myitemstable.getColumnModel().getColumn(3);
-        column3.setPreferredWidth(80);
-        column3.setMinWidth(70);
-        
-        TableColumn column4 = myitemstable.getColumnModel().getColumn(4);
-        column4.setPreferredWidth(100);
-        column4.setMinWidth(80);
-        
-        TableColumn column5 = myitemstable.getColumnModel().getColumn(5);
-        column5.setPreferredWidth(150);
-        column5.setMinWidth(120);
-        
-        TableColumn column6 = myitemstable.getColumnModel().getColumn(6);
-        column6.setPreferredWidth(70);
-        column6.setMinWidth(60);
+        conversationsTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+        conversationsTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        conversationsTable.getColumnModel().getColumn(3).setPreferredWidth(50);
 
-        myitemstable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int selectedRow = myitemstable.getSelectedRow();
-                if (selectedRow != -1) {
-                    int modelRow = myitemstable.convertRowIndexToModel(selectedRow);
-                    selectedItemId = Integer.parseInt(tableModel.getValueAt(modelRow, 0).toString());
-                }
-            }
-        });
-
-        myitemstable.addMouseListener(new java.awt.event.MouseAdapter() {
+        conversationsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (evt.getClickCount() == 2) {
-                    int selectedRow = myitemstable.getSelectedRow();
-                    if (selectedRow != -1 && selectedRow == lastSelectedRow) {
-                        myitemstable.clearSelection();
-                        clearSelection();
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    int selectedRow = conversationsTable.getSelectedRow();
+                    if (selectedRow != -1) {
+                        int modelRow = conversationsTable.convertRowIndexToModel(selectedRow);
+                        loadConversationMessages(modelRow);
+                    } else {
+                        clearMessagePanel();
                     }
-                    lastSelectedRow = selectedRow;
                 }
             }
         });
     }
 
-    private void clearSelection() {
-        myitemstable.clearSelection();
-        selectedItemId = -1;
-        lastSelectedRow = -1;
+    private void setupMessagesTable() {
+        String[] columns = {"ID", "Sender", "Message", "Date", "Sender ID"};
+        messagesTableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        messagesTable = new javax.swing.JTable(messagesTableModel);
+        messagesTable.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        messagesTable.setRowHeight(25);
+        messagesTable.setShowGrid(true);
+        messagesTable.setGridColor(new Color(12, 192, 223));
+        messagesTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        messagesTable.getTableHeader().setBackground(new Color(12, 192, 223));
+        messagesTable.getTableHeader().setForeground(Color.WHITE);
+        messagesTable.setSelectionBackground(new Color(184, 239, 255));
+        messagesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        messagesTable.getColumnModel().getColumn(0).setMinWidth(0);
+        messagesTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        messagesTable.getColumnModel().getColumn(0).setWidth(0);
+
+        messagesTable.getColumnModel().getColumn(4).setMinWidth(0);
+        messagesTable.getColumnModel().getColumn(4).setMaxWidth(0);
+        messagesTable.getColumnModel().getColumn(4).setWidth(0);
+
+        messagesTable.getColumnModel().getColumn(1).setPreferredWidth(50);
+        messagesTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        messagesTable.getColumnModel().getColumn(3).setPreferredWidth(80);
+
+        messagesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    int selectedRow = messagesTable.getSelectedRow();
+                    if (selectedRow != -1) {
+                        int modelRow = messagesTable.convertRowIndexToModel(selectedRow);
+                        String message = messagesTableModel.getValueAt(modelRow, 2).toString();
+                        messagePreviewArea.setText(message);
+                    }
+                }
+            }
+        });
     }
 
     private void setupLiveSearch() {
-        rowSorter = new TableRowSorter<>(myitemstable.getModel());
-        myitemstable.setRowSorter(rowSorter);
+        TableRowSorter<DefaultTableModel> rowSorter = new TableRowSorter<>(conversationsTableModel);
+        conversationsTable.setRowSorter(rowSorter);
 
-        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
+            public void insertUpdate(DocumentEvent e) {
+                performSearch();
             }
 
             @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
+            public void removeUpdate(DocumentEvent e) {
+                performSearch();
             }
 
             @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
+            public void changedUpdate(DocumentEvent e) {
+                performSearch();
+            }
+
+            private void performSearch() {
+                String text = searchField.getText().trim();
+                if (text.isEmpty()) {
+                    rowSorter.setRowFilter(null);
+                } else {
+                    rowSorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text, 1, 2));
+                }
             }
         });
     }
 
-    private void filterTable() {
-        String text = searchField.getText();
-        if (text.trim().length() == 0) {
-            rowSorter.setRowFilter(null);
-        } else {
-            rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1, 2, 3, 5));
-        }
-    }
+    private void loadConversations() {
+        conversationsTableModel.setRowCount(0);
 
-    private void loadItems() {
-        tableModel.setRowCount(0);
+        String sql = "WITH conversation_list AS ("
+                + "    SELECT DISTINCT "
+                + "    CASE "
+                + "        WHEN sender_id = ? THEN receiver_id "
+                + "        ELSE sender_id "
+                + "    END as other_id "
+                + "    FROM tbl_trade_messages "
+                + "    WHERE sender_id = ? OR receiver_id = ? "
+                + ") "
+                + "SELECT "
+                + "    cl.other_id, "
+                + "    u.user_fullname as other_name, "
+                + "    (SELECT message_text FROM tbl_trade_messages "
+                + "     WHERE (sender_id = ? AND receiver_id = cl.other_id) "
+                + "        OR (sender_id = cl.other_id AND receiver_id = ?) "
+                + "     ORDER BY message_date DESC LIMIT 1) as last_message, "
+                + "    (SELECT message_date FROM tbl_trade_messages "
+                + "     WHERE (sender_id = ? AND receiver_id = cl.other_id) "
+                + "        OR (sender_id = cl.other_id AND receiver_id = ?) "
+                + "     ORDER BY message_date DESC LIMIT 1) as last_date "
+                + "FROM conversation_list cl "
+                + "JOIN tbl_users u ON cl.other_id = u.user_id "
+                + "ORDER BY last_date DESC";
 
-        String sql = "SELECT items_id, item_Name, item_Brand, item_Condition, "
-                + "item_Date, item_Description, is_active, item_picture "
-                + "FROM tbl_items WHERE trader_id = ? ORDER BY items_id DESC";
+        List<Map<String, Object>> conversations = db.fetchRecords(sql, 
+            traderId, traderId, traderId, traderId, traderId, traderId, traderId);
 
-        List<Map<String, Object>> items = db.fetchRecords(sql, traderId);
-
-        for (Map<String, Object> item : items) {
-            Object status = item.get("is_active");
-            String statusText = "Active";
-            if (status instanceof Boolean) {
-                statusText = (Boolean) status ? "Active" : "Inactive";
-            } else if (status instanceof Integer) {
-                statusText = ((Integer) status == 1) ? "Active" : "Inactive";
-            }
-
-            String photoPath = item.get("item_picture") != null ? item.get("item_picture").toString() : "";
-
-            tableModel.addRow(new Object[]{
-                item.get("items_id"),
-                item.get("item_Name"),
-                item.get("item_Brand"),
-                item.get("item_Condition"),
-                item.get("item_Date"),
-                item.get("item_Description"),
-                statusText,
-                photoPath
+        for (Map<String, Object> conv : conversations) {
+            conversationsTableModel.addRow(new Object[]{
+                conv.get("other_id"),
+                conv.get("other_name"),
+                conv.get("last_message") != null ? conv.get("last_message").toString() : "No messages yet",
+                formatDate(conv.get("last_date")),
+                conv.get("other_id")
             });
         }
     }
 
-    private void refreshItems() {
-        loadItems();
-        JOptionPane.showMessageDialog(this, "Items refreshed!", "Success", JOptionPane.INFORMATION_MESSAGE);
+    private void loadConversationMessages(int modelRow) {
+        selectedOtherTraderId = Integer.parseInt(conversationsTableModel.getValueAt(modelRow, 4).toString());
+        selectedOtherTraderName = conversationsTableModel.getValueAt(modelRow, 1).toString();
+
+        selectedConversationLabel.setText("Conversation with: " + selectedOtherTraderName);
+        messageInputField.setEnabled(true);
+        sendButton.setEnabled(true);
+
+        messagesTableModel.setRowCount(0);
+
+        String sql = "SELECT m.message_id, m.sender_id, m.message_text, m.message_date, "
+                + "u.user_fullname as sender_name "
+                + "FROM tbl_trade_messages m "
+                + "JOIN tbl_users u ON m.sender_id = u.user_id "
+                + "WHERE (m.sender_id = ? AND m.receiver_id = ?) "
+                + "   OR (m.sender_id = ? AND m.receiver_id = ?) "
+                + "ORDER BY m.message_date ASC";
+
+        List<Map<String, Object>> messages = db.fetchRecords(sql, 
+            traderId, selectedOtherTraderId, selectedOtherTraderId, traderId);
+
+        for (Map<String, Object> msg : messages) {
+            String sender = msg.get("sender_id").toString().equals(String.valueOf(traderId)) ? "You" : msg.get("sender_name").toString();
+            messagesTableModel.addRow(new Object[]{
+                msg.get("message_id"),
+                sender,
+                msg.get("message_text"),
+                formatDateTime(msg.get("message_date")),
+                msg.get("sender_id")
+            });
+        }
+
+        if (messagesTableModel.getRowCount() > 0) {
+            messagesTable.scrollRectToVisible(messagesTable.getCellRect(messagesTableModel.getRowCount() - 1, 0, true));
+        }
     }
 
-    private void openAddItem() {
-        add_items addFrame = new add_items(traderId, traderName);
-        addFrame.setVisible(true);
-        addFrame.setLocationRelativeTo(null);
-//        this.dispose();
+    private void clearMessagePanel() {
+        selectedConversationLabel.setText("Select a conversation");
+        messageInputField.setEnabled(false);
+        sendButton.setEnabled(false);
+        messageInputField.setText("");
+        messagePreviewArea.setText("");
+        messagesTableModel.setRowCount(0);
     }
 
-    private void openEditItem() {
-        if (selectedItemId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an item to edit.", "No Selection", JOptionPane.WARNING_MESSAGE);
+    private void sendMessage() {
+        String messageText = messageInputField.getText().trim();
+        if (messageText.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter a message.", "Empty Message", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        edit_items editFrame = new edit_items(traderId, traderName, selectedItemId);
-        editFrame.setVisible(true);
-        editFrame.setLocationRelativeTo(null);
-//        this.dispose();
+        String sql = "INSERT INTO tbl_trade_messages (sender_id, receiver_id, message_text, message_date) "
+                + "VALUES (?, ?, ?, datetime('now'))";
+
+        try {
+            db.addRecord(sql, traderId, selectedOtherTraderId, messageText);
+            
+            messageInputField.setText("");
+            int selectedRow = conversationsTable.getSelectedRow();
+            if (selectedRow != -1) {
+                int modelRow = conversationsTable.convertRowIndexToModel(selectedRow);
+                loadConversationMessages(modelRow);
+            }
+            loadConversations();
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to send message: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
-    private void deleteSelectedItem() {
-        if (selectedItemId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an item to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
+    private void showNewMessageDialog() {
+        String sql = "SELECT user_id, user_fullname FROM tbl_users WHERE user_id != ? AND user_type = 'trader' AND user_status = 'active' ORDER BY user_fullname";
+        List<Map<String, Object>> traders = db.fetchRecords(sql, traderId);
+
+        if (traders.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No other traders available.", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete this item?", "Confirm Delete",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        String[] traderNames = new String[traders.size()];
+        Integer[] traderIds = new Integer[traders.size()];
+        for (int i = 0; i < traders.size(); i++) {
+            traderNames[i] = traders.get(i).get("user_fullname").toString();
+            traderIds[i] = Integer.parseInt(traders.get(i).get("user_id").toString());
+        }
 
-        if (confirm == JOptionPane.YES_OPTION) {
-            String sql = "DELETE FROM tbl_items WHERE items_id = ? AND trader_id = ?";
-            db.deleteRecord(sql, selectedItemId, traderId);
+        javax.swing.JDialog dialog = new javax.swing.JDialog(this, "New Message", true);
+        dialog.setSize(400, 250);
+        dialog.setLayout(null);
+        dialog.setLocationRelativeTo(this);
+        dialog.getContentPane().setBackground(Color.WHITE);
 
-            JOptionPane.showMessageDialog(this, "Item deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            selectedItemId = -1;
-            loadItems();
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(new Color(12, 192, 223));
+        titlePanel.setBounds(0, 0, 400, 40);
+        titlePanel.setLayout(null);
+
+        javax.swing.JLabel titleLabel = new javax.swing.JLabel("NEW MESSAGE");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(20, 5, 200, 30);
+        titlePanel.add(titleLabel);
+        dialog.add(titlePanel);
+
+        javax.swing.JLabel toLabel = new javax.swing.JLabel("To:");
+        toLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        toLabel.setBounds(20, 60, 50, 25);
+        dialog.add(toLabel);
+
+        javax.swing.JComboBox<String> traderCombo = new javax.swing.JComboBox<>(traderNames);
+        traderCombo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        traderCombo.setBounds(80, 60, 250, 30);
+        traderCombo.setBackground(Color.WHITE);
+        dialog.add(traderCombo);
+
+        javax.swing.JLabel messageLabel = new javax.swing.JLabel("Message:");
+        messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        messageLabel.setBounds(20, 100, 80, 25);
+        dialog.add(messageLabel);
+
+        javax.swing.JTextArea messageArea = new javax.swing.JTextArea();
+        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        messageArea.setLineWrap(true);
+        messageArea.setWrapStyleWord(true);
+        javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(messageArea);
+        scrollPane.setBounds(20, 130, 350, 60);
+        scrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        dialog.add(scrollPane);
+
+        javax.swing.JButton sendBtn = new javax.swing.JButton("SEND");
+        sendBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        sendBtn.setBackground(new Color(0, 102, 102));
+        sendBtn.setForeground(Color.WHITE);
+        sendBtn.setBounds(100, 200, 100, 30);
+        sendBtn.setBorder(null);
+        sendBtn.setFocusPainted(false);
+        sendBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        sendBtn.addActionListener(e -> {
+            int selectedIndex = traderCombo.getSelectedIndex();
+            if (selectedIndex >= 0) {
+                String msgText = messageArea.getText().trim();
+                if (!msgText.isEmpty()) {
+                    int receiverId = traderIds[selectedIndex];
+                    String receiverName = traderNames[selectedIndex];
+                    
+                    String insertSql = "INSERT INTO tbl_trade_messages (sender_id, receiver_id, message_text, message_date) "
+                            + "VALUES (?, ?, ?, datetime('now'))";
+                    
+                    try {
+                        db.addRecord(insertSql, traderId, receiverId, msgText);
+                        JOptionPane.showMessageDialog(dialog, "Message sent to " + receiverName + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        dialog.dispose();
+                        loadConversations();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(dialog, "Failed to send message: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Please enter a message.", "Error", JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        });
+        dialog.add(sendBtn);
+
+        javax.swing.JButton cancelBtn = new javax.swing.JButton("CANCEL");
+        cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelBtn.setBackground(new Color(204, 0, 0));
+        cancelBtn.setForeground(Color.WHITE);
+        cancelBtn.setBounds(210, 200, 100, 30);
+        cancelBtn.setBorder(null);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        dialog.add(cancelBtn);
+
+        dialog.setVisible(true);
+    }
+
+    private void refreshMessages() {
+        loadConversations();
+        clearMessagePanel();
+        JOptionPane.showMessageDialog(this, "Messages refreshed!", "Refresh", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String formatDate(Object dateObj) {
+        if (dateObj == null) return "-";
+        try {
+            String dateStr = dateObj.toString();
+            if (dateStr.length() >= 10) {
+                return dateStr.substring(0, 10);
+            }
+            return dateStr;
+        } catch (Exception e) {
+            return "-";
+        }
+    }
+
+    private String formatDateTime(Object dateObj) {
+        if (dateObj == null) return "-";
+        try {
+            String dateStr = dateObj.toString();
+            if (dateStr.length() >= 16) {
+                return dateStr.substring(0, 16).replace("T", " ");
+            }
+            return dateStr;
+        } catch (Exception e) {
+            return "-";
         }
     }
 
@@ -454,6 +686,13 @@ public class myitems extends javax.swing.JFrame {
         trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
         dashboard.setVisible(true);
         dashboard.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openMyItems() {
+        myitems myItemsFrame = new myitems(traderId, traderName);
+        myItemsFrame.setVisible(true);
+        myItemsFrame.setLocationRelativeTo(null);
         this.dispose();
     }
 
@@ -468,13 +707,6 @@ public class myitems extends javax.swing.JFrame {
         trades tradesFrame = new trades(traderId, traderName);
         tradesFrame.setVisible(true);
         tradesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openMessages() {
-        messages messagesFrame = new messages(traderId, traderName);
-        messagesFrame.setVisible(true);
-        messagesFrame.setLocationRelativeTo(null);
         this.dispose();
     }
 
@@ -503,43 +735,6 @@ public class myitems extends javax.swing.JFrame {
             landingFrame.setVisible(true);
             landingFrame.setLocationRelativeTo(null);
             this.dispose();
-        }
-    }
-
-    class ImageRenderer extends javax.swing.table.DefaultTableCellRenderer {
-        @Override
-        public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
-            javax.swing.JLabel label = new javax.swing.JLabel();
-            label.setHorizontalAlignment(javax.swing.JLabel.CENTER);
-            label.setVerticalAlignment(javax.swing.JLabel.CENTER);
-            
-            if (value != null && !value.toString().isEmpty()) {
-                try {
-                    String imagePath = "src/" + value.toString().replace(".", "/");
-                    File imgFile = new File(imagePath);
-                    if (imgFile.exists()) {
-                        ImageIcon icon = new ImageIcon(imagePath);
-                        Image img = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-                        label.setIcon(new ImageIcon(img));
-                    } else {
-                        label.setText("No Image");
-                        label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-                    }
-                } catch (Exception e) {
-                    label.setText("Error");
-                }
-            } else {
-                label.setText("No Image");
-                label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-            }
-            
-            if (isSelected) {
-                label.setBackground(table.getSelectionBackground());
-                label.setOpaque(true);
-            }
-            
-            return label;
         }
     }
 
@@ -867,7 +1062,7 @@ public class myitems extends javax.swing.JFrame {
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30));
-        jLabel1.setText("My Items");
+        jLabel1.setText("Messages");
         jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, 30));
 
         CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
@@ -879,13 +1074,13 @@ public class myitems extends javax.swing.JFrame {
 
         myitemstable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "ID", "Item Name", "Brand", "Condition", "Date", "Description", "Status", "Photo"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         jScrollPane1.setViewportView(myitemstable);
@@ -917,38 +1112,38 @@ public class myitems extends javax.swing.JFrame {
 
     private javax.swing.JLabel CurrentDate;
     private javax.swing.JLabel Profile;
-    private javax.swing.JLabel Reports;
-    private javax.swing.JPanel avatar;
-    private javax.swing.JLabel avatarletter;
-    private javax.swing.JLabel barterzonelogo;
-    private javax.swing.JLabel dashboard;
-    private javax.swing.JLabel dashboardicon;
-    private javax.swing.JLabel finditems;
-    private javax.swing.JLabel finditemsicon;
+    javax.swing.JLabel Reports;
+    javax.swing.JPanel avatar;
+    javax.swing.JLabel avatarletter;
+    javax.swing.JLabel barterzonelogo;
+    javax.swing.JLabel dashboard;
+    javax.swing.JLabel dashboardicon;
+    javax.swing.JLabel finditems;
+    javax.swing.JLabel finditemsicon;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel logotext;
-    private javax.swing.JLabel logout;
-    private javax.swing.JLabel logouticon;
-    private javax.swing.JLabel messages;
-    private javax.swing.JLabel messagesicon;
-    private javax.swing.JLabel myitems;
-    private javax.swing.JLabel myitemsicon;
-    private javax.swing.JTable myitemstable;
-    private javax.swing.JPanel paneldashboard;
-    private javax.swing.JPanel panelfinditems;
-    private javax.swing.JPanel panellogout;
-    private javax.swing.JPanel panelmessages;
-    private javax.swing.JPanel panelmyitems;
-    private javax.swing.JPanel panelprofile;
-    private javax.swing.JPanel panelreports;
-    private javax.swing.JPanel paneltrades;
-    private javax.swing.JLabel profileicon;
-    private javax.swing.JLabel reportsicon;
-    private javax.swing.JPanel tradermenu1;
-    private javax.swing.JLabel trades;
-    private javax.swing.JLabel tradesicon;
-    private javax.swing.JLabel username;
+    javax.swing.JPanel jPanel2;
+    javax.swing.JScrollPane jScrollPane1;
+    javax.swing.JLabel logotext;
+    javax.swing.JLabel logout;
+    javax.swing.JLabel logouticon;
+    javax.swing.JLabel messages;
+    javax.swing.JLabel messagesicon;
+    javax.swing.JLabel myitems;
+    javax.swing.JLabel myitemsicon;
+    javax.swing.JTable myitemstable;
+    javax.swing.JPanel paneldashboard;
+    javax.swing.JPanel panelfinditems;
+    javax.swing.JPanel panellogout;
+    javax.swing.JPanel panelmessages;
+    javax.swing.JPanel panelmyitems;
+    javax.swing.JPanel panelprofile;
+    javax.swing.JPanel panelreports;
+    javax.swing.JPanel paneltrades;
+    javax.swing.JLabel profileicon;
+    javax.swing.JLabel reportsicon;
+    javax.swing.JPanel tradermenu1;
+    javax.swing.JLabel trades;
+    javax.swing.JLabel tradesicon;
+    javax.swing.JLabel username;
 }

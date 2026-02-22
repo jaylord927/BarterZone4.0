@@ -17,7 +17,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import javax.swing.RowFilter;
 import javax.swing.ListSelectionModel;
@@ -32,10 +33,9 @@ public class finditems extends javax.swing.JFrame {
     private String traderName;
     private config db;
     private DefaultTableModel tableModel;
-    private TableRowSorter<TableModel> rowSorter;
+    private TableRowSorter<DefaultTableModel> rowSorter;
     private IconManager iconManager;
 
-    // UI Components
     private javax.swing.JTextField searchField;
     private javax.swing.JComboBox<String> searchCategoryCombo;
     private javax.swing.JPanel detailsPanel;
@@ -51,18 +51,15 @@ public class finditems extends javax.swing.JFrame {
     private javax.swing.JButton tradeRequestButton;
     private javax.swing.JLabel selectedStatusLabel;
 
-    // Scroll panes
     private JScrollPane tableScrollPane;
     private JScrollPane detailsScrollPane;
 
-    // Selected item data
     private int selectedItemId = -1;
     private int selectedItemOwnerId = -1;
     private String selectedItemOwnerName = "";
     private String selectedItemImagePath = "";
     private int lastSelectedRow = -1;
 
-    // Trader's own items for trade validation
     private java.util.List<Map<String, Object>> traderOwnItems;
     private javax.swing.JComboBox<String> traderItemsCombo;
     private int selectedOwnItemId = -1;
@@ -80,21 +77,17 @@ public class finditems extends javax.swing.JFrame {
         this.iconManager = IconManager.getInstance();
         initComponents();
 
-        // Load icons for side panel
         loadAndResizeIcons();
 
-        // Set as active panel
         setActivePanel(panelfinditems);
 
         setupCustomComponents();
         loadAllItems();
-        loadTraderOwnItems(); // Load trader's own available items
+        loadTraderOwnItems();
         setupLiveSearch();
 
-        // Add hover effects to all side panel items
         setupSidebarHoverEffects();
 
-        // Set title and properties
         setTitle("Find Items - " + traderName);
         setSize(800, 500);
         setResizable(false);
@@ -122,18 +115,17 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void setupSidebarHoverEffects() {
-        // Apply hover effects to all side panel items
-        applyHoverEffect(paneldashboard, dashboard);
-        applyHoverEffect(panelmyitems, myitems);
-        applyHoverEffect(panelfinditems, finditems);
-        applyHoverEffect(paneltrades, trades);
-        applyHoverEffect(panelmessages, messages);
-        applyHoverEffect(panelreports, Reports);
-        applyHoverEffect(panelprofile, Profile);
-        applyHoverEffect(panellogout, logout);
+        applyHoverEffectToPanelAndLabel(paneldashboard, dashboard);
+        applyHoverEffectToPanelAndLabel(panelmyitems, myitems);
+        applyHoverEffectToPanelAndLabel(panelfinditems, finditems);
+        applyHoverEffectToPanelAndLabel(paneltrades, trades);
+        applyHoverEffectToPanelAndLabel(panelmessages, messages);
+        applyHoverEffectToPanelAndLabel(panelreports, Reports);
+        applyHoverEffectToPanelAndLabel(panelprofile, Profile);
+        applyHoverEffectToPanelAndLabel(panellogout, logout);
     }
 
-    private void applyHoverEffect(JPanel panel, javax.swing.JLabel label) {
+    private void applyHoverEffectToPanelAndLabel(JPanel panel, javax.swing.JLabel label) {
         java.awt.event.MouseAdapter adapter = new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -143,6 +135,25 @@ public class finditems extends javax.swing.JFrame {
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 setDefault(panel);
+            }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (panel == paneldashboard) {
+                    openDashboard();
+                } else if (panel == panelmyitems) {
+                    openMyItems();
+                } else if (panel == paneltrades) {
+                    openTrades();
+                } else if (panel == panelmessages) {
+                    openMessages();
+                } else if (panel == panelreports) {
+                    openReports();
+                } else if (panel == panelprofile) {
+                    openProfile();
+                } else if (panel == panellogout) {
+                    logout();
+                }
             }
         };
 
@@ -170,24 +181,19 @@ public class finditems extends javax.swing.JFrame {
         }
     }
 
-    /**
-     * Load trader's own items that are still available for trade (not yet
-     * involved in any completed/accepted trade)
-     */
     private void loadTraderOwnItems() {
         String sql = "SELECT i.items_id, i.item_Name, i.item_Brand, i.item_Condition "
                 + "FROM tbl_items i "
                 + "WHERE i.trader_id = ? AND i.is_active = 1 "
                 + "AND i.items_id NOT IN ("
-                + "    SELECT DISTINCT offered_item_id FROM tbl_trades WHERE status IN ('accepted', 'completed') "
+                + "    SELECT DISTINCT offer_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed') "
                 + "    UNION "
-                + "    SELECT DISTINCT requested_item_id FROM tbl_trades WHERE status IN ('accepted', 'completed')"
+                + "    SELECT DISTINCT target_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed')"
                 + ") "
                 + "ORDER BY i.item_Name ASC";
 
         traderOwnItems = db.fetchRecords(sql, traderId);
 
-        // Update the combo box if it exists
         if (traderItemsCombo != null) {
             traderItemsCombo.removeAllItems();
             traderItemsCombo.addItem("-- Select your item to trade --");
@@ -200,27 +206,22 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void setupCustomComponents() {
-        // Set username and avatar
         username.setText(traderName);
         if (traderName != null && traderName.length() > 0) {
             avatarletter.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
 
-        // Set current date
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy");
         CurrentDate.setText(sdf.format(new Date()));
 
-        // Clear jPanel2 and set up new content
         jPanel2.removeAll();
         jPanel2.setLayout(null);
 
-        // Create main content panel
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(null);
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBounds(0, 0, 620, 450);
 
-        // Search Section
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(null);
         searchPanel.setBackground(new Color(245, 245, 245));
@@ -248,7 +249,6 @@ public class finditems extends javax.swing.JFrame {
         searchCategoryCombo.addActionListener(e -> performLiveSearch());
         searchPanel.add(searchCategoryCombo);
 
-        // Left Panel - Items Table with scroll bar
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(null);
         leftPanel.setBackground(new Color(245, 245, 245));
@@ -261,10 +261,8 @@ public class finditems extends javax.swing.JFrame {
         tableTitle.setBounds(10, 5, 200, 20);
         leftPanel.add(tableTitle);
 
-        // Setup table
         setupTable();
 
-        // Create scroll pane for table
         tableScrollPane = new JScrollPane(myitemstable);
         tableScrollPane.setBounds(10, 30, 280, 310);
         tableScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
@@ -272,7 +270,6 @@ public class finditems extends javax.swing.JFrame {
         tableScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         leftPanel.add(tableScrollPane);
 
-        // Right Panel - Item Details with scroll bar
         detailsPanel = new JPanel();
         detailsPanel.setLayout(null);
         detailsPanel.setBackground(new Color(245, 245, 245));
@@ -285,20 +282,17 @@ public class finditems extends javax.swing.JFrame {
         detailsTitle.setBounds(10, 5, 200, 20);
         detailsPanel.add(detailsTitle);
 
-        // Selected Status
         selectedStatusLabel = new javax.swing.JLabel("No item selected");
         selectedStatusLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         selectedStatusLabel.setForeground(new Color(102, 102, 102));
         selectedStatusLabel.setBounds(10, 25, 270, 15);
         detailsPanel.add(selectedStatusLabel);
 
-        // Create a content panel for details that can scroll
         JPanel detailsContentPanel = new JPanel();
         detailsContentPanel.setLayout(null);
         detailsContentPanel.setBackground(new Color(245, 245, 245));
         detailsContentPanel.setPreferredSize(new java.awt.Dimension(260, 550));
 
-        // Item Image
         itemImageLabel = new javax.swing.JLabel();
         itemImageLabel.setBounds(30, 10, 200, 120);
         itemImageLabel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
@@ -310,14 +304,12 @@ public class finditems extends javax.swing.JFrame {
         itemImageLabel.setOpaque(true);
         detailsContentPanel.add(itemImageLabel);
 
-        // Item Details
         int y = 140;
         int labelWidth = 70;
         int valueWidth = 150;
         int labelX = 20;
         int valueX = 90;
 
-        // Owner
         javax.swing.JLabel ownerTitle = new javax.swing.JLabel("Owner:");
         ownerTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         ownerTitle.setBounds(labelX, y, 50, 20);
@@ -330,7 +322,6 @@ public class finditems extends javax.swing.JFrame {
         detailsContentPanel.add(ownerNameLabel);
         y += 25;
 
-        // Item Name
         javax.swing.JLabel nameTitle = new javax.swing.JLabel("Name:");
         nameTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         nameTitle.setBounds(labelX, y, 50, 20);
@@ -342,7 +333,6 @@ public class finditems extends javax.swing.JFrame {
         detailsContentPanel.add(itemNameLabel);
         y += 25;
 
-        // Brand
         javax.swing.JLabel brandTitle = new javax.swing.JLabel("Brand:");
         brandTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         brandTitle.setBounds(labelX, y, 50, 20);
@@ -354,7 +344,6 @@ public class finditems extends javax.swing.JFrame {
         detailsContentPanel.add(itemBrandLabel);
         y += 25;
 
-        // Condition
         javax.swing.JLabel conditionTitle = new javax.swing.JLabel("Condition:");
         conditionTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         conditionTitle.setBounds(labelX, y, 70, 20);
@@ -366,7 +355,6 @@ public class finditems extends javax.swing.JFrame {
         detailsContentPanel.add(itemConditionLabel);
         y += 25;
 
-        // Date
         javax.swing.JLabel dateTitle = new javax.swing.JLabel("Date:");
         dateTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         dateTitle.setBounds(labelX, y, 50, 20);
@@ -378,7 +366,6 @@ public class finditems extends javax.swing.JFrame {
         detailsContentPanel.add(itemDateLabel);
         y += 25;
 
-        // Description
         javax.swing.JLabel descTitle = new javax.swing.JLabel("Description:");
         descTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         descTitle.setBounds(labelX, y, 80, 20);
@@ -399,7 +386,6 @@ public class finditems extends javax.swing.JFrame {
         detailsContentPanel.add(descScrollPane);
         y += 60;
 
-        // Buttons
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(null);
         buttonPanel.setBackground(new Color(12, 192, 223));
@@ -412,7 +398,6 @@ public class finditems extends javax.swing.JFrame {
         actionLabel.setBounds(10, 5, 100, 15);
         buttonPanel.add(actionLabel);
 
-        // Message Button
         messageButton = new javax.swing.JButton("MESSAGE");
         messageButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         messageButton.setBackground(new Color(0, 102, 102));
@@ -425,7 +410,6 @@ public class finditems extends javax.swing.JFrame {
         messageButton.addActionListener(e -> sendMessage());
         buttonPanel.add(messageButton);
 
-        // Trade Request Button
         tradeRequestButton = new javax.swing.JButton("TRADE");
         tradeRequestButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         tradeRequestButton.setBackground(new Color(255, 140, 0));
@@ -440,7 +424,6 @@ public class finditems extends javax.swing.JFrame {
 
         detailsContentPanel.add(buttonPanel);
 
-        // Create scroll pane for details panel
         detailsScrollPane = new JScrollPane(detailsContentPanel);
         detailsScrollPane.setBounds(5, 45, 280, 300);
         detailsScrollPane.setBorder(null);
@@ -448,12 +431,10 @@ public class finditems extends javax.swing.JFrame {
         detailsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         detailsPanel.add(detailsScrollPane);
 
-        // Add all panels to content panel
         contentPanel.add(searchPanel);
         contentPanel.add(leftPanel);
         contentPanel.add(detailsPanel);
 
-        // Add content panel to jPanel2
         jPanel2.add(contentPanel);
         contentPanel.setBounds(0, 0, 620, 450);
 
@@ -462,7 +443,7 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void setupTable() {
-        String[] columns = {"ID", "Item Name", "Brand", "Condition", "Owner", "Owner ID"};
+        String[] columns = {"ID", "Item Name", "Brand", "Condition", "Owner", "Owner ID", "Photo"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -472,7 +453,7 @@ public class finditems extends javax.swing.JFrame {
 
         myitemstable.setModel(tableModel);
         myitemstable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        myitemstable.setRowHeight(25);
+        myitemstable.setRowHeight(60);
         myitemstable.setShowGrid(true);
         myitemstable.setGridColor(new Color(12, 192, 223));
         myitemstable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -482,23 +463,35 @@ public class finditems extends javax.swing.JFrame {
         myitemstable.setSelectionBackground(new Color(184, 239, 255));
         myitemstable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Hide the ID column and Owner ID column
         myitemstable.getColumnModel().getColumn(0).setMinWidth(0);
         myitemstable.getColumnModel().getColumn(0).setMaxWidth(0);
         myitemstable.getColumnModel().getColumn(0).setWidth(0);
-
-        myitemstable.getColumnModel().getColumn(4).setPreferredWidth(80);
 
         myitemstable.getColumnModel().getColumn(5).setMinWidth(0);
         myitemstable.getColumnModel().getColumn(5).setMaxWidth(0);
         myitemstable.getColumnModel().getColumn(5).setWidth(0);
 
-        // Set column widths
-        myitemstable.getColumnModel().getColumn(1).setPreferredWidth(100);
-        myitemstable.getColumnModel().getColumn(2).setPreferredWidth(70);
-        myitemstable.getColumnModel().getColumn(3).setPreferredWidth(60);
+        myitemstable.getColumnModel().getColumn(6).setCellRenderer(new ImageRenderer());
+        myitemstable.getColumnModel().getColumn(6).setPreferredWidth(60);
+        myitemstable.getColumnModel().getColumn(6).setMinWidth(60);
+        myitemstable.getColumnModel().getColumn(6).setMaxWidth(60);
 
-        // Add selection listener
+        TableColumn col1 = myitemstable.getColumnModel().getColumn(1);
+        col1.setPreferredWidth(100);
+        col1.setMinWidth(80);
+
+        TableColumn col2 = myitemstable.getColumnModel().getColumn(2);
+        col2.setPreferredWidth(80);
+        col2.setMinWidth(70);
+
+        TableColumn col3 = myitemstable.getColumnModel().getColumn(3);
+        col3.setPreferredWidth(70);
+        col3.setMinWidth(60);
+
+        TableColumn col4 = myitemstable.getColumnModel().getColumn(4);
+        col4.setPreferredWidth(80);
+        col4.setMinWidth(70);
+
         myitemstable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -553,10 +546,9 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void setupLiveSearch() {
-        rowSorter = new TableRowSorter<>(myitemstable.getModel());
+        rowSorter = new TableRowSorter<>(tableModel);
         myitemstable.setRowSorter(rowSorter);
 
-        // Add document listener for live search
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -599,7 +591,6 @@ public class finditems extends javax.swing.JFrame {
                 columnIndex = 4;
                 break;
             default:
-                // Search all fields
                 rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1, 2, 3, 4));
                 return;
         }
@@ -623,13 +614,16 @@ public class finditems extends javax.swing.JFrame {
         List<Map<String, Object>> items = db.fetchRecords(sql, traderId);
 
         for (Map<String, Object> item : items) {
+            String photoPath = item.get("item_picture") != null ? item.get("item_picture").toString() : "";
+
             tableModel.addRow(new Object[]{
                 item.get("items_id"),
                 item.get("item_Name"),
                 item.get("item_Brand"),
                 item.get("item_Condition"),
                 item.get("owner_name"),
-                item.get("owner_id")
+                item.get("owner_id"),
+                photoPath
             });
         }
 
@@ -703,15 +697,54 @@ public class finditems extends javax.swing.JFrame {
         }
     }
 
+    class ImageRenderer extends javax.swing.table.DefaultTableCellRenderer {
+
+        @Override
+        public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            javax.swing.JLabel label = new javax.swing.JLabel();
+            label.setHorizontalAlignment(javax.swing.JLabel.CENTER);
+            label.setVerticalAlignment(javax.swing.JLabel.CENTER);
+
+            if (value != null && !value.toString().isEmpty()) {
+                try {
+                    String imagePath = "src/" + value.toString().replace(".", "/");
+                    File imgFile = new File(imagePath);
+                    if (imgFile.exists()) {
+                        ImageIcon icon = new ImageIcon(imagePath);
+                        Image img = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
+                        label.setIcon(new ImageIcon(img));
+                    } else {
+                        label.setText("No Img");
+                        label.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+                    }
+                } catch (Exception e) {
+                    label.setText("Err");
+                }
+            } else {
+                label.setText("No Img");
+                label.setFont(new Font("Segoe UI", Font.PLAIN, 9));
+            }
+
+            if (isSelected) {
+                label.setBackground(table.getSelectionBackground());
+                label.setOpaque(true);
+            }
+
+            return label;
+        }
+    }
+
     private void sendMessage() {
         if (selectedItemId == -1) {
             JOptionPane.showMessageDialog(this, "Please select an item first.", "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        JOptionPane.showMessageDialog(this,
-                "Message feature coming soon!\n\nSend message to: " + selectedItemOwnerName,
-                "Messages", JOptionPane.INFORMATION_MESSAGE);
+        messages messagesFrame = new messages(traderId, traderName);
+        messagesFrame.setVisible(true);
+        messagesFrame.setLocationRelativeTo(null);
+        this.dispose();
     }
 
     private void sendTradeRequest() {
@@ -725,8 +758,7 @@ public class finditems extends javax.swing.JFrame {
             return;
         }
 
-        // Check if trader has any available items to trade
-        loadTraderOwnItems(); // Refresh the list
+        loadTraderOwnItems();
 
         if (traderOwnItems.isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -741,18 +773,12 @@ public class finditems extends javax.swing.JFrame {
         showTradeRequestDialog();
     }
 
-    /**
-     * Check if an item is still available for trade
-     *
-     * @param itemId The item ID to check
-     * @return true if the item is available, false otherwise
-     */
     private boolean isItemAvailableForTrade(int itemId) {
         String sql = "SELECT COUNT(*) as count FROM tbl_items WHERE items_id = ? AND is_active = 1 "
                 + "AND items_id NOT IN ("
-                + "    SELECT DISTINCT offered_item_id FROM tbl_trades WHERE status IN ('accepted', 'completed') "
+                + "    SELECT DISTINCT offer_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed') "
                 + "    UNION "
-                + "    SELECT DISTINCT requested_item_id FROM tbl_trades WHERE status IN ('accepted', 'completed')"
+                + "    SELECT DISTINCT target_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed')"
                 + ")";
 
         double count = db.getSingleValue(sql, itemId);
@@ -760,14 +786,12 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void showTradeRequestDialog() {
-        // Create dialog
         javax.swing.JDialog tradeDialog = new javax.swing.JDialog(this, "Send Trade Request", true);
         tradeDialog.setSize(450, 350);
         tradeDialog.setLayout(null);
         tradeDialog.setLocationRelativeTo(this);
         tradeDialog.getContentPane().setBackground(Color.WHITE);
 
-        // Title Panel
         JPanel titlePanel = new JPanel();
         titlePanel.setBackground(new Color(12, 192, 223));
         titlePanel.setBounds(0, 0, 450, 40);
@@ -781,7 +805,6 @@ public class finditems extends javax.swing.JFrame {
 
         tradeDialog.add(titlePanel);
 
-        // Requested Item Info
         javax.swing.JLabel requestedItemLabel = new javax.swing.JLabel("You want to trade for:");
         requestedItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         requestedItemLabel.setBounds(20, 60, 200, 20);
@@ -796,23 +819,19 @@ public class finditems extends javax.swing.JFrame {
         itemInfoLabel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
         tradeDialog.add(itemInfoLabel);
 
-        // Your Item Selection
         javax.swing.JLabel yourItemLabel = new javax.swing.JLabel("Select your item to offer:");
         yourItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         yourItemLabel.setBounds(20, 150, 200, 20);
         tradeDialog.add(yourItemLabel);
 
-        // Refresh available items
         loadTraderOwnItems();
 
-        // Create combo box for trader's items
         traderItemsCombo = new javax.swing.JComboBox<>();
         traderItemsCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         traderItemsCombo.setBounds(20, 175, 300, 30);
         traderItemsCombo.setBackground(Color.WHITE);
         traderItemsCombo.setBorder(new LineBorder(new Color(12, 192, 223)));
 
-        // Add items to combo box
         traderItemsCombo.addItem("-- Select your item to trade --");
         for (Map<String, Object> item : traderOwnItems) {
             String itemDisplay = item.get("item_Name") + " (" + item.get("item_Brand") + ")";
@@ -821,7 +840,6 @@ public class finditems extends javax.swing.JFrame {
 
         tradeDialog.add(traderItemsCombo);
 
-        // Message field (optional)
         javax.swing.JLabel messageLabel = new javax.swing.JLabel("Optional message:");
         messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         messageLabel.setBounds(20, 220, 200, 20);
@@ -837,7 +855,6 @@ public class finditems extends javax.swing.JFrame {
         messageScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
         tradeDialog.add(messageScroll);
 
-        // Buttons
         javax.swing.JButton sendButton = new javax.swing.JButton("SEND REQUEST");
         sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         sendButton.setBackground(new Color(0, 102, 102));
@@ -847,7 +864,6 @@ public class finditems extends javax.swing.JFrame {
         sendButton.setFocusPainted(false);
         sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         sendButton.addActionListener(e -> {
-            // Validate selection
             if (traderItemsCombo.getSelectedIndex() == 0) {
                 JOptionPane.showMessageDialog(tradeDialog,
                         "Please select an item to trade.",
@@ -856,14 +872,12 @@ public class finditems extends javax.swing.JFrame {
                 return;
             }
 
-            // Get selected item ID
-            int selectedIndex = traderItemsCombo.getSelectedIndex() - 1; // Subtract 1 because first item is prompt
+            int selectedIndex = traderItemsCombo.getSelectedIndex() - 1;
             if (selectedIndex >= 0 && selectedIndex < traderOwnItems.size()) {
                 Map<String, Object> selectedItem = traderOwnItems.get(selectedIndex);
                 int offeredItemId = Integer.parseInt(selectedItem.get("items_id").toString());
                 String offeredItemName = selectedItem.get("item_Name").toString();
 
-                // Double-check if the offered item is still available
                 if (!isItemAvailableForTrade(offeredItemId)) {
                     JOptionPane.showMessageDialog(tradeDialog,
                             "Sorry, the item '" + offeredItemName + "' is no longer available for trade.\n"
@@ -871,7 +885,6 @@ public class finditems extends javax.swing.JFrame {
                             "Item Unavailable",
                             JOptionPane.WARNING_MESSAGE);
 
-                    // Refresh the list
                     loadTraderOwnItems();
                     if (traderOwnItems.isEmpty()) {
                         tradeDialog.dispose();
@@ -879,7 +892,6 @@ public class finditems extends javax.swing.JFrame {
                     return;
                 }
 
-                // Check if the requested item is still available
                 if (!isItemAvailableForTrade(selectedItemId)) {
                     JOptionPane.showMessageDialog(tradeDialog,
                             "Sorry, the item you requested is no longer available.\n"
@@ -887,12 +899,11 @@ public class finditems extends javax.swing.JFrame {
                             "Item Unavailable",
                             JOptionPane.WARNING_MESSAGE);
                     tradeDialog.dispose();
-                    loadAllItems(); // Refresh the main table
+                    loadAllItems();
                     clearSelection();
                     return;
                 }
 
-                // Create the trade request
                 createTradeRequest(offeredItemId, offeredItemName, messageArea.getText().trim());
             }
 
@@ -914,11 +925,7 @@ public class finditems extends javax.swing.JFrame {
         tradeDialog.setVisible(true);
     }
 
-    /**
-     * Create a trade request in the database
-     */
     private void createTradeRequest(int offeredItemId, String offeredItemName, String message) {
-        // Check one more time if both items are still available
         if (!isItemAvailableForTrade(offeredItemId)) {
             JOptionPane.showMessageDialog(this,
                     "Your item '" + offeredItemName + "' is no longer available for trade.\n"
@@ -935,24 +942,23 @@ public class finditems extends javax.swing.JFrame {
                     + "It may have been traded to someone else.",
                     "Trade Failed",
                     JOptionPane.WARNING_MESSAGE);
-            loadAllItems(); // Refresh the main table
+            loadAllItems();
             clearSelection();
             return;
         }
 
-        // Insert trade request into database
-        String sql = "INSERT INTO tbl_trades ("
-                + "offered_by_id, offered_item_id, "
-                + "requested_by_id, requested_item_id, "
-                + "status, message, created_date"
-                + ") VALUES (?, ?, ?, ?, ?, ?, NOW())";
+        String sql = "INSERT INTO tbl_trade ("
+                + "offer_trader_id, offer_item_id, "
+                + "target_trader_id, target_item_id, "
+                + "trade_status, trade_DateRequest"
+                + ") VALUES (?, ?, ?, ?, ?, datetime('now'))";
 
-        boolean success = db.addRecord(sql,
-                traderId, offeredItemId,
-                selectedItemOwnerId, selectedItemId,
-                "pending", message);
+        try {
+            db.addRecord(sql,
+                    traderId, offeredItemId,
+                    selectedItemOwnerId, selectedItemId,
+                    "pending");
 
-        if (success) {
             JOptionPane.showMessageDialog(this,
                     "✅ Trade request sent successfully!\n\n"
                     + "Your item: " + offeredItemName + "\n"
@@ -961,22 +967,75 @@ public class finditems extends javax.swing.JFrame {
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 
-            // Refresh the trader's available items (the offered item is now in a pending trade)
             loadTraderOwnItems();
-
-            // Optionally refresh the main items table
             loadAllItems();
             clearSelection();
-        } else {
+
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                    "Failed to send trade request. Please try again.",
+                    "Failed to send trade request. Please try again.\nError: " + ex.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    private void openDashboard() {
+        trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
+        dashboard.setVisible(true);
+        dashboard.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openMyItems() {
+        myitems myItemsFrame = new myitems(traderId, traderName);
+        myItemsFrame.setVisible(true);
+        myItemsFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openTrades() {
+        trades tradesFrame = new trades(traderId, traderName);
+        tradesFrame.setVisible(true);
+        tradesFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openMessages() {
+        messages messagesFrame = new messages(traderId, traderName);
+        messagesFrame.setVisible(true);
+        messagesFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openReports() {
+        reports reportsFrame = new reports(traderId, traderName);
+        reportsFrame.setVisible(true);
+        reportsFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openProfile() {
+        profile profileFrame = new profile(traderId, traderName);
+        profileFrame.setVisible(true);
+        profileFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            landing.landing landingFrame = new landing.landing();
+            landingFrame.setVisible(true);
+            landingFrame.setLocationRelativeTo(null);
+            this.dispose();
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
     private void initComponents() {
 
         tradermenu1 = new javax.swing.JPanel();
@@ -1025,7 +1084,7 @@ public class finditems extends javax.swing.JFrame {
         tradermenu1.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(8, 150, 175), 1, true));
         tradermenu1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        logotext.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        logotext.setFont(new java.awt.Font("Segoe UI", 1, 22));
         logotext.setForeground(new java.awt.Color(255, 255, 255));
         logotext.setText("BarterZone");
         logotext.setAlignmentX(0.5F);
@@ -1034,40 +1093,26 @@ public class finditems extends javax.swing.JFrame {
         avatar.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3));
         avatar.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        avatarletter.setFont(new java.awt.Font("Arial", 1, 36)); // NOI18N
+        avatarletter.setFont(new java.awt.Font("Arial", 1, 36));
         avatarletter.setForeground(new java.awt.Color(12, 192, 223));
         avatarletter.setText("T");
         avatar.add(avatarletter, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 10, 50, 30));
 
         username.setBackground(new java.awt.Color(255, 255, 255));
-        username.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        username.setFont(new java.awt.Font("Segoe UI", 1, 14));
         username.setForeground(new java.awt.Color(255, 255, 255));
         avatar.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, 110, 30));
 
         tradermenu1.add(avatar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, 110, 60));
 
-        barterzonelogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logo.png"))); // NOI18N
+        barterzonelogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logo.png")));
         tradermenu1.add(barterzonelogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 40, 40));
 
-        // DASHBOARD PANEL
         paneldashboard.setBackground(new java.awt.Color(12, 192, 223));
-        paneldashboard.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                paneldashboardMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                paneldashboardMouseEntered(evt);
-            }
+        dashboardicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/dashboard.png")));
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                paneldashboardMouseExited(evt);
-            }
-        });
-
-        dashboardicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/dashboard.png"))); // NOI18N
-
-        dashboard.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        dashboard.setFont(new java.awt.Font("Segoe UI", 1, 14));
         dashboard.setForeground(new java.awt.Color(255, 255, 255));
         dashboard.setText("Dashboard");
 
@@ -1093,25 +1138,11 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(paneldashboard, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 130, 40));
 
-        // MY ITEMS PANEL
         panelmyitems.setBackground(new java.awt.Color(12, 192, 223));
-        panelmyitems.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelmyitemsMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelmyitemsMouseEntered(evt);
-            }
+        myitemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/myitems.png")));
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelmyitemsMouseExited(evt);
-            }
-        });
-
-        myitemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/myitems.png"))); // NOI18N
-
-        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14));
         myitems.setForeground(new java.awt.Color(255, 255, 255));
         myitems.setText("My Items");
 
@@ -1138,25 +1169,11 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(panelmyitems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 160, 130, 40));
 
-        // FIND ITEMS PANEL
         panelfinditems.setBackground(new java.awt.Color(12, 192, 223));
-        panelfinditems.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelfinditemsMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelfinditemsMouseEntered(evt);
-            }
+        finditemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/finditems.png")));
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelfinditemsMouseExited(evt);
-            }
-        });
-
-        finditemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/finditems.png"))); // NOI18N
-
-        finditems.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        finditems.setFont(new java.awt.Font("Segoe UI", 1, 14));
         finditems.setForeground(new java.awt.Color(255, 255, 255));
         finditems.setText("Find Items");
 
@@ -1183,25 +1200,11 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(panelfinditems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 130, 40));
 
-        // TRADES PANEL
         paneltrades.setBackground(new java.awt.Color(12, 192, 223));
-        paneltrades.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                paneltradesMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                paneltradesMouseEntered(evt);
-            }
+        tradesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/trade.png")));
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                paneltradesMouseExited(evt);
-            }
-        });
-
-        tradesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/trade.png"))); // NOI18N
-
-        trades.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        trades.setFont(new java.awt.Font("Segoe UI", 1, 14));
         trades.setForeground(new java.awt.Color(255, 255, 255));
         trades.setText("Trades");
 
@@ -1228,25 +1231,11 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(paneltrades, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, 130, 40));
 
-        // MESSAGES PANEL
         panelmessages.setBackground(new java.awt.Color(12, 192, 223));
-        panelmessages.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelmessagesMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelmessagesMouseEntered(evt);
-            }
+        messagesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/messages.png")));
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelmessagesMouseExited(evt);
-            }
-        });
-
-        messagesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/messages.png"))); // NOI18N
-
-        messages.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        messages.setFont(new java.awt.Font("Segoe UI", 1, 14));
         messages.setForeground(new java.awt.Color(255, 255, 255));
         messages.setText("Messages");
 
@@ -1273,27 +1262,44 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(panelmessages, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 280, 130, 40));
 
-        // REPORTS PANEL
+        panellogout.setBackground(new java.awt.Color(12, 192, 223));
+
+        logout.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        logout.setForeground(new java.awt.Color(255, 255, 255));
+        logout.setText("Logout");
+
+        logouticon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logout.png")));
+
+        javax.swing.GroupLayout panellogoutLayout = new javax.swing.GroupLayout(panellogout);
+        panellogout.setLayout(panellogoutLayout);
+        panellogoutLayout.setHorizontalGroup(
+                panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(16, 16, 16)
+                                .addComponent(logout)
+                                .addContainerGap(34, Short.MAX_VALUE))
+        );
+        panellogoutLayout.setVerticalGroup(
+                panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addComponent(logout)
+                                        .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(22, 22, 22))
+        );
+
+        tradermenu1.add(panellogout, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 130, 40));
+
         panelreports.setBackground(new java.awt.Color(12, 192, 223));
-        panelreports.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelreportsMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelreportsMouseEntered(evt);
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelreportsMouseExited(evt);
-            }
-        });
-
-        Reports.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        Reports.setFont(new java.awt.Font("Segoe UI", 1, 14));
         Reports.setForeground(new java.awt.Color(255, 255, 255));
         Reports.setText("Reports");
 
-        reportsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/report.png"))); // NOI18N
+        reportsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/report.png")));
 
         javax.swing.GroupLayout panelreportsLayout = new javax.swing.GroupLayout(panelreports);
         panelreports.setLayout(panelreportsLayout);
@@ -1318,25 +1324,11 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(panelreports, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 320, 130, 40));
 
-        // PROFILE PANEL
         panelprofile.setBackground(new java.awt.Color(12, 192, 223));
-        panelprofile.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelprofileMouseClicked(evt);
-            }
 
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelprofileMouseEntered(evt);
-            }
+        profileicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/profile.png")));
 
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelprofileMouseExited(evt);
-            }
-        });
-
-        profileicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/profile.png"))); // NOI18N
-
-        Profile.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        Profile.setFont(new java.awt.Font("Segoe UI", 1, 14));
         Profile.setForeground(new java.awt.Color(255, 255, 255));
         Profile.setText("Profile");
 
@@ -1363,59 +1355,14 @@ public class finditems extends javax.swing.JFrame {
 
         tradermenu1.add(panelprofile, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 360, 130, 40));
 
-        // LOGOUT PANEL
-        panellogout.setBackground(new java.awt.Color(12, 192, 223));
-        panellogout.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panellogoutMouseClicked(evt);
-            }
-
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panellogoutMouseEntered(evt);
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panellogoutMouseExited(evt);
-            }
-        });
-
-        logout.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        logout.setForeground(new java.awt.Color(255, 255, 255));
-        logout.setText("Logout");
-
-        logouticon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logout.png"))); // NOI18N
-
-        javax.swing.GroupLayout panellogoutLayout = new javax.swing.GroupLayout(panellogout);
-        panellogout.setLayout(panellogoutLayout);
-        panellogoutLayout.setHorizontalGroup(
-                panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                                .addContainerGap()
-                                .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(16, 16, 16)
-                                .addComponent(logout)
-                                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        panellogoutLayout.setVerticalGroup(
-                panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addGroup(panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                        .addComponent(logout)
-                                        .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(22, 22, 22))
-        );
-
-        tradermenu1.add(panellogout, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 130, 40));
-
         jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153), 2));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30));
         jLabel1.setText("Find Items");
         jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, 30));
 
-        CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
         CurrentDate.setForeground(new java.awt.Color(102, 102, 102));
         CurrentDate.setText("jLabel2");
         jPanel1.add(CurrentDate, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 10, 200, 30));
@@ -1424,17 +1371,15 @@ public class finditems extends javax.swing.JFrame {
 
         myitemstable.setModel(new javax.swing.table.DefaultTableModel(
                 new Object[][]{
-                    {null, null, null, null, null},
-                    {null, null, null, null, null},
-                    {null, null, null, null, null},
-                    {null, null, null, null, null}
+                    {null, null, null, null, null, null, null},
+                    {null, null, null, null, null, null, null},
+                    {null, null, null, null, null, null, null},
+                    {null, null, null, null, null, null, null}
                 },
                 new String[]{
-                    "ID", "Item Name", "Brand", "Condition", "Owner"
+                    "ID", "Item Name", "Brand", "Condition", "Owner", "Owner ID", "Photo"
                 }
         ));
-        myitemstable.setEditingColumn(1);
-        myitemstable.setEditingRow(1);
         jScrollPane1.setViewportView(myitemstable);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -1460,160 +1405,8 @@ public class finditems extends javax.swing.JFrame {
         );
 
         pack();
-    }// </editor-fold>                        
-
-    // Sidebar Navigation Methods
-    private void paneldashboardMouseClicked(java.awt.event.MouseEvent evt) {
-        openDashboard();
     }
 
-    private void panelmyitemsMouseClicked(java.awt.event.MouseEvent evt) {
-        openMyItems();
-    }
-
-    private void panelfinditemsMouseClicked(java.awt.event.MouseEvent evt) {
-        loadAllItems();
-        clearSelection();
-        lastSelectedRow = -1;
-    }
-
-    private void paneltradesMouseClicked(java.awt.event.MouseEvent evt) {
-        openTrades();
-    }
-
-    private void panelmessagesMouseClicked(java.awt.event.MouseEvent evt) {
-        openMessages();
-    }
-
-    private void panelreportsMouseClicked(java.awt.event.MouseEvent evt) {
-        openReports();
-    }
-
-    private void panelprofileMouseClicked(java.awt.event.MouseEvent evt) {
-        profile profileFrame = new profile(traderId, traderName);
-        profileFrame.setVisible(true);
-        profileFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void panellogoutMouseClicked(java.awt.event.MouseEvent evt) {
-        logout();
-    }
-
-    // Hover Effects
-    private void paneldashboardMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(paneldashboard);
-    }
-
-    private void paneldashboardMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(paneldashboard);
-    }
-
-    private void panelmyitemsMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(panelmyitems);
-    }
-
-    private void panelmyitemsMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(panelmyitems);
-    }
-
-    private void panelfinditemsMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(panelfinditems);
-    }
-
-    private void panelfinditemsMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(panelfinditems);
-    }
-
-    private void paneltradesMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(paneltrades);
-    }
-
-    private void paneltradesMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(paneltrades);
-    }
-
-    private void panelmessagesMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(panelmessages);
-    }
-
-    private void panelmessagesMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(panelmessages);
-    }
-
-    private void panelreportsMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(panelreports);
-    }
-
-    private void panelreportsMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(panelreports);
-    }
-
-    private void panelprofileMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(panelprofile);
-    }
-
-    private void panelprofileMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(panelprofile);
-    }
-
-    private void panellogoutMouseEntered(java.awt.event.MouseEvent evt) {
-        setHover(panellogout);
-    }
-
-    private void panellogoutMouseExited(java.awt.event.MouseEvent evt) {
-        setDefault(panellogout);
-    }
-
-    // Navigation Methods
-    private void openDashboard() {
-        trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
-        dashboard.setVisible(true);
-        dashboard.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openMyItems() {
-        myitems myItemsFrame = new myitems(traderId, traderName);
-        myItemsFrame.setVisible(true);
-        myItemsFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openTrades() {
-        trades tradesFrame = new trades(traderId, traderName);
-        tradesFrame.setVisible(true);
-        tradesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openMessages() {
-        JOptionPane.showMessageDialog(this, "Messages feature coming soon!", "Info", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void openReports() {
-        JOptionPane.showMessageDialog(this, "Reports feature coming soon!", "Info", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void openProfile() {
-        JOptionPane.showMessageDialog(this, "Profile feature coming soon!", "Info", JOptionPane.INFORMATION_MESSAGE);
-    }
-
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            landing.landing landingFrame = new landing.landing();
-            landingFrame.setVisible(true);
-            landingFrame.setLocationRelativeTo(null);
-            this.dispose();
-        }
-    }
-
-    // Variables declaration - do not modify                     
     private javax.swing.JLabel CurrentDate;
     private javax.swing.JLabel Profile;
     javax.swing.JLabel Reports;
@@ -1650,5 +1443,4 @@ public class finditems extends javax.swing.JFrame {
     javax.swing.JLabel trades;
     javax.swing.JLabel tradesicon;
     javax.swing.JLabel username;
-    // End of variables declaration                   
 }

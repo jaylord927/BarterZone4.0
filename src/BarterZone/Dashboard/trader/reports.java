@@ -4,8 +4,7 @@ import BarterZone.resources.IconManager;
 import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Image;
-import java.io.File;
+import java.awt.Cursor;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -16,35 +15,43 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.RowFilter;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
-public class myitems extends javax.swing.JFrame {
+public class reports extends javax.swing.JFrame {
 
     private int traderId;
     private String traderName;
     private config db;
-    private DefaultTableModel tableModel;
-    private TableRowSorter<TableModel> rowSorter;
-    private int selectedItemId = -1;
-    private int lastSelectedRow = -1;
     private IconManager iconManager;
 
-    private javax.swing.JTextField searchField;
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton editButton;
-    private javax.swing.JButton deleteButton;
-    private javax.swing.JButton removeButton;
+    private DefaultTableModel myReportsTableModel;
+    private javax.swing.JTable myReportsTable;
+    private JScrollPane myReportsScrollPane;
+
+    private javax.swing.JComboBox<String> traderComboBox;
+    private javax.swing.JComboBox<String> reasonComboBox;
+    private javax.swing.JTextArea descriptionArea;
+    private JScrollPane descriptionScrollPane;
+    private javax.swing.JButton submitReportButton;
+    private javax.swing.JButton refreshButton;
+    private javax.swing.JButton cancelReportButton;
+    private javax.swing.JLabel selectedReportLabel;
+    private javax.swing.JTextArea adminReplyArea;
+    private JScrollPane replyScrollPane;
+
+    private int selectedReportId = -1;
+    private String selectedReportStatus = "";
+    private int lastSelectedRow = -1;
 
     private Color hoverColor = new Color(70, 210, 235);
     private Color defaultColor = new Color(12, 192, 223);
     private Color activeColor = new Color(0, 150, 180);
     private JPanel activePanel = null;
 
-    public myitems(int traderId, String traderName) {
+    public reports(int traderId, String traderName) {
         this.traderId = traderId;
         this.traderName = traderName;
         this.db = new config();
@@ -53,15 +60,15 @@ public class myitems extends javax.swing.JFrame {
 
         loadAndResizeIcons();
 
-        setActivePanel(panelmyitems);
+        setActivePanel(panelreports);
 
         setupCustomComponents();
-        loadItems();
-        setupLiveSearch();
+        loadMyReports();
+        loadTraders();
 
         setupSidebarHoverEffects();
 
-        setTitle("My Items - " + traderName);
+        setTitle("Reports - " + traderName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -114,14 +121,14 @@ public class myitems extends javax.swing.JFrame {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (panel == paneldashboard) {
                     openDashboard();
+                } else if (panel == panelmyitems) {
+                    openMyItems();
                 } else if (panel == panelfinditems) {
                     openFindItems();
                 } else if (panel == paneltrades) {
                     openTrades();
                 } else if (panel == panelmessages) {
                     openMessages();
-                } else if (panel == panelreports) {
-                    openReports();
                 } else if (panel == panelprofile) {
                     openProfile();
                 } else if (panel == panellogout) {
@@ -163,93 +170,162 @@ public class myitems extends javax.swing.JFrame {
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy");
         CurrentDate.setText(sdf.format(new Date()));
 
+        jPanel2.removeAll();
+        jPanel2.setLayout(null);
+
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(null);
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBounds(0, 0, 620, 450);
 
-        JPanel searchPanel = new JPanel();
-        searchPanel.setLayout(null);
-        searchPanel.setBackground(new Color(245, 245, 245));
-        searchPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        searchPanel.setBounds(10, 10, 600, 50);
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(null);
+        leftPanel.setBackground(new Color(245, 245, 245));
+        leftPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        leftPanel.setBounds(10, 10, 250, 430);
 
-        javax.swing.JLabel searchLabel = new javax.swing.JLabel("Search Items:");
-        searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        searchLabel.setBounds(10, 15, 100, 20);
-        searchPanel.add(searchLabel);
+        javax.swing.JLabel myReportsTitle = new javax.swing.JLabel("My Reports");
+        myReportsTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        myReportsTitle.setForeground(new Color(0, 102, 102));
+        myReportsTitle.setBounds(10, 10, 200, 25);
+        leftPanel.add(myReportsTitle);
 
-        searchField = new javax.swing.JTextField();
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchField.setBounds(120, 12, 200, 26);
-        searchField.setBorder(new LineBorder(new Color(200, 200, 200)));
-        searchPanel.add(searchField);
+        setupMyReportsTable();
+        myReportsScrollPane = new JScrollPane(myReportsTable);
+        myReportsScrollPane.setBounds(10, 40, 230, 380);
+        myReportsScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        myReportsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        myReportsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        leftPanel.add(myReportsScrollPane);
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(null);
-        buttonPanel.setBackground(new Color(245, 245, 245));
-        buttonPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        buttonPanel.setBounds(10, 70, 600, 50);
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(null);
+        rightPanel.setBackground(new Color(245, 245, 245));
+        rightPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        rightPanel.setBounds(270, 10, 340, 430);
 
-        addButton = new javax.swing.JButton("Add Item");
-        addButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        addButton.setBackground(new Color(0, 102, 102));
-        addButton.setForeground(Color.WHITE);
-        addButton.setBounds(10, 10, 100, 30);
-        addButton.setBorder(null);
-        addButton.setFocusPainted(false);
-        addButton.addActionListener(e -> openAddItem());
-        buttonPanel.add(addButton);
+        javax.swing.JLabel submitTitle = new javax.swing.JLabel("Submit New Report");
+        submitTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        submitTitle.setForeground(new Color(0, 102, 102));
+        submitTitle.setBounds(10, 10, 200, 25);
+        rightPanel.add(submitTitle);
 
-        editButton = new javax.swing.JButton("Edit Item");
-        editButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        editButton.setBackground(new Color(255, 153, 0));
-        editButton.setForeground(Color.WHITE);
-        editButton.setBounds(120, 10, 100, 30);
-        editButton.setBorder(null);
-        editButton.setFocusPainted(false);
-        editButton.addActionListener(e -> openEditItem());
-        buttonPanel.add(editButton);
+        javax.swing.JLabel traderLabel = new javax.swing.JLabel("Report Trader:");
+        traderLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        traderLabel.setBounds(10, 45, 100, 20);
+        rightPanel.add(traderLabel);
 
-        deleteButton = new javax.swing.JButton("Delete Item");
-        deleteButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        deleteButton.setBackground(new Color(204, 0, 0));
-        deleteButton.setForeground(Color.WHITE);
-        deleteButton.setBounds(230, 10, 110, 30);
-        deleteButton.setBorder(null);
-        deleteButton.setFocusPainted(false);
-        deleteButton.addActionListener(e -> deleteSelectedItem());
-        buttonPanel.add(deleteButton);
+        traderComboBox = new javax.swing.JComboBox<>();
+        traderComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        traderComboBox.setBounds(10, 65, 320, 30);
+        traderComboBox.setBackground(Color.WHITE);
+        traderComboBox.setBorder(new LineBorder(new Color(12, 192, 223)));
+        rightPanel.add(traderComboBox);
 
-        removeButton = new javax.swing.JButton("Remove Selection");
-        removeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        removeButton.setBackground(new Color(102, 102, 102));
-        removeButton.setForeground(Color.WHITE);
-        removeButton.setBounds(350, 10, 140, 30);
-        removeButton.setBorder(null);
-        removeButton.setFocusPainted(false);
-        removeButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        removeButton.addActionListener(e -> clearSelection());
-        buttonPanel.add(removeButton);
+        javax.swing.JLabel reasonLabel = new javax.swing.JLabel("Reason for Report:");
+        reasonLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        reasonLabel.setBounds(10, 105, 150, 20);
+        rightPanel.add(reasonLabel);
 
-        JPanel tablePanel = new JPanel();
-        tablePanel.setLayout(null);
-        tablePanel.setBackground(new Color(245, 245, 245));
-        tablePanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        tablePanel.setBounds(10, 130, 600, 310);
+        String[] reportReasons = {
+            "Select a reason",
+            "Scamming / Fraud",
+            "Fake Account",
+            "Fake Item Listing",
+            "Harassment / Bullying",
+            "Inappropriate Behavior",
+            "Misleading Description",
+            "Trade Cancellation Abuse",
+            "No Show for Meetup",
+            "Suspicious Activity",
+            "Multiple Accounts",
+            "Violation of Terms",
+            "Other"
+        };
+        
+        reasonComboBox = new javax.swing.JComboBox<>(reportReasons);
+        reasonComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        reasonComboBox.setBounds(10, 125, 320, 30);
+        reasonComboBox.setBackground(Color.WHITE);
+        reasonComboBox.setBorder(new LineBorder(new Color(12, 192, 223)));
+        rightPanel.add(reasonComboBox);
 
-        setupTable();
+        javax.swing.JLabel descriptionLabel = new javax.swing.JLabel("Description:");
+        descriptionLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        descriptionLabel.setBounds(10, 165, 100, 20);
+        rightPanel.add(descriptionLabel);
 
-        jScrollPane1.setBounds(10, 10, 580, 290);
-        jScrollPane1.setBorder(null);
-        tablePanel.add(jScrollPane1);
+        descriptionArea = new javax.swing.JTextArea();
+        descriptionArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        descriptionArea.setLineWrap(true);
+        descriptionArea.setWrapStyleWord(true);
+        descriptionScrollPane = new JScrollPane(descriptionArea);
+        descriptionScrollPane.setBounds(10, 185, 320, 60);
+        descriptionScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        descriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        rightPanel.add(descriptionScrollPane);
 
-        contentPanel.add(searchPanel);
-        contentPanel.add(buttonPanel);
-        contentPanel.add(tablePanel);
+        submitReportButton = new javax.swing.JButton("SUBMIT REPORT");
+        submitReportButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        submitReportButton.setBackground(new Color(204, 0, 0));
+        submitReportButton.setForeground(Color.WHITE);
+        submitReportButton.setBounds(20, 255, 140, 30);
+        submitReportButton.setBorder(null);
+        submitReportButton.setFocusPainted(false);
+        submitReportButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        submitReportButton.addActionListener(e -> submitReport());
+        rightPanel.add(submitReportButton);
 
-        jPanel2.removeAll();
-        jPanel2.setLayout(null);
+        cancelReportButton = new javax.swing.JButton("CANCEL REPORT");
+        cancelReportButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        cancelReportButton.setBackground(new Color(102, 102, 102));
+        cancelReportButton.setForeground(Color.WHITE);
+        cancelReportButton.setBounds(170, 255, 140, 30);
+        cancelReportButton.setBorder(null);
+        cancelReportButton.setFocusPainted(false);
+        cancelReportButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cancelReportButton.setEnabled(false);
+        cancelReportButton.addActionListener(e -> cancelReport());
+        rightPanel.add(cancelReportButton);
+
+        refreshButton = new javax.swing.JButton("REFRESH");
+        refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        refreshButton.setBackground(new Color(0, 102, 102));
+        refreshButton.setForeground(Color.WHITE);
+        refreshButton.setBounds(100, 295, 130, 30);
+        refreshButton.setBorder(null);
+        refreshButton.setFocusPainted(false);
+        refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        refreshButton.addActionListener(e -> refreshReports());
+        rightPanel.add(refreshButton);
+
+        javax.swing.JLabel statusLabel = new javax.swing.JLabel("Admin Reply:");
+        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        statusLabel.setBounds(10, 335, 100, 20);
+        rightPanel.add(statusLabel);
+
+        selectedReportLabel = new javax.swing.JLabel("Select a report");
+        selectedReportLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        selectedReportLabel.setForeground(new Color(102, 102, 102));
+        selectedReportLabel.setBounds(10, 350, 320, 15);
+        rightPanel.add(selectedReportLabel);
+
+        adminReplyArea = new javax.swing.JTextArea();
+        adminReplyArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        adminReplyArea.setLineWrap(true);
+        adminReplyArea.setWrapStyleWord(true);
+        adminReplyArea.setEditable(false);
+        adminReplyArea.setBackground(new Color(245, 245, 245));
+        replyScrollPane = new JScrollPane(adminReplyArea);
+        replyScrollPane.setBounds(10, 365, 320, 55);
+        replyScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        replyScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        replyScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        rightPanel.add(replyScrollPane);
+
+        contentPanel.add(leftPanel);
+        contentPanel.add(rightPanel);
+
         jPanel2.add(contentPanel);
         contentPanel.setBounds(0, 0, 620, 450);
 
@@ -257,196 +333,312 @@ public class myitems extends javax.swing.JFrame {
         jPanel2.repaint();
     }
 
-    private void setupTable() {
-        String[] columns = {"ID", "Item Name", "Brand", "Condition", "Date Bought", "Description", "Status", "Photo"};
-        tableModel = new DefaultTableModel(columns, 0) {
+    private void setupMyReportsTable() {
+        String[] columns = {"Report ID", "Date", "Reason", "Status", "Reported Trader"};
+        myReportsTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
 
-        myitemstable.setModel(tableModel);
-        myitemstable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        myitemstable.setRowHeight(60);
-        myitemstable.setShowGrid(true);
-        myitemstable.setGridColor(new Color(230, 230, 230));
-        myitemstable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        myitemstable.getTableHeader().setBackground(new Color(12, 192, 223));
-        myitemstable.getTableHeader().setForeground(Color.WHITE);
-        myitemstable.getTableHeader().setBorder(null);
-        myitemstable.setSelectionBackground(new Color(184, 239, 255));
-        myitemstable.setRowHeight(60);
+        myReportsTable = new javax.swing.JTable(myReportsTableModel);
+        myReportsTable.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        myReportsTable.setRowHeight(30);
+        myReportsTable.setShowGrid(true);
+        myReportsTable.setGridColor(new Color(12, 192, 223));
+        myReportsTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        myReportsTable.getTableHeader().setBackground(new Color(0, 102, 102));
+        myReportsTable.getTableHeader().setForeground(Color.WHITE);
+        myReportsTable.setSelectionBackground(new Color(184, 239, 255));
+        myReportsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        myitemstable.getColumnModel().getColumn(0).setMinWidth(0);
-        myitemstable.getColumnModel().getColumn(0).setMaxWidth(0);
-        myitemstable.getColumnModel().getColumn(0).setWidth(0);
+        myReportsTable.getColumnModel().getColumn(0).setMinWidth(0);
+        myReportsTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        myReportsTable.getColumnModel().getColumn(0).setWidth(0);
 
-        myitemstable.getColumnModel().getColumn(7).setCellRenderer(new ImageRenderer());
-        myitemstable.getColumnModel().getColumn(7).setPreferredWidth(80);
-        myitemstable.getColumnModel().getColumn(7).setMinWidth(80);
-        myitemstable.getColumnModel().getColumn(7).setMaxWidth(80);
+        myReportsTable.getColumnModel().getColumn(1).setPreferredWidth(60);
+        myReportsTable.getColumnModel().getColumn(2).setPreferredWidth(70);
+        myReportsTable.getColumnModel().getColumn(3).setPreferredWidth(50);
+        myReportsTable.getColumnModel().getColumn(4).setPreferredWidth(50);
 
-        TableColumn column1 = myitemstable.getColumnModel().getColumn(1);
-        column1.setPreferredWidth(120);
-        column1.setMinWidth(100);
-        
-        TableColumn column2 = myitemstable.getColumnModel().getColumn(2);
-        column2.setPreferredWidth(100);
-        column2.setMinWidth(80);
-        
-        TableColumn column3 = myitemstable.getColumnModel().getColumn(3);
-        column3.setPreferredWidth(80);
-        column3.setMinWidth(70);
-        
-        TableColumn column4 = myitemstable.getColumnModel().getColumn(4);
-        column4.setPreferredWidth(100);
-        column4.setMinWidth(80);
-        
-        TableColumn column5 = myitemstable.getColumnModel().getColumn(5);
-        column5.setPreferredWidth(150);
-        column5.setMinWidth(120);
-        
-        TableColumn column6 = myitemstable.getColumnModel().getColumn(6);
-        column6.setPreferredWidth(70);
-        column6.setMinWidth(60);
-
-        myitemstable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int selectedRow = myitemstable.getSelectedRow();
-                if (selectedRow != -1) {
-                    int modelRow = myitemstable.convertRowIndexToModel(selectedRow);
-                    selectedItemId = Integer.parseInt(tableModel.getValueAt(modelRow, 0).toString());
+        myReportsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    int selectedRow = myReportsTable.getSelectedRow();
+                    
+                    if (selectedRow == lastSelectedRow && selectedRow != -1) {
+                        myReportsTable.clearSelection();
+                        clearReportDetails();
+                        lastSelectedRow = -1;
+                    } else if (selectedRow != -1) {
+                        int modelRow = myReportsTable.convertRowIndexToModel(selectedRow);
+                        displayReportDetails(modelRow);
+                        lastSelectedRow = selectedRow;
+                    }
                 }
             }
         });
 
-        myitemstable.addMouseListener(new java.awt.event.MouseAdapter() {
+        myReportsTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2) {
-                    int selectedRow = myitemstable.getSelectedRow();
-                    if (selectedRow != -1 && selectedRow == lastSelectedRow) {
-                        myitemstable.clearSelection();
-                        clearSelection();
-                    }
-                    lastSelectedRow = selectedRow;
+                    myReportsTable.clearSelection();
+                    clearReportDetails();
+                    lastSelectedRow = -1;
                 }
             }
         });
     }
 
-    private void clearSelection() {
-        myitemstable.clearSelection();
-        selectedItemId = -1;
-        lastSelectedRow = -1;
-    }
+    private void loadMyReports() {
+        myReportsTableModel.setRowCount(0);
 
-    private void setupLiveSearch() {
-        rowSorter = new TableRowSorter<>(myitemstable.getModel());
-        myitemstable.setRowSorter(rowSorter);
+        String sql = "SELECT r.report_id, r.report_date, r.report_reason, r.report_status, "
+                + "u.user_fullname as reported_trader, r.admin_notes "
+                + "FROM tbl_reports r "
+                + "JOIN tbl_users u ON r.reported_trader_id = u.user_id "
+                + "WHERE r.reporter_id = ? "
+                + "ORDER BY r.report_date DESC";
 
-        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
+        List<Map<String, Object>> reports = db.fetchRecords(sql, traderId);
+
+        for (Map<String, Object> report : reports) {
+            String status = report.get("report_status") != null ? report.get("report_status").toString() : "pending";
+            String displayStatus = "";
+            
+            switch (status.toLowerCase()) {
+                case "resolved":
+                    displayStatus = "Resolved";
+                    break;
+                case "under_review":
+                    displayStatus = "Under Review";
+                    break;
+                case "pending":
+                default:
+                    displayStatus = "Pending";
+                    break;
             }
 
-            @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
-            }
-
-            @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filterTable();
-            }
-        });
-    }
-
-    private void filterTable() {
-        String text = searchField.getText();
-        if (text.trim().length() == 0) {
-            rowSorter.setRowFilter(null);
-        } else {
-            rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1, 2, 3, 5));
-        }
-    }
-
-    private void loadItems() {
-        tableModel.setRowCount(0);
-
-        String sql = "SELECT items_id, item_Name, item_Brand, item_Condition, "
-                + "item_Date, item_Description, is_active, item_picture "
-                + "FROM tbl_items WHERE trader_id = ? ORDER BY items_id DESC";
-
-        List<Map<String, Object>> items = db.fetchRecords(sql, traderId);
-
-        for (Map<String, Object> item : items) {
-            Object status = item.get("is_active");
-            String statusText = "Active";
-            if (status instanceof Boolean) {
-                statusText = (Boolean) status ? "Active" : "Inactive";
-            } else if (status instanceof Integer) {
-                statusText = ((Integer) status == 1) ? "Active" : "Inactive";
-            }
-
-            String photoPath = item.get("item_picture") != null ? item.get("item_picture").toString() : "";
-
-            tableModel.addRow(new Object[]{
-                item.get("items_id"),
-                item.get("item_Name"),
-                item.get("item_Brand"),
-                item.get("item_Condition"),
-                item.get("item_Date"),
-                item.get("item_Description"),
-                statusText,
-                photoPath
+            myReportsTableModel.addRow(new Object[]{
+                report.get("report_id"),
+                formatDate(report.get("report_date")),
+                report.get("report_reason"),
+                displayStatus,
+                report.get("reported_trader")
             });
         }
     }
 
-    private void refreshItems() {
-        loadItems();
-        JOptionPane.showMessageDialog(this, "Items refreshed!", "Success", JOptionPane.INFORMATION_MESSAGE);
+    private void loadTraders() {
+        traderComboBox.removeAllItems();
+        traderComboBox.addItem("-- Select Trader to Report --");
+
+        String sql = "SELECT user_id, user_fullname FROM tbl_users WHERE user_id != ? AND user_type = 'trader' AND user_status = 'active' ORDER BY user_fullname";
+        List<Map<String, Object>> traders = db.fetchRecords(sql, traderId);
+
+        for (Map<String, Object> trader : traders) {
+            String displayName = trader.get("user_fullname").toString();
+            traderComboBox.addItem(displayName);
+        }
     }
 
-    private void openAddItem() {
-        add_items addFrame = new add_items(traderId, traderName);
-        addFrame.setVisible(true);
-        addFrame.setLocationRelativeTo(null);
-//        this.dispose();
+    private void displayReportDetails(int modelRow) {
+        selectedReportId = Integer.parseInt(myReportsTableModel.getValueAt(modelRow, 0).toString());
+        String status = myReportsTableModel.getValueAt(modelRow, 3).toString();
+        selectedReportStatus = status;
+
+        String sql = "SELECT admin_notes, report_status FROM tbl_reports WHERE report_id = ?";
+        List<Map<String, Object>> report = db.fetchRecords(sql, selectedReportId);
+
+        if (!report.isEmpty()) {
+            String adminNotes = report.get(0).get("admin_notes") != null ? 
+                report.get(0).get("admin_notes").toString() : "No admin reply yet.";
+            String reportStatus = report.get(0).get("report_status") != null ? 
+                report.get(0).get("report_status").toString() : "pending";
+
+            String statusDisplay = "";
+            switch (reportStatus.toLowerCase()) {
+                case "resolved":
+                    statusDisplay = "RESOLVED";
+                    cancelReportButton.setEnabled(false);
+                    break;
+                case "under_review":
+                    statusDisplay = "UNDER REVIEW";
+                    cancelReportButton.setEnabled(true);
+                    break;
+                case "pending":
+                default:
+                    statusDisplay = "PENDING";
+                    cancelReportButton.setEnabled(true);
+                    break;
+            }
+
+            selectedReportLabel.setText("Report #" + selectedReportId + " - " + statusDisplay);
+            adminReplyArea.setText(adminNotes);
+            adminReplyArea.setCaretPosition(0);
+        }
     }
 
-    private void openEditItem() {
-        if (selectedItemId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an item to edit.", "No Selection", JOptionPane.WARNING_MESSAGE);
+    private void clearReportDetails() {
+        selectedReportId = -1;
+        selectedReportStatus = "";
+        selectedReportLabel.setText("Select a report");
+        adminReplyArea.setText("");
+        cancelReportButton.setEnabled(false);
+    }
+
+    private void submitReport() {
+        int selectedTraderIndex = traderComboBox.getSelectedIndex();
+        if (selectedTraderIndex == 0) {
+            JOptionPane.showMessageDialog(this, "Please select a trader to report.", "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        edit_items editFrame = new edit_items(traderId, traderName, selectedItemId);
-        editFrame.setVisible(true);
-        editFrame.setLocationRelativeTo(null);
-//        this.dispose();
+        int selectedReasonIndex = reasonComboBox.getSelectedIndex();
+        if (selectedReasonIndex == 0) {
+            JOptionPane.showMessageDialog(this, "Please select a reason for the report.", "No Reason", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String description = descriptionArea.getText().trim();
+        if (description.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please provide a description of the issue.", "No Description", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String selectedTraderName = traderComboBox.getSelectedItem().toString();
+        
+        String getTraderIdSql = "SELECT user_id FROM tbl_users WHERE user_fullname = ? AND user_type = 'trader'";
+        List<Map<String, Object>> traders = db.fetchRecords(getTraderIdSql, selectedTraderName);
+
+        if (traders.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Error: Trader not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int reportedTraderId = Integer.parseInt(traders.get(0).get("user_id").toString());
+        String reason = reasonComboBox.getSelectedItem().toString();
+
+        String checkSql = "SELECT COUNT(*) as count FROM tbl_reports WHERE reporter_id = ? AND reported_trader_id = ? AND report_status IN ('pending', 'under_review')";
+        double pendingCount = db.getSingleValue(checkSql, traderId, reportedTraderId);
+
+        if (pendingCount > 0) {
+            JOptionPane.showMessageDialog(this, 
+                "You already have a pending report against this trader.\nPlease wait for admin resolution.",
+                "Duplicate Report", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String insertSql = "INSERT INTO tbl_reports (reporter_id, reported_trader_id, report_reason, report_description, report_date, report_status) "
+                + "VALUES (?, ?, ?, ?, datetime('now'), 'pending')";
+
+        try {
+            db.addRecord(insertSql, traderId, reportedTraderId, reason, description);
+            
+            JOptionPane.showMessageDialog(this, 
+                "Report submitted successfully!\n\n"
+                + "Reported Trader: " + selectedTraderName + "\n"
+                + "Reason: " + reason + "\n\n"
+                + "An admin will review your report.",
+                "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            traderComboBox.setSelectedIndex(0);
+            reasonComboBox.setSelectedIndex(0);
+            descriptionArea.setText("");
+            
+            loadMyReports();
+            
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Failed to submit report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
-    private void deleteSelectedItem() {
-        if (selectedItemId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an item to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
+    private void cancelReport() {
+        if (selectedReportId == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a report to cancel.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (!selectedReportStatus.equalsIgnoreCase("Pending") && !selectedReportStatus.equalsIgnoreCase("Under Review")) {
+            JOptionPane.showMessageDialog(this, 
+                "This report cannot be cancelled as it is already " + selectedReportStatus + ".\n\n"
+                + "It will be removed from your view only.",
+                "Cannot Cancel", JOptionPane.INFORMATION_MESSAGE);
+            
+            removeFromDisplay();
             return;
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete this item?", "Confirm Delete",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Are you sure you want to cancel this report?\n\n"
+                + "Report ID: " + selectedReportId + "\n"
+                + "Status: " + selectedReportStatus,
+                "Confirm Cancellation",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            String sql = "DELETE FROM tbl_items WHERE items_id = ? AND trader_id = ?";
-            db.deleteRecord(sql, selectedItemId, traderId);
+            try {
+                String sql = "DELETE FROM tbl_reports WHERE report_id = ? AND reporter_id = ? AND report_status IN ('pending', 'under_review')";
+                db.deleteRecord(sql, selectedReportId, traderId);
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Report cancelled successfully!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                
+                loadMyReports();
+                clearReportDetails();
+                
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Failed to cancel report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
 
-            JOptionPane.showMessageDialog(this, "Item deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            selectedItemId = -1;
-            loadItems();
+    private void removeFromDisplay() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Remove this report from your view?\n\n"
+                + "Report ID: " + selectedReportId + "\n"
+                + "Status: " + selectedReportStatus + "\n\n"
+                + "Note: This will only hide it from your list. The report will still be in the database.",
+                "Confirm Remove",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            int currentRow = myReportsTable.getSelectedRow();
+            if (currentRow != -1) {
+                int modelRow = myReportsTable.convertRowIndexToModel(currentRow);
+                myReportsTableModel.removeRow(modelRow);
+                clearReportDetails();
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Report removed from display.",
+                    "Removed", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
+
+    private void refreshReports() {
+        loadMyReports();
+        loadTraders();
+        clearReportDetails();
+        JOptionPane.showMessageDialog(this, "Reports refreshed!", "Refresh", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String formatDate(Object dateObj) {
+        if (dateObj == null) return "-";
+        try {
+            String dateStr = dateObj.toString();
+            if (dateStr.length() >= 10) {
+                return dateStr.substring(0, 10);
+            }
+            return dateStr;
+        } catch (Exception e) {
+            return "-";
         }
     }
 
@@ -454,6 +646,13 @@ public class myitems extends javax.swing.JFrame {
         trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
         dashboard.setVisible(true);
         dashboard.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openMyItems() {
+        myitems myItemsFrame = new myitems(traderId, traderName);
+        myItemsFrame.setVisible(true);
+        myItemsFrame.setLocationRelativeTo(null);
         this.dispose();
     }
 
@@ -478,13 +677,6 @@ public class myitems extends javax.swing.JFrame {
         this.dispose();
     }
 
-    private void openReports() {
-        reports reportsFrame = new reports(traderId, traderName);
-        reportsFrame.setVisible(true);
-        reportsFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
     private void openProfile() {
         profile profileFrame = new profile(traderId, traderName);
         profileFrame.setVisible(true);
@@ -503,43 +695,6 @@ public class myitems extends javax.swing.JFrame {
             landingFrame.setVisible(true);
             landingFrame.setLocationRelativeTo(null);
             this.dispose();
-        }
-    }
-
-    class ImageRenderer extends javax.swing.table.DefaultTableCellRenderer {
-        @Override
-        public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
-            javax.swing.JLabel label = new javax.swing.JLabel();
-            label.setHorizontalAlignment(javax.swing.JLabel.CENTER);
-            label.setVerticalAlignment(javax.swing.JLabel.CENTER);
-            
-            if (value != null && !value.toString().isEmpty()) {
-                try {
-                    String imagePath = "src/" + value.toString().replace(".", "/");
-                    File imgFile = new File(imagePath);
-                    if (imgFile.exists()) {
-                        ImageIcon icon = new ImageIcon(imagePath);
-                        Image img = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-                        label.setIcon(new ImageIcon(img));
-                    } else {
-                        label.setText("No Image");
-                        label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-                    }
-                } catch (Exception e) {
-                    label.setText("Error");
-                }
-            } else {
-                label.setText("No Image");
-                label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-            }
-            
-            if (isSelected) {
-                label.setBackground(table.getSelectionBackground());
-                label.setOpaque(true);
-            }
-            
-            return label;
         }
     }
 
@@ -867,7 +1022,7 @@ public class myitems extends javax.swing.JFrame {
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30));
-        jLabel1.setText("My Items");
+        jLabel1.setText("Reports");
         jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, 30));
 
         CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
@@ -879,13 +1034,13 @@ public class myitems extends javax.swing.JFrame {
 
         myitemstable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
             },
             new String [] {
-                "ID", "Item Name", "Brand", "Condition", "Date", "Description", "Status", "Photo"
+                "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
         jScrollPane1.setViewportView(myitemstable);

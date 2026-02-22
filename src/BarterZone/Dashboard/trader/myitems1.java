@@ -1,13 +1,13 @@
-package BarterZone.Dashboard.trader;
-
-public class myitems1 extends javax.swing.JFrame {
-
-    public myitems1() {
-        initComponents();
-    }
-
-    
-    @SuppressWarnings("unchecked")
+//package BarterZone.Dashboard.trader;
+//
+//public class myitems1 extends javax.swing.JFrame {
+//
+//    public myitems1() {
+//        initComponents();
+//    }
+//
+//    
+//    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -530,20 +530,20 @@ public class myitems1 extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void dashboardMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_dashboardMouseClicked
-        myitemsframe test = new myitemsframe();
-        test.setVisible(true);
-        test.pack();
-        test.setLocationRelativeTo(null);
-        this.dispose();
+//        myitemsframe test = new myitemsframe();
+//        test.setVisible(true);
+//        test.pack();
+//        test.setLocationRelativeTo(null);
+//        this.dispose();
 
     }//GEN-LAST:event_dashboardMouseClicked
 
     private void paneldashboardMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneldashboardMouseEntered
-        paneldashboard.setBackground(hoverColor);
+//        paneldashboard.setBackground(hoverColor);
     }//GEN-LAST:event_paneldashboardMouseEntered
 
     private void paneldashboardMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneldashboardMouseExited
-        paneldashboard.setBackground(defaultColor);
+//        paneldashboard.setBackground(defaultColor);
     }//GEN-LAST:event_paneldashboardMouseExited
 
     private void myitemsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitemsMouseClicked
@@ -551,12 +551,12 @@ public class myitems1 extends javax.swing.JFrame {
     }//GEN-LAST:event_myitemsMouseClicked
 
     private void panelmyitemsMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmyitemsMouseEntered
-        panelmyitems.setBackground(hoverColor);
+//        panelmyitems.setBackground(hoverColor);
 
     }//GEN-LAST:event_panelmyitemsMouseEntered
 
     private void panelmyitemsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmyitemsMouseExited
-        panelmyitems.setBackground(defaultColor);
+//        panelmyitems.setBackground(defaultColor);
 
     }//GEN-LAST:event_panelmyitemsMouseExited
 
@@ -565,12 +565,12 @@ public class myitems1 extends javax.swing.JFrame {
     }//GEN-LAST:event_finditemsMouseClicked
 
     private void panelfinditemsMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelfinditemsMouseEntered
-        panelfinditems.setBackground(hoverColor);
+//        panelfinditems.setBackground(hoverColor);
 
     }//GEN-LAST:event_panelfinditemsMouseEntered
 
     private void panelfinditemsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelfinditemsMouseExited
-        panelfinditems.setBackground(defaultColor);
+//        panelfinditems.setBackground(defaultColor);
 
     }//GEN-LAST:event_panelfinditemsMouseExited
 
@@ -615,7 +615,7 @@ public class myitems1 extends javax.swing.JFrame {
     }//GEN-LAST:event_panelreportsMouseEntered
 
     private void panelreportsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelreportsMouseExited
-        panelreports.setBackground(defaultColor);
+//        panelreports.setBackground(defaultColor);
     }//GEN-LAST:event_panelreportsMouseExited
 
     private void ProfileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_ProfileMouseClicked
@@ -623,11 +623,11 @@ public class myitems1 extends javax.swing.JFrame {
     }//GEN-LAST:event_ProfileMouseClicked
 
     private void panelprofileMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelprofileMouseEntered
-        panelprofile.setBackground(hoverColor);
+//        panelprofile.setBackground(hoverColor);
     }//GEN-LAST:event_panelprofileMouseEntered
 
     private void panelprofileMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelprofileMouseExited
-        panelprofile.setBackground(defaultColor);
+//        panelprofile.setBackground(defaultColor);
     }//GEN-LAST:event_panelprofileMouseExited
 
     private void myitemstableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_myitemstableMouseClicked
