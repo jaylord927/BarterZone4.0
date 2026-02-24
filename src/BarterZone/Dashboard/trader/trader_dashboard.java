@@ -850,7 +850,7 @@ public class trader_dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_panelmessagesMouseClicked
 
     private void panelprofileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelprofileMouseClicked
-        profile profileFrame = new profile(traderId, traderName);
+        profile profileFrame = new profile();
         profileFrame.setVisible(true);
         profileFrame.setLocationRelativeTo(null);
         this.dispose();

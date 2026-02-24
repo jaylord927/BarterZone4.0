@@ -1015,7 +1015,7 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void openProfile() {
-        profile profileFrame = new profile(traderId, traderName);
+        profile profileFrame = new profile();
         profileFrame.setVisible(true);
         profileFrame.setLocationRelativeTo(null);
         this.dispose();

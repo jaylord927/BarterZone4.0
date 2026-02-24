@@ -1,25 +1,159 @@
 package BarterZone.Dashboard.trader;
 
 import BarterZone.resources.IconManager;
+import BarterZone.Dashboard.session.user_session;
+import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
-import javax.swing.BorderFactory;
+import java.awt.Image;
+import java.awt.Cursor;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import javax.swing.border.LineBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class profile extends javax.swing.JFrame {
 
-    private int traderId;
-    private String traderName;
+    private user_session session;
     private IconManager iconManager;
+    private String selectedImagePath = "";
+
+    private javax.swing.JLabel nameValue;
+    private javax.swing.JLabel usernameValue;
+    private javax.swing.JLabel emailValue;
+    private javax.swing.JLabel typeValue;
+    private javax.swing.JLabel statusValue;
+    private javax.swing.JLabel memberSinceValue;
+    private javax.swing.JLabel profilePictureLabel;
+    private javax.swing.JButton editProfileButton;
+    private javax.swing.JButton changePhotoButton;
 
     private Color hoverColor = new Color(70, 210, 235);
     private Color defaultColor = new Color(12, 192, 223);
     private Color activeColor = new Color(0, 150, 180);
     private JPanel activePanel = null;
+
+    private static final String PROFILE_IMAGE_PATH = "src/BarterZone/resources/images/";
+
+    public profile() {
+        this.session = user_session.getInstance();
+        this.iconManager = IconManager.getInstance();
+        
+        if (!session.isLoggedIn()) {
+            JOptionPane.showMessageDialog(this, "No active session. Please login again.", "Session Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        initComponents();
+        loadAndResizeIcons();
+        setActivePanel(panelprofile);
+        setupCustomComponents();
+        loadUserData();
+        setupSidebarHoverEffects();
+        createImageDirectory();
+
+        setTitle("Profile - " + session.getFullName());
+        setSize(800, 500);
+        setResizable(false);
+        setLocationRelativeTo(null);
+    }
+
+    private void createImageDirectory() {
+        File directory = new File(PROFILE_IMAGE_PATH);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+    }
+
+    private void loadAndResizeIcons() {
+        setIconSafely(dashboardicon, iconManager.getSideMenuIcon("dashboard"));
+        setIconSafely(myitemsicon, iconManager.getSideMenuIcon("myitems"));
+        setIconSafely(finditemsicon, iconManager.getSideMenuIcon("finditems"));
+        setIconSafely(tradesicon, iconManager.getSideMenuIcon("trade"));
+        setIconSafely(messagesicon, iconManager.getSideMenuIcon("messages"));
+        setIconSafely(reportsicon, iconManager.getSideMenuIcon("report"));
+        setIconSafely(profileicon, iconManager.getSideMenuIcon("profile"));
+        setIconSafely(logouticon, iconManager.getSideMenuIcon("logout"));
+        setIconSafely(barterzonelogo, iconManager.getLogoIcon());
+    }
+
+    private void setIconSafely(javax.swing.JLabel label, ImageIcon icon) {
+        if (icon != null) {
+            label.setIcon(icon);
+            label.setText("");
+        }
+    }
+
+    private void setupSidebarHoverEffects() {
+        applyHoverEffectToPanelAndLabel(paneldashboard, dashboard);
+        applyHoverEffectToPanelAndLabel(panelmyitems, myitems);
+        applyHoverEffectToPanelAndLabel(panelfinditems, finditems);
+        applyHoverEffectToPanelAndLabel(paneltrades, trades);
+        applyHoverEffectToPanelAndLabel(panelmessages, messages);
+        applyHoverEffectToPanelAndLabel(panelreports, Reports);
+        applyHoverEffectToPanelAndLabel(panelprofile, Profile);
+        applyHoverEffectToPanelAndLabel(panellogout, logout);
+    }
+
+    private void applyHoverEffectToPanelAndLabel(JPanel panel, javax.swing.JLabel label) {
+        java.awt.event.MouseAdapter adapter = new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                setHover(panel);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                setDefault(panel);
+            }
+
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                handleNavigation(panel);
+            }
+        };
+
+        panel.addMouseListener(adapter);
+        label.addMouseListener(adapter);
+    }
+
+    private void handleNavigation(JPanel panel) {
+        if (panel == paneldashboard) {
+            openDashboard();
+        } else if (panel == panelmyitems) {
+            openMyItems();
+        } else if (panel == panelfinditems) {
+            openFindItems();
+        } else if (panel == paneltrades) {
+            openTrades();
+        } else if (panel == panelmessages) {
+            openMessages();
+        } else if (panel == panelreports) {
+            openReports();
+        } else if (panel == panelprofile) {
+            refreshProfile();
+        } else if (panel == panellogout) {
+            logout();
+        }
+    }
+
+    private void setActivePanel(JPanel panel) {
+        if (activePanel != null) {
+            activePanel.setBackground(defaultColor);
+        }
+        activePanel = panel;
+        activePanel.setBackground(activeColor);
+    }
 
     private void setHover(JPanel panel) {
         if (panel != activePanel) {
@@ -33,125 +167,314 @@ public class profile extends javax.swing.JFrame {
         }
     }
 
-    private void setActivePanel(JPanel panel) {
-        if (activePanel != null) {
-            activePanel.setBackground(defaultColor);
+    private void setupCustomComponents() {
+        username.setText(session.getFullName());
+        if (session.getFullName() != null && session.getFullName().length() > 0) {
+            avatarletter.setText(String.valueOf(session.getFullName().charAt(0)).toUpperCase());
         }
 
-        activePanel = panel;
-        activePanel.setBackground(activeColor);
+        SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy");
+        CurrentDate.setText(sdf.format(new Date()));
+
+        jPanel2.removeAll();
+        jPanel2.setLayout(null);
+
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setBounds(0, 0, 620, 450);
+
+        JPanel profileCard = new JPanel();
+        profileCard.setLayout(null);
+        profileCard.setBackground(new Color(245, 245, 245));
+        profileCard.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        profileCard.setBounds(10, 10, 600, 430);
+
+        javax.swing.JLabel profileTitle = new javax.swing.JLabel("My Profile");
+        profileTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        profileTitle.setForeground(new Color(0, 102, 102));
+        profileTitle.setBounds(20, 20, 200, 30);
+        profileCard.add(profileTitle);
+
+        profilePictureLabel = new javax.swing.JLabel();
+        profilePictureLabel.setBounds(220, 60, 150, 150);
+        profilePictureLabel.setBorder(new LineBorder(new Color(12, 192, 223), 3));
+        profilePictureLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        profilePictureLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
+        profilePictureLabel.setBackground(Color.WHITE);
+        profilePictureLabel.setOpaque(true);
+        profilePictureLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        profilePictureLabel.setText("No Photo");
+        profileCard.add(profilePictureLabel);
+
+        changePhotoButton = new javax.swing.JButton("Change Photo");
+        changePhotoButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        changePhotoButton.setBackground(new Color(12, 192, 223));
+        changePhotoButton.setForeground(Color.WHITE);
+        changePhotoButton.setBounds(235, 215, 120, 30);
+        changePhotoButton.setBorder(null);
+        changePhotoButton.setFocusPainted(false);
+        changePhotoButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        changePhotoButton.addActionListener(e -> changeProfilePhoto());
+        profileCard.add(changePhotoButton);
+
+        int startY = 260;
+        int labelWidth = 120;
+        int valueWidth = 300;
+        int labelX = 100;
+        int valueX = 220;
+
+        javax.swing.JLabel nameLabel = new javax.swing.JLabel("Full Name:");
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        nameLabel.setBounds(labelX, startY, labelWidth, 25);
+        profileCard.add(nameLabel);
+
+        nameValue = new javax.swing.JLabel();
+        nameValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        nameValue.setBounds(valueX, startY, valueWidth, 25);
+        profileCard.add(nameValue);
+
+        javax.swing.JLabel usernameLabel = new javax.swing.JLabel("Username:");
+        usernameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        usernameLabel.setBounds(labelX, startY + 30, labelWidth, 25);
+        profileCard.add(usernameLabel);
+
+        usernameValue = new javax.swing.JLabel();
+        usernameValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        usernameValue.setBounds(valueX, startY + 30, valueWidth, 25);
+        profileCard.add(usernameValue);
+
+        javax.swing.JLabel emailLabel = new javax.swing.JLabel("Email:");
+        emailLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        emailLabel.setBounds(labelX, startY + 60, labelWidth, 25);
+        profileCard.add(emailLabel);
+
+        emailValue = new javax.swing.JLabel();
+        emailValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        emailValue.setBounds(valueX, startY + 60, valueWidth, 25);
+        profileCard.add(emailValue);
+
+        javax.swing.JLabel typeLabel = new javax.swing.JLabel("Account Type:");
+        typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        typeLabel.setBounds(labelX, startY + 90, labelWidth, 25);
+        profileCard.add(typeLabel);
+
+        typeValue = new javax.swing.JLabel();
+        typeValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        typeValue.setBounds(valueX, startY + 90, valueWidth, 25);
+        profileCard.add(typeValue);
+
+        javax.swing.JLabel statusLabel = new javax.swing.JLabel("Account Status:");
+        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        statusLabel.setBounds(labelX, startY + 120, labelWidth, 25);
+        profileCard.add(statusLabel);
+
+        statusValue = new javax.swing.JLabel();
+        statusValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        statusValue.setBounds(valueX, startY + 120, valueWidth, 25);
+        profileCard.add(statusValue);
+
+        javax.swing.JLabel memberLabel = new javax.swing.JLabel("Member Since:");
+        memberLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        memberLabel.setBounds(labelX, startY + 150, labelWidth, 25);
+        profileCard.add(memberLabel);
+
+        memberSinceValue = new javax.swing.JLabel(getMemberSinceDate());
+        memberSinceValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        memberSinceValue.setBounds(valueX, startY + 150, valueWidth, 25);
+        profileCard.add(memberSinceValue);
+
+        editProfileButton = new javax.swing.JButton("EDIT PROFILE");
+        editProfileButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        editProfileButton.setBackground(new Color(0, 102, 102));
+        editProfileButton.setForeground(Color.WHITE);
+        editProfileButton.setBounds(220, 430, 160, 35);
+        editProfileButton.setBorder(null);
+        editProfileButton.setFocusPainted(false);
+        editProfileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        editProfileButton.addActionListener(e -> editProfile());
+        profileCard.add(editProfileButton);
+
+        contentPanel.add(profileCard);
+        jPanel2.add(contentPanel);
+        contentPanel.setBounds(0, 0, 620, 450);
+
+        jPanel2.revalidate();
+        jPanel2.repaint();
     }
 
-    private void applyHoverEffect(JPanel panel, JLabel label) {
-        MouseAdapter adapter = new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                setHover(panel);
+    private void loadUserData() {
+        Map<String, Object> userData = session.getAllUserData();
+        
+        nameValue.setText((String) userData.get("user_fullname"));
+        usernameValue.setText((String) userData.get("user_username"));
+        emailValue.setText((String) userData.get("user_email"));
+        
+        String type = (String) userData.get("user_type");
+        if (type != null) {
+            typeValue.setText(type.substring(0, 1).toUpperCase() + type.substring(1));
+        }
+        
+        String status = (String) userData.get("user_status");
+        if (status != null) {
+            if (status.equalsIgnoreCase("active")) {
+                statusValue.setText("Active");
+                statusValue.setForeground(new Color(46, 125, 50));
+            } else {
+                statusValue.setText("Inactive");
+                statusValue.setForeground(new Color(204, 0, 0));
             }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                setDefault(panel);
-            }
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                setActivePanel(panel);
-            }
-        };
-
-        panel.addMouseListener(adapter);
-        label.addMouseListener(adapter);
-    }
-
-    public profile(int traderId, String traderName) {
-        this.traderId = traderId;
-        this.traderName = traderName;
-        this.iconManager = IconManager.getInstance();
-        initComponents();
-
-        setTitle("Profile - " + traderName);
-        setSize(800, 500);
-        setResizable(false);
-        setLocationRelativeTo(null);
-
-        applyHoverEffect(paneldashboard, dashboard);
-        applyHoverEffect(panelmyitems, myitems);
-        applyHoverEffect(panelfinditems, finditems);
-        applyHoverEffect(paneltrades, trades);
-        applyHoverEffect(panelmessages, messages);
-        applyHoverEffect(panelreports, Reports);
-        applyHoverEffect(panelprofile, Profile);
-        applyHoverEffect(panellogout, logout);
-
-        // Load and resize icons
-        loadAndResizeIcons();
-
-        // Apply modern styling
-        applyModernStyling();
-    }
-
-    private void loadAndResizeIcons() {
-        setIconSafely(dashboardicon, iconManager.getSideMenuIcon("dashboard"));
-        setIconSafely(myitemsicon, iconManager.getSideMenuIcon("myitems"));
-        setIconSafely(finditemsicon, iconManager.getSideMenuIcon("finditems"));
-        setIconSafely(tradesicon, iconManager.getSideMenuIcon("trade"));
-        setIconSafely(messagesicon, iconManager.getSideMenuIcon("messages"));
-        setIconSafely(reportsicon, iconManager.getSideMenuIcon("report"));
-        setIconSafely(profileicon, iconManager.getSideMenuIcon("profile"));
-        setIconSafely(logouticon, iconManager.getSideMenuIcon("logout"));
-
-        setIconSafely(barterzonelogo, iconManager.getLogoIcon());
-    }
-
-    private void setIconSafely(JLabel label, ImageIcon icon) {
-        if (icon != null) {
-            label.setIcon(icon);
-            label.setText("");
+        }
+        
+        String profilePic = (String) userData.get("user_profile_picture");
+        if (profilePic != null && !profilePic.isEmpty()) {
+            loadProfileImage(profilePic);
         }
     }
 
-    private void applyModernStyling() {
-        // Configure icon containers
-        configureIconContainer(dashboardicon);
-        configureIconContainer(myitemsicon);
-        configureIconContainer(finditemsicon);
-        configureIconContainer(tradesicon);
-        configureIconContainer(messagesicon);
-        configureIconContainer(reportsicon);
-        configureIconContainer(profileicon);
-        configureIconContainer(logouticon);
-        configureIconContainer(barterzonelogo);
-
-        // Set username
-        username.setText(traderName);
-
-        // Set avatar letter
-        if (traderName != null && traderName.length() > 0) {
-            avatarletter.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
+    private String getMemberSinceDate() {
+        try {
+            config db = new config();
+            String sql = "SELECT user_id FROM tbl_users WHERE user_id = ?";
+            java.util.List<Map<String, Object>> result = db.fetchRecords(sql, session.getUserId());
+            
+            if (!result.isEmpty()) {
+                return "Member since 2024";
+            }
+            return "N/A";
+        } catch (Exception e) {
+            return "N/A";
         }
-
-        // Make panels opaque
-        paneldashboard.setOpaque(true);
-        panelmyitems.setOpaque(true);
-        panelfinditems.setOpaque(true);
-        paneltrades.setOpaque(true);
-        panelmessages.setOpaque(true);
-        panelreports.setOpaque(true);
-        panelprofile.setOpaque(true);
-        panellogout.setOpaque(true);
     }
 
-    private void configureIconContainer(JLabel iconLabel) {
-        iconLabel.setHorizontalAlignment(JLabel.CENTER);
-        iconLabel.setVerticalAlignment(JLabel.CENTER);
-        iconLabel.setPreferredSize(new java.awt.Dimension(25, 25));
-        iconLabel.setMinimumSize(new java.awt.Dimension(25, 25));
-        iconLabel.setMaximumSize(new java.awt.Dimension(25, 25));
+    private void loadProfileImage(String imagePath) {
+        try {
+            String fullPath = "src/" + imagePath.replace(".", "/");
+            File imgFile = new File(fullPath);
+            if (imgFile.exists()) {
+                ImageIcon icon = new ImageIcon(fullPath);
+                Image image = icon.getImage().getScaledInstance(140, 140, Image.SCALE_SMOOTH);
+                profilePictureLabel.setIcon(new ImageIcon(image));
+                profilePictureLabel.setText("");
+            }
+        } catch (Exception e) {
+            System.out.println("Error loading profile image: " + e.getMessage());
+        }
+    }
+
+    private void changeProfilePhoto() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png", "gif"));
+
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            selectedImagePath = selectedFile.getAbsolutePath();
+            
+            String savedPath = saveProfileImage(selectedImagePath);
+            if (!savedPath.isEmpty()) {
+                session.setProfilePicture(savedPath);
+                loadProfileImage(savedPath);
+                JOptionPane.showMessageDialog(this, "Profile photo updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
+
+    private String saveProfileImage(String sourcePath) {
+        try {
+            File directory = new File(PROFILE_IMAGE_PATH);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String extension = sourcePath.substring(sourcePath.lastIndexOf("."));
+            String fileName = "profile_" + session.getUserId() + "_" + System.currentTimeMillis() + extension;
+            String destinationPath = PROFILE_IMAGE_PATH + fileName;
+
+            Files.copy(Paths.get(sourcePath), Paths.get(destinationPath), StandardCopyOption.REPLACE_EXISTING);
+
+            return "BarterZone.resources.images." + fileName;
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error saving image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return "";
+        }
+    }
+
+    private void editProfile() {
+        JOptionPane.showMessageDialog(this, 
+            "Edit Profile feature coming soon!\n\n"
+            + "You will be able to edit:\n"
+            + "• Full Name\n"
+            + "• Username\n"
+            + "• Email\n"
+            + "• Password",
+            "Edit Profile", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void refreshProfile() {
+        session.refreshData();
+        loadUserData();
+        JOptionPane.showMessageDialog(this, "Profile refreshed!", "Success", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void openDashboard() {
+        trader_dashboard dashboard = new trader_dashboard(session.getUserId(), session.getFullName());
+        dashboard.setVisible(true);
+        dashboard.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openMyItems() {
+        myitems myItemsFrame = new myitems(session.getUserId(), session.getFullName());
+        myItemsFrame.setVisible(true);
+        myItemsFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openFindItems() {
+        finditems findItemsFrame = new finditems(session.getUserId(), session.getFullName());
+        findItemsFrame.setVisible(true);
+        findItemsFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openTrades() {
+        trades tradesFrame = new trades(session.getUserId(), session.getFullName());
+        tradesFrame.setVisible(true);
+        tradesFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openMessages() {
+        messages messagesFrame = new messages(session.getUserId(), session.getFullName());
+        messagesFrame.setVisible(true);
+        messagesFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void openReports() {
+        reports reportsFrame = new reports(session.getUserId(), session.getFullName());
+        reportsFrame.setVisible(true);
+        reportsFrame.setLocationRelativeTo(null);
+        this.dispose();
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            session.logout();
+            landing.landing landingFrame = new landing.landing();
+            landingFrame.setVisible(true);
+            landingFrame.setLocationRelativeTo(null);
+            this.dispose();
+        }
     }
 
     @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
         tradermenu1 = new javax.swing.JPanel();
@@ -187,14 +510,18 @@ public class profile extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         CurrentDate = new javax.swing.JLabel();
+        jPanel2 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(800, 500));
+        setPreferredSize(new java.awt.Dimension(800, 500));
+        setResizable(false);
 
         tradermenu1.setBackground(new java.awt.Color(12, 192, 223));
         tradermenu1.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(8, 150, 175), 1, true));
         tradermenu1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        logotext.setFont(new java.awt.Font("Segoe UI", 1, 22)); // NOI18N
+        logotext.setFont(new java.awt.Font("Segoe UI", 1, 22));
         logotext.setForeground(new java.awt.Color(255, 255, 255));
         logotext.setText("BarterZone");
         logotext.setAlignmentX(0.5F);
@@ -203,34 +530,26 @@ public class profile extends javax.swing.JFrame {
         avatar.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3));
         avatar.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        avatarletter.setFont(new java.awt.Font("Arial", 1, 36)); // NOI18N
+        avatarletter.setFont(new java.awt.Font("Arial", 1, 36));
         avatarletter.setForeground(new java.awt.Color(12, 192, 223));
         avatarletter.setText("T");
         avatar.add(avatarletter, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 10, 50, 30));
 
         username.setBackground(new java.awt.Color(255, 255, 255));
-        username.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        username.setFont(new java.awt.Font("Segoe UI", 1, 14));
         username.setForeground(new java.awt.Color(255, 255, 255));
         avatar.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, 110, 30));
 
         tradermenu1.add(avatar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, 110, 60));
 
-        barterzonelogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logo.png"))); // NOI18N
+        barterzonelogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logo.png")));
         tradermenu1.add(barterzonelogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 40, 40));
 
         paneldashboard.setBackground(new java.awt.Color(12, 192, 223));
-        paneldashboard.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                paneldashboardMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                paneldashboardMouseExited(evt);
-            }
-        });
 
-        dashboardicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/dashboard.png"))); // NOI18N
+        dashboardicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/dashboard.png")));
 
-        dashboard.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        dashboard.setFont(new java.awt.Font("Segoe UI", 1, 14));
         dashboard.setForeground(new java.awt.Color(255, 255, 255));
         dashboard.setText("Dashboard");
 
@@ -257,21 +576,10 @@ public class profile extends javax.swing.JFrame {
         tradermenu1.add(paneldashboard, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 130, 40));
 
         panelmyitems.setBackground(new java.awt.Color(12, 192, 223));
-        panelmyitems.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelmyitemsMouseClicked(evt);
-            }
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelmyitemsMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelmyitemsMouseExited(evt);
-            }
-        });
 
-        myitemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/myitems.png"))); // NOI18N
+        myitemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/myitems.png")));
 
-        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14));
         myitems.setForeground(new java.awt.Color(255, 255, 255));
         myitems.setText("My Items");
 
@@ -299,21 +607,10 @@ public class profile extends javax.swing.JFrame {
         tradermenu1.add(panelmyitems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 160, 130, 40));
 
         panelfinditems.setBackground(new java.awt.Color(12, 192, 223));
-        panelfinditems.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelfinditemsMouseClicked(evt);
-            }
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelfinditemsMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelfinditemsMouseExited(evt);
-            }
-        });
 
-        finditemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/finditems.png"))); // NOI18N
+        finditemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/finditems.png")));
 
-        finditems.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        finditems.setFont(new java.awt.Font("Segoe UI", 1, 14));
         finditems.setForeground(new java.awt.Color(255, 255, 255));
         finditems.setText("Find Items");
 
@@ -341,21 +638,10 @@ public class profile extends javax.swing.JFrame {
         tradermenu1.add(panelfinditems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 130, 40));
 
         paneltrades.setBackground(new java.awt.Color(12, 192, 223));
-        paneltrades.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                paneltradesMouseClicked(evt);
-            }
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                paneltradesMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                paneltradesMouseExited(evt);
-            }
-        });
 
-        tradesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/trade.png"))); // NOI18N
+        tradesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/trade.png")));
 
-        trades.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        trades.setFont(new java.awt.Font("Segoe UI", 1, 14));
         trades.setForeground(new java.awt.Color(255, 255, 255));
         trades.setText("Trades");
 
@@ -383,21 +669,10 @@ public class profile extends javax.swing.JFrame {
         tradermenu1.add(paneltrades, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, 130, 40));
 
         panelmessages.setBackground(new java.awt.Color(12, 192, 223));
-        panelmessages.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                panelmessagesMouseClicked(evt);
-            }
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelmessagesMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelmessagesMouseExited(evt);
-            }
-        });
 
-        messagesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/messages.png"))); // NOI18N
+        messagesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/messages.png")));
 
-        messages.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        messages.setFont(new java.awt.Font("Segoe UI", 1, 14));
         messages.setForeground(new java.awt.Color(255, 255, 255));
         messages.setText("Messages");
 
@@ -424,60 +699,13 @@ public class profile extends javax.swing.JFrame {
 
         tradermenu1.add(panelmessages, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 280, 130, 40));
 
-        panellogout.setBackground(new java.awt.Color(12, 192, 223));
-        panellogout.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panellogoutMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panellogoutMouseExited(evt);
-            }
-        });
-
-        logout.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        logout.setForeground(new java.awt.Color(255, 255, 255));
-        logout.setText("Logout");
-
-        logouticon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logout.png"))); // NOI18N
-
-        javax.swing.GroupLayout panellogoutLayout = new javax.swing.GroupLayout(panellogout);
-        panellogout.setLayout(panellogoutLayout);
-        panellogoutLayout.setHorizontalGroup(
-            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(16, 16, 16)
-                .addComponent(logout)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        panellogoutLayout.setVerticalGroup(
-            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(logout)
-                    .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22))
-        );
-
-        tradermenu1.add(panellogout, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 130, 40));
-
         panelreports.setBackground(new java.awt.Color(12, 192, 223));
-        panelreports.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelreportsMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelreportsMouseExited(evt);
-            }
-        });
 
-        Reports.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        Reports.setFont(new java.awt.Font("Segoe UI", 1, 14));
         Reports.setForeground(new java.awt.Color(255, 255, 255));
         Reports.setText("Reports");
 
-        reportsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/report.png"))); // NOI18N
+        reportsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/report.png")));
 
         javax.swing.GroupLayout panelreportsLayout = new javax.swing.GroupLayout(panelreports);
         panelreports.setLayout(panelreportsLayout);
@@ -503,18 +731,10 @@ public class profile extends javax.swing.JFrame {
         tradermenu1.add(panelreports, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 320, 130, 40));
 
         panelprofile.setBackground(new java.awt.Color(12, 192, 223));
-        panelprofile.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                panelprofileMouseEntered(evt);
-            }
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                panelprofileMouseExited(evt);
-            }
-        });
 
-        profileicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/profile.png"))); // NOI18N
+        profileicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/profile.png")));
 
-        Profile.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        Profile.setFont(new java.awt.Font("Segoe UI", 1, 14));
         Profile.setForeground(new java.awt.Color(255, 255, 255));
         Profile.setText("Profile");
 
@@ -541,17 +761,50 @@ public class profile extends javax.swing.JFrame {
 
         tradermenu1.add(panelprofile, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 360, 130, 40));
 
+        panellogout.setBackground(new java.awt.Color(12, 192, 223));
+
+        logout.setFont(new java.awt.Font("Segoe UI", 1, 14));
+        logout.setForeground(new java.awt.Color(255, 255, 255));
+        logout.setText("Logout");
+
+        logouticon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logout.png")));
+
+        javax.swing.GroupLayout panellogoutLayout = new javax.swing.GroupLayout(panellogout);
+        panellogout.setLayout(panellogoutLayout);
+        panellogoutLayout.setHorizontalGroup(
+            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(16, 16, 16)
+                .addComponent(logout)
+                .addContainerGap(34, Short.MAX_VALUE))
+        );
+        panellogoutLayout.setVerticalGroup(
+            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(logout)
+                    .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(22, 22, 22))
+        );
+
+        tradermenu1.add(panellogout, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 130, 40));
+
         jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153), 2));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30));
         jLabel1.setText("Profile");
         jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, 30));
 
-        CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
         CurrentDate.setForeground(new java.awt.Color(102, 102, 102));
         CurrentDate.setText("jLabel2");
         jPanel1.add(CurrentDate, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 0, 142, 39));
+
+        jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -559,121 +812,28 @@ public class profile extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(tradermenu1, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 614, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE)
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(tradermenu1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 0, 0)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 450, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(0, 0, 0))
         );
 
         pack();
-    }// </editor-fold>//GEN-END:initComponents
+    }
 
-    private void paneldashboardMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneldashboardMouseEntered
-        paneldashboard.setBackground(hoverColor);
-    }//GEN-LAST:event_paneldashboardMouseEntered
-
-    private void paneldashboardMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneldashboardMouseExited
-        paneldashboard.setBackground(hoverColor);
-    }//GEN-LAST:event_paneldashboardMouseExited
-
-    private void panelmyitemsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmyitemsMouseClicked
-        System.out.println("My Items clicked! traderId: " + traderId + ", traderName: " + traderName);
-        myitems myItemsFrame = new myitems(traderId, traderName);
-        myItemsFrame.setVisible(true);
-        myItemsFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }//GEN-LAST:event_panelmyitemsMouseClicked
-
-    private void panelmyitemsMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmyitemsMouseEntered
-        panelmyitems.setBackground(hoverColor);
-
-    }//GEN-LAST:event_panelmyitemsMouseEntered
-
-    private void panelmyitemsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmyitemsMouseExited
-        panelmyitems.setBackground(defaultColor);
-
-    }//GEN-LAST:event_panelmyitemsMouseExited
-
-    private void panelfinditemsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelfinditemsMouseClicked
-        finditems findItemsFrame = new finditems(traderId, traderName);
-        findItemsFrame.setVisible(true);
-        findItemsFrame.setLocationRelativeTo(null);
-        this.dispose();
-
-    }//GEN-LAST:event_panelfinditemsMouseClicked
-
-    private void panelfinditemsMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelfinditemsMouseEntered
-        panelfinditems.setBackground(hoverColor);
-
-    }//GEN-LAST:event_panelfinditemsMouseEntered
-
-    private void panelfinditemsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelfinditemsMouseExited
-        panelfinditems.setBackground(defaultColor);
-
-    }//GEN-LAST:event_panelfinditemsMouseExited
-
-    private void paneltradesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneltradesMouseClicked
-        trades tradesFrame = new trades(traderId, traderName);
-        tradesFrame.setVisible(true);
-        tradesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }//GEN-LAST:event_paneltradesMouseClicked
-
-    private void paneltradesMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneltradesMouseEntered
-        paneltrades.setBackground(hoverColor);
-    }//GEN-LAST:event_paneltradesMouseEntered
-
-    private void paneltradesMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_paneltradesMouseExited
-        paneltrades.setBackground(defaultColor);
-    }//GEN-LAST:event_paneltradesMouseExited
-
-    private void panelmessagesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmessagesMouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_panelmessagesMouseClicked
-
-    private void panelmessagesMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmessagesMouseEntered
-        panelmessages.setBackground(hoverColor);
-    }//GEN-LAST:event_panelmessagesMouseEntered
-
-    private void panelmessagesMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelmessagesMouseExited
-        panelmessages.setBackground(defaultColor);
-    }//GEN-LAST:event_panelmessagesMouseExited
-
-    private void panellogoutMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panellogoutMouseEntered
-        panellogout.setBackground(hoverColor);
-    }//GEN-LAST:event_panellogoutMouseEntered
-
-    private void panellogoutMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panellogoutMouseExited
-        panellogout.setBackground(defaultColor);
-    }//GEN-LAST:event_panellogoutMouseExited
-
-    private void panelreportsMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelreportsMouseEntered
-        panelreports.setBackground(hoverColor);
-    }//GEN-LAST:event_panelreportsMouseEntered
-
-    private void panelreportsMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelreportsMouseExited
-        panelreports.setBackground(defaultColor);
-    }//GEN-LAST:event_panelreportsMouseExited
-
-    private void panelprofileMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelprofileMouseEntered
-        panelprofile.setBackground(hoverColor);
-    }//GEN-LAST:event_panelprofileMouseEntered
-
-    private void panelprofileMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_panelprofileMouseExited
-        panelprofile.setBackground(defaultColor);
-    }//GEN-LAST:event_panelprofileMouseExited
-
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel CurrentDate;
     private javax.swing.JLabel Profile;
-    private javax.swing.JLabel Reports;
+    javax.swing.JLabel Reports;
     private javax.swing.JPanel avatar;
     private javax.swing.JLabel avatarletter;
     private javax.swing.JLabel barterzonelogo;
@@ -683,6 +843,7 @@ public class profile extends javax.swing.JFrame {
     private javax.swing.JLabel finditemsicon;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
+    javax.swing.JPanel jPanel2;
     private javax.swing.JLabel logotext;
     private javax.swing.JLabel logout;
     private javax.swing.JLabel logouticon;
@@ -704,5 +865,4 @@ public class profile extends javax.swing.JFrame {
     private javax.swing.JLabel trades;
     private javax.swing.JLabel tradesicon;
     private javax.swing.JLabel username;
-    // End of variables declaration//GEN-END:variables
 }

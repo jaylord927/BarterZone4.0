@@ -263,7 +263,7 @@ public class admin_dashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_tableusersMouseClicked
 
     private void adminprofileMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_adminprofileMouseClicked
-        BarterZone.Dashboard.session.userProfile profileFrame = new BarterZone.Dashboard.session.userProfile(adminId, "admin");
+        BarterZone.Dashboard.session.user_profile profileFrame = new BarterZone.Dashboard.session.user_profile(adminId, "admin");
         profileFrame.setVisible(true);
         profileFrame.setLocationRelativeTo(null);
     }//GEN-LAST:event_adminprofileMouseClicked
