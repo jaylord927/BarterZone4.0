@@ -1,10 +1,10 @@
 package BarterZone.Dashboard.session;
 
 import database.config.config;
-import java.util.HashMap;
 import java.util.Map;
 
 public class user_session {
+    
     private static user_session instance;
     private int userId;
     private String fullName;
@@ -13,19 +13,24 @@ public class user_session {
     private String userType;
     private String status;
     private String profilePicture;
+    private String createdDate;
     private config db;
     
     private user_session() {
         this.db = new config();
     }
-    
-    public static user_session getInstance() {
+
+    public static synchronized user_session getInstance() {
         if (instance == null) {
             instance = new user_session();
         }
         return instance;
     }
-    
+   
+    public static boolean isInstanceEmpty() {
+        return instance == null;
+    }
+
     public boolean login(int userId, String userType, String fullName) {
         this.userId = userId;
         this.userType = userType;
@@ -34,7 +39,7 @@ public class user_session {
     }
     
     private boolean loadUserData() {
-        String sql = "SELECT user_fullname, user_username, user_email, user_type, user_status, user_profile_picture "
+        String sql = "SELECT user_fullname, user_username, user_email, user_type, user_status, user_profile_picture, created_date "
                 + "FROM tbl_users WHERE user_id = ?";
         
         java.util.List<Map<String, Object>> users = db.fetchRecords(sql, userId);
@@ -47,6 +52,7 @@ public class user_session {
             this.userType = (String) user.get("user_type");
             this.status = (String) user.get("user_status");
             this.profilePicture = (String) user.get("user_profile_picture");
+            this.createdDate = user.get("created_date") != null ? user.get("created_date").toString() : null;
             return true;
         }
         return false;
@@ -64,48 +70,82 @@ public class user_session {
         this.userType = null;
         this.status = null;
         this.profilePicture = null;
+        this.createdDate = null;
+        instance = null;
     }
     
     public boolean isLoggedIn() {
         return userId != -1;
     }
-    
+
     public int getUserId() {
         return userId;
     }
-    
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+
     public String getFullName() {
         return fullName;
     }
-    
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     public String getUsername() {
         return username;
     }
-    
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public String getEmail() {
         return email;
     }
-    
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getUserType() {
         return userType;
     }
-    
+
+    public void setUserType(String userType) {
+        this.userType = userType;
+    }
+
     public String getStatus() {
         return status;
     }
-    
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     public String getProfilePicture() {
         return profilePicture;
     }
-    
+
     public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
         String sql = "UPDATE tbl_users SET user_profile_picture = ? WHERE user_id = ?";
         db.updateRecord(sql, profilePicture, userId);
     }
+
+    public String getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(String createdDate) {
+        this.createdDate = createdDate;
+    }
     
     public Map<String, Object> getAllUserData() {
-        Map<String, Object> data = new HashMap<>();
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
         data.put("user_id", userId);
         data.put("user_fullname", fullName);
         data.put("user_username", username);
@@ -113,6 +153,7 @@ public class user_session {
         data.put("user_type", userType);
         data.put("user_status", status);
         data.put("user_profile_picture", profilePicture);
+        data.put("created_date", createdDate);
         return data;
     }
 }

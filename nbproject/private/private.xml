@@ -5,25 +5,33 @@
         <group>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/messages.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/myitems1.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/trades.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/manage_users.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/myitems.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/landing/landing.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/finditems.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/profile.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/edit_items.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/profile.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/trader_dashboard.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/loginandsignup/login.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/loginandsignup/signup.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/trades.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/resources/IconLoader.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/myitems.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/manage_trades.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/edit_profile.java</file>
             <file>file:/E:/website/BarterZone4.0/src/database/config/config.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/landing/landing.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/manageusers.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/finditems.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/App.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/profile.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/edit_items.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/logs.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/admin_dashboard.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/admin_dashboard1.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/session/user_session.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/manage_reports.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/add_items.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/manage_trades.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/resources/IconManager.java</file>
             <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/reports.java</file>
-            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/trader/profile.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/BarterZone/Dashboard/admin/manage_announcement.java</file>
+            <file>file:/E:/website/BarterZone4.0/src/landing/announcement.java</file>
         </group>
     </open-files>
 </project-private>

@@ -1,6 +1,7 @@
 package BarterZone.loginandsignup;
 
 //import Barterzone.ui.Transition;
+import BarterZone.Dashboard.session.user_session;
 import database.config.config;
 import javax.swing.JOptionPane;
 import landing.landing;
@@ -229,7 +230,7 @@ public class login extends javax.swing.JFrame {
         try {
             config dbConfig = new config();
 
-            String checkUserSQL = "SELECT user_id, user_fullname, user_username, user_email, user_pass, user_type, user_status FROM tbl_users WHERE user_username = ? OR user_email = ?";
+            String checkUserSQL = "SELECT user_id, user_fullname, user_username, user_email, user_pass, user_type, user_status, created_date FROM tbl_users WHERE user_username = ? OR user_email = ?";
 
             java.util.List<java.util.Map<String, Object>> users = dbConfig.fetchRecords(checkUserSQL, usernameOrEmail, usernameOrEmail);
 
@@ -253,48 +254,30 @@ public class login extends javax.swing.JFrame {
             String inputHashedPassword = dbConfig.hashPassword(password);
 
             if (inputHashedPassword.equals(storedHashedPassword)) {
+                user_session session = user_session.getInstance();
+                session.setUserId(userId);
+                session.setFullName(userFullName);
+                session.setUsername((String) user.get("user_username"));
+                session.setEmail((String) user.get("user_email"));
+                session.setUserType(userType);
+                session.setStatus(userStatus);
+                session.setCreatedDate(user.get("created_date") != null ? user.get("created_date").toString() : null);
+
                 JOptionPane.showMessageDialog(this, "Login successful!\nWelcome " + userFullName + " (" + userType + ")", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                 if ("admin".equalsIgnoreCase(userType)) {
-                    try {
-                        BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard(userId, userFullName);
-                        adminFrame.setVisible(true);
-                        adminFrame.pack();
-                        adminFrame.setLocationRelativeTo(null);
-                        this.dispose();
-
-                    } catch (Exception e) {
-                        try {
-                            BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard(userId, userFullName);
-                            adminFrame.setVisible(true);
-                            adminFrame.pack();
-                            adminFrame.setLocationRelativeTo(null);
-                            this.dispose();
-                        } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(this,
-                                    "Admin Dashboard not found! Redirecting to main page.",
-                                    "Admin Dashboard Error",
-                                    JOptionPane.WARNING_MESSAGE);
-
-                            landing landingFrame = new landing(userId, userFullName);
-                            landingFrame.setVisible(true);
-                            landingFrame.pack();
-                            landingFrame.setLocationRelativeTo(null);
-                            this.dispose();
-                        }
-                    }
-
+                    BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard(userId, userFullName);
+                    adminFrame.setVisible(true);
+                    adminFrame.setLocationRelativeTo(null);
+                    this.dispose();
                 } else if ("trader".equalsIgnoreCase(userType)) {
                     BarterZone.Dashboard.trader.trader_dashboard traderDashboard = new BarterZone.Dashboard.trader.trader_dashboard(userId, userFullName);
                     traderDashboard.setVisible(true);
-                    traderDashboard.pack();
                     traderDashboard.setLocationRelativeTo(null);
                     this.dispose();
-
                 } else {
                     landing landingFrame = new landing(userId, userFullName);
                     landingFrame.setVisible(true);
-                    landingFrame.pack();
                     landingFrame.setLocationRelativeTo(null);
                     this.dispose();
                 }

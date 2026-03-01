@@ -297,7 +297,7 @@ public class signup extends javax.swing.JFrame {
 
             String hashedPassword = dbConfig.hashPassword(password);
 
-            String sqltrader = "INSERT INTO tbl_users (user_fullname, user_username, user_email, user_pass, user_type, user_status) VALUES (?, ?, ?, ?, ?, ?)";
+            String sqltrader = "INSERT INTO tbl_users (user_fullname, user_username, user_email, user_pass, user_type, user_status, created_date) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))";
 
             dbConfig.addRecord(sqltrader, fullName, usernameInput, emails, hashedPassword, "trader", "active");
 

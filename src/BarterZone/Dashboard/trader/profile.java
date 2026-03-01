@@ -2,7 +2,6 @@ package BarterZone.Dashboard.trader;
 
 import BarterZone.resources.IconManager;
 import BarterZone.Dashboard.session.user_session;
-import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Image;
@@ -14,7 +13,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -31,9 +29,10 @@ public class profile extends javax.swing.JFrame {
     private javax.swing.JLabel nameValue;
     private javax.swing.JLabel usernameValue;
     private javax.swing.JLabel emailValue;
+    private javax.swing.JLabel passwordValue;
     private javax.swing.JLabel typeValue;
     private javax.swing.JLabel statusValue;
-    private javax.swing.JLabel memberSinceValue;
+    private javax.swing.JLabel createdDateValue;
     private javax.swing.JLabel profilePictureLabel;
     private javax.swing.JButton editProfileButton;
     private javax.swing.JButton changePhotoButton;
@@ -168,6 +167,7 @@ public class profile extends javax.swing.JFrame {
     }
 
     private void setupCustomComponents() {
+        // Set the username in the sidebar
         username.setText(session.getFullName());
         if (session.getFullName() != null && session.getFullName().length() > 0) {
             avatarletter.setText(String.valueOf(session.getFullName().charAt(0)).toUpperCase());
@@ -193,11 +193,11 @@ public class profile extends javax.swing.JFrame {
         javax.swing.JLabel profileTitle = new javax.swing.JLabel("My Profile");
         profileTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         profileTitle.setForeground(new Color(0, 102, 102));
-        profileTitle.setBounds(20, 20, 200, 30);
+        profileTitle.setBounds(20, 15, 200, 30);
         profileCard.add(profileTitle);
 
         profilePictureLabel = new javax.swing.JLabel();
-        profilePictureLabel.setBounds(220, 60, 150, 150);
+        profilePictureLabel.setBounds(40, 60, 150, 150);
         profilePictureLabel.setBorder(new LineBorder(new Color(12, 192, 223), 3));
         profilePictureLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         profilePictureLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
@@ -211,18 +211,18 @@ public class profile extends javax.swing.JFrame {
         changePhotoButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         changePhotoButton.setBackground(new Color(12, 192, 223));
         changePhotoButton.setForeground(Color.WHITE);
-        changePhotoButton.setBounds(235, 215, 120, 30);
+        changePhotoButton.setBounds(55, 215, 120, 30);
         changePhotoButton.setBorder(null);
         changePhotoButton.setFocusPainted(false);
         changePhotoButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         changePhotoButton.addActionListener(e -> changeProfilePhoto());
         profileCard.add(changePhotoButton);
 
-        int startY = 260;
+        int startY = 55;
         int labelWidth = 120;
-        int valueWidth = 300;
-        int labelX = 100;
-        int valueX = 220;
+        int valueWidth = 280;
+        int labelX = 220;
+        int valueX = 340;
 
         javax.swing.JLabel nameLabel = new javax.swing.JLabel("Full Name:");
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -254,45 +254,55 @@ public class profile extends javax.swing.JFrame {
         emailValue.setBounds(valueX, startY + 60, valueWidth, 25);
         profileCard.add(emailValue);
 
+        javax.swing.JLabel passwordLabel = new javax.swing.JLabel("Password:");
+        passwordLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        passwordLabel.setBounds(labelX, startY + 90, labelWidth, 25);
+        profileCard.add(passwordLabel);
+
+        passwordValue = new javax.swing.JLabel("••••••••");
+        passwordValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        passwordValue.setBounds(valueX, startY + 90, valueWidth, 25);
+        profileCard.add(passwordValue);
+
         javax.swing.JLabel typeLabel = new javax.swing.JLabel("Account Type:");
         typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        typeLabel.setBounds(labelX, startY + 90, labelWidth, 25);
+        typeLabel.setBounds(labelX, startY + 120, labelWidth, 25);
         profileCard.add(typeLabel);
 
         typeValue = new javax.swing.JLabel();
         typeValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        typeValue.setBounds(valueX, startY + 90, valueWidth, 25);
+        typeValue.setBounds(valueX, startY + 120, valueWidth, 25);
         profileCard.add(typeValue);
 
         javax.swing.JLabel statusLabel = new javax.swing.JLabel("Account Status:");
         statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        statusLabel.setBounds(labelX, startY + 120, labelWidth, 25);
+        statusLabel.setBounds(labelX, startY + 150, labelWidth, 25);
         profileCard.add(statusLabel);
 
         statusValue = new javax.swing.JLabel();
         statusValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        statusValue.setBounds(valueX, startY + 120, valueWidth, 25);
+        statusValue.setBounds(valueX, startY + 150, valueWidth, 25);
         profileCard.add(statusValue);
 
-        javax.swing.JLabel memberLabel = new javax.swing.JLabel("Member Since:");
-        memberLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        memberLabel.setBounds(labelX, startY + 150, labelWidth, 25);
-        profileCard.add(memberLabel);
+        javax.swing.JLabel createdLabel = new javax.swing.JLabel("Member Since:");
+        createdLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        createdLabel.setBounds(labelX, startY + 180, labelWidth, 25);
+        profileCard.add(createdLabel);
 
-        memberSinceValue = new javax.swing.JLabel(getMemberSinceDate());
-        memberSinceValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        memberSinceValue.setBounds(valueX, startY + 150, valueWidth, 25);
-        profileCard.add(memberSinceValue);
+        createdDateValue = new javax.swing.JLabel();
+        createdDateValue.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        createdDateValue.setBounds(valueX, startY + 180, valueWidth, 25);
+        profileCard.add(createdDateValue);
 
         editProfileButton = new javax.swing.JButton("EDIT PROFILE");
         editProfileButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         editProfileButton.setBackground(new Color(0, 102, 102));
         editProfileButton.setForeground(Color.WHITE);
-        editProfileButton.setBounds(220, 430, 160, 35);
+        editProfileButton.setBounds(220, 380, 160, 35);
         editProfileButton.setBorder(null);
         editProfileButton.setFocusPainted(false);
         editProfileButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        editProfileButton.addActionListener(e -> editProfile());
+        editProfileButton.addActionListener(e -> openEditProfile());
         profileCard.add(editProfileButton);
 
         contentPanel.add(profileCard);
@@ -304,18 +314,28 @@ public class profile extends javax.swing.JFrame {
     }
 
     private void loadUserData() {
-        Map<String, Object> userData = session.getAllUserData();
+        // Debug print to check session data
+        System.out.println("Loading user data from session:");
+        System.out.println("Full Name: " + session.getFullName());
+        System.out.println("Username: " + session.getUsername());
+        System.out.println("Email: " + session.getEmail());
+        System.out.println("User Type: " + session.getUserType());
+        System.out.println("Status: " + session.getStatus());
+        System.out.println("Created Date: " + session.getCreatedDate());
         
-        nameValue.setText((String) userData.get("user_fullname"));
-        usernameValue.setText((String) userData.get("user_username"));
-        emailValue.setText((String) userData.get("user_email"));
+        // Load all user data from session
+        nameValue.setText(session.getFullName() != null ? session.getFullName() : "N/A");
+        usernameValue.setText(session.getUsername() != null ? session.getUsername() : "N/A");
+        emailValue.setText(session.getEmail() != null ? session.getEmail() : "N/A");
         
-        String type = (String) userData.get("user_type");
+        String type = session.getUserType();
         if (type != null) {
             typeValue.setText(type.substring(0, 1).toUpperCase() + type.substring(1));
+        } else {
+            typeValue.setText("N/A");
         }
         
-        String status = (String) userData.get("user_status");
+        String status = session.getStatus();
         if (status != null) {
             if (status.equalsIgnoreCase("active")) {
                 statusValue.setText("Active");
@@ -324,26 +344,45 @@ public class profile extends javax.swing.JFrame {
                 statusValue.setText("Inactive");
                 statusValue.setForeground(new Color(204, 0, 0));
             }
+        } else {
+            statusValue.setText("N/A");
         }
         
-        String profilePic = (String) userData.get("user_profile_picture");
+        // Format and display created date
+        String createdDate = session.getCreatedDate();
+        createdDateValue.setText(formatCreatedDate(createdDate));
+        
+        // Load profile picture
+        String profilePic = session.getProfilePicture();
         if (profilePic != null && !profilePic.isEmpty()) {
             loadProfileImage(profilePic);
         }
     }
 
-    private String getMemberSinceDate() {
+    private String formatCreatedDate(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) {
+            return "N/A";
+        }
+        
         try {
-            config db = new config();
-            String sql = "SELECT user_id FROM tbl_users WHERE user_id = ?";
-            java.util.List<Map<String, Object>> result = db.fetchRecords(sql, session.getUserId());
-            
-            if (!result.isEmpty()) {
-                return "Member since 2024";
+            // Try to parse and format the date nicely
+            // SQLite date format is typically "yyyy-MM-dd HH:mm:ss"
+            if (dateStr.length() >= 10) {
+                String[] dateParts = dateStr.substring(0, 10).split("-");
+                if (dateParts.length == 3) {
+                    int year = Integer.parseInt(dateParts[0]);
+                    int month = Integer.parseInt(dateParts[1]);
+                    int day = Integer.parseInt(dateParts[2]);
+                    
+                    String[] monthNames = {"January", "February", "March", "April", "May", "June",
+                                          "July", "August", "September", "October", "November", "December"};
+                    
+                    return monthNames[month - 1] + " " + day + ", " + year;
+                }
             }
-            return "N/A";
+            return dateStr.substring(0, 10);
         } catch (Exception e) {
-            return "N/A";
+            return dateStr;
         }
     }
 
@@ -400,15 +439,11 @@ public class profile extends javax.swing.JFrame {
         }
     }
 
-    private void editProfile() {
-        JOptionPane.showMessageDialog(this, 
-            "Edit Profile feature coming soon!\n\n"
-            + "You will be able to edit:\n"
-            + "• Full Name\n"
-            + "• Username\n"
-            + "• Email\n"
-            + "• Password",
-            "Edit Profile", JOptionPane.INFORMATION_MESSAGE);
+    private void openEditProfile() {
+        edit_profile editFrame = new edit_profile();
+        editFrame.setVisible(true);
+        editFrame.setLocationRelativeTo(null);
+        
     }
 
     private void refreshProfile() {
@@ -801,8 +836,8 @@ public class profile extends javax.swing.JFrame {
 
         CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
         CurrentDate.setForeground(new java.awt.Color(102, 102, 102));
-        CurrentDate.setText("jLabel2");
-        jPanel1.add(CurrentDate, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 0, 142, 39));
+        CurrentDate.setText("");
+        jPanel1.add(CurrentDate, new org.netbeans.lib.awtextra.AbsoluteConstraints(380, 10, 250, 30));
 
         jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
