@@ -1,10 +1,19 @@
 package BarterZone.Dashboard.trader;
 
 import BarterZone.resources.IconManager;
+import BarterZone.Dashboard.session.user_session;
 import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.Cursor;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,14 +22,17 @@ import java.util.Map;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
+import javax.swing.JLabel;
+import javax.swing.JButton;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
 import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.RowFilter;
 
 public class myitems extends javax.swing.JFrame {
 
@@ -32,141 +44,434 @@ public class myitems extends javax.swing.JFrame {
     private int selectedItemId = -1;
     private int lastSelectedRow = -1;
     private IconManager iconManager;
+    private user_session session;
 
-    private javax.swing.JTextField searchField;
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton editButton;
-    private javax.swing.JButton deleteButton;
-    private javax.swing.JButton removeButton;
+    private JPanel sidePanel;
+    private JPanel avatarContainer;
+    private JLabel avatarLabel;
+    private JLabel avatarInitialLabel;
+    
+    private JPanel dashboardPanel;
+    private JLabel dashboardIcon;
+    private JLabel dashboardLabel;
+    
+    private JPanel myItemsPanel;
+    private JLabel myItemsIcon;
+    private JLabel myItemsLabel;
+    
+    private JPanel findItemsPanel;
+    private JLabel findItemsIcon;
+    private JLabel findItemsLabel;
+    
+    private JPanel tradesPanel;
+    private JLabel tradesIcon;
+    private JLabel tradesLabel;
+    
+    private JPanel messagesPanel;
+    private JLabel messagesIcon;
+    private JLabel messagesLabel;
+    
+    private JPanel reportsPanel;
+    private JLabel reportsIcon;
+    private JLabel reportsLabel;
+    
+    private JPanel settingsPanel;
+    private JLabel settingsIcon;
+    private JLabel settingsLabel;
+    
+    private JPanel headerPanel;
+    private JLabel headerTitle;
+    private JLabel currentDateLabel;
+    
+    private JPanel contentPanel;
+    
+    private JTextField searchField;
+    private JButton addButton;
+    private JButton editButton;
+    private JButton deleteButton;
+    private JButton removeButton;
+    
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTable myitemstable;
 
+    private Color themeColor = new Color(12, 192, 223);
     private Color hoverColor = new Color(70, 210, 235);
-    private Color defaultColor = new Color(12, 192, 223);
     private Color activeColor = new Color(0, 150, 180);
+    private Color headerBgColor = new Color(245, 245, 245);
+    private Color textColor = new Color(80, 80, 80);
+    private Color accentColor = new Color(0, 102, 102);
+    private Color initialColor = new Color(0, 102, 102);
+    
     private JPanel activePanel = null;
 
     public myitems(int traderId, String traderName) {
         this.traderId = traderId;
         this.traderName = traderName;
+        this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
+        
         initComponents();
-
+        initializeIconLabels();
         loadAndResizeIcons();
-
-        setActivePanel(panelmyitems);
-
-        setupCustomComponents();
+        setupSidePanel();
+        setupHeader();
+        setupContentPanel();
         loadItems();
         setupLiveSearch();
-
-        setupSidebarHoverEffects();
+        loadProfileAvatar();
 
         setTitle("My Items - " + traderName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+    }
+
+    private void initComponents() {
+        getContentPane().setLayout(null);
+        getContentPane().setBackground(Color.WHITE);
+
+        sidePanel = new JPanel();
+        sidePanel.setLayout(null);
+        sidePanel.setBackground(themeColor);
+        sidePanel.setBounds(0, 0, 180, 500);
+        sidePanel.setBorder(new LineBorder(new Color(8, 150, 175), 1, true));
+        getContentPane().add(sidePanel);
+
+        headerPanel = new JPanel();
+        headerPanel.setLayout(null);
+        headerPanel.setBackground(headerBgColor);
+        headerPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
+        headerPanel.setBounds(180, 0, 620, 70);
+        getContentPane().add(headerPanel);
+
+        contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBackground(new Color(250, 250, 250));
+        contentPanel.setBounds(180, 70, 620, 430);
+        getContentPane().add(contentPanel);
+        
+        jScrollPane1 = new javax.swing.JScrollPane();
+        myitemstable = new javax.swing.JTable();
+    }
+
+    private void initializeIconLabels() {
+        dashboardIcon = new JLabel();
+        myItemsIcon = new JLabel();
+        findItemsIcon = new JLabel();
+        tradesIcon = new JLabel();
+        messagesIcon = new JLabel();
+        reportsIcon = new JLabel();
+        settingsIcon = new JLabel();
     }
 
     private void loadAndResizeIcons() {
-        setIconSafely(dashboardicon, iconManager.getSideMenuIcon("dashboard"));
-        setIconSafely(myitemsicon, iconManager.getSideMenuIcon("myitems"));
-        setIconSafely(finditemsicon, iconManager.getSideMenuIcon("finditems"));
-        setIconSafely(tradesicon, iconManager.getSideMenuIcon("trade"));
-        setIconSafely(messagesicon, iconManager.getSideMenuIcon("messages"));
-        setIconSafely(reportsicon, iconManager.getSideMenuIcon("report"));
-        setIconSafely(profileicon, iconManager.getSideMenuIcon("profile"));
-        setIconSafely(logouticon, iconManager.getSideMenuIcon("logout"));
-
-        setIconSafely(barterzonelogo, iconManager.getLogoIcon());
+        setIconSafely(dashboardIcon, iconManager.getSideMenuIcon("dashboard"));
+        setIconSafely(myItemsIcon, iconManager.getSideMenuIcon("myitems"));
+        setIconSafely(findItemsIcon, iconManager.getSideMenuIcon("finditems"));
+        setIconSafely(tradesIcon, iconManager.getSideMenuIcon("trade"));
+        setIconSafely(messagesIcon, iconManager.getSideMenuIcon("messages"));
+        setIconSafely(reportsIcon, iconManager.getSideMenuIcon("report"));
+        setIconSafely(settingsIcon, iconManager.getSideMenuIcon("setting"));
     }
 
-    private void setIconSafely(javax.swing.JLabel label, ImageIcon icon) {
-        if (icon != null) {
+    private void setIconSafely(JLabel label, ImageIcon icon) {
+        if (label != null && icon != null) {
             label.setIcon(icon);
             label.setText("");
         }
     }
 
-    private void setupSidebarHoverEffects() {
-        applyHoverEffectToPanelAndLabel(paneldashboard, dashboard);
-        applyHoverEffectToPanelAndLabel(panelmyitems, myitems);
-        applyHoverEffectToPanelAndLabel(panelfinditems, finditems);
-        applyHoverEffectToPanelAndLabel(paneltrades, trades);
-        applyHoverEffectToPanelAndLabel(panelmessages, messages);
-        applyHoverEffectToPanelAndLabel(panelreports, Reports);
-        applyHoverEffectToPanelAndLabel(panelprofile, Profile);
-        applyHoverEffectToPanelAndLabel(panellogout, logout);
+    private String convertResourcePathToFilePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.trim().isEmpty()) {
+            return null;
+        }
+
+        resourcePath = resourcePath.trim();
+
+        int lastDot = resourcePath.lastIndexOf(".");
+        if (lastDot == -1) {
+            return null;
+        }
+
+        String extension = resourcePath.substring(lastDot + 1);
+        String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
+
+        return "src/" + pathWithoutExtension + "." + extension;
     }
 
-    private void applyHoverEffectToPanelAndLabel(JPanel panel, javax.swing.JLabel label) {
-        java.awt.event.MouseAdapter adapter = new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                setHover(panel);
+    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
+        try {
+            File file = new File(imagePath);
+            if (!file.exists()) {
+                return null;
             }
 
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                setDefault(panel);
+            ImageIcon icon = new ImageIcon(imagePath);
+            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        } catch (Exception e) {
+            System.out.println("Error creating scaled image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private ImageIcon createCircularImageIcon(String imagePath, int width, int height) {
+        try {
+            File file = new File(imagePath);
+            if (!file.exists()) {
+                return null;
             }
 
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (panel == paneldashboard) {
-                    openDashboard();
-                } else if (panel == panelfinditems) {
-                    openFindItems();
-                } else if (panel == paneltrades) {
-                    openTrades();
-                } else if (panel == panelmessages) {
-                    openMessages();
-                } else if (panel == panelreports) {
-                    openReports();
-                } else if (panel == panelprofile) {
-                    openProfile();
-                } else if (panel == panellogout) {
-                    logout();
+            ImageIcon originalIcon = new ImageIcon(imagePath);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+
+            BufferedImage circularImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = circularImage.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setClip(new Ellipse2D.Float(0, 0, width, height));
+            g2.drawImage(scaledImage, 0, 0, width, height, null);
+            g2.dispose();
+
+            return new ImageIcon(circularImage);
+        } catch (Exception e) {
+            System.out.println("Error creating circular image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void loadProfileAvatar() {
+        try {
+            String sql = "SELECT user_profile_picture FROM tbl_users WHERE user_id = ?";
+            List<Map<String, Object>> result = db.fetchRecords(sql, traderId);
+
+            if (!result.isEmpty() && result.get(0).get("user_profile_picture") != null) {
+                String profilePicPath = result.get(0).get("user_profile_picture").toString().trim();
+
+                if (!profilePicPath.isEmpty()) {
+                    String fullPath = convertResourcePathToFilePath(profilePicPath);
+
+                    if (fullPath != null) {
+                        ImageIcon circularIcon = createCircularImageIcon(fullPath, 90, 90);
+
+                        if (circularIcon != null) {
+                            avatarLabel.setIcon(circularIcon);
+                            avatarLabel.setText("");
+                            avatarLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+                            avatarLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
+                            avatarInitialLabel.setVisible(false);
+                            return;
+                        }
+                    }
                 }
             }
+        } catch (Exception e) {
+            System.out.println("Error loading profile image: " + e.getMessage());
+        }
+
+        avatarLabel.setIcon(null);
+        if (traderName != null && !traderName.trim().isEmpty()) {
+            avatarInitialLabel.setText(String.valueOf(traderName.trim().charAt(0)).toUpperCase());
+        } else {
+            avatarInitialLabel.setText("U");
+        }
+        avatarInitialLabel.setVisible(true);
+        avatarLabel.setText("");
+    }
+
+    private void setupSidePanel() {
+        avatarContainer = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(0, 0, 100, 100);
+                g2.setColor(initialColor);
+                g2.setStroke(new java.awt.BasicStroke(3));
+                g2.drawOval(0, 0, 100, 100);
+            }
         };
+        avatarContainer.setLayout(null);
+        avatarContainer.setBounds(40, 20, 100, 100);
+        avatarContainer.setOpaque(false);
+        sidePanel.add(avatarContainer);
 
-        panel.addMouseListener(adapter);
-        label.addMouseListener(adapter);
-    }
+        avatarLabel = new JLabel();
+        avatarLabel.setBounds(0, 0, 100, 100);
+        avatarLabel.setHorizontalAlignment(JLabel.CENTER);
+        avatarLabel.setVerticalAlignment(JLabel.CENTER);
+        avatarContainer.add(avatarLabel);
 
-    private void setActivePanel(JPanel panel) {
-        if (activePanel != null) {
-            activePanel.setBackground(defaultColor);
-        }
-        activePanel = panel;
-        activePanel.setBackground(activeColor);
-    }
-
-    private void setHover(JPanel panel) {
-        if (panel != activePanel) {
-            panel.setBackground(hoverColor);
-        }
-    }
-
-    private void setDefault(JPanel panel) {
-        if (panel != activePanel) {
-            panel.setBackground(defaultColor);
-        }
-    }
-
-    private void setupCustomComponents() {
-        username.setText(traderName);
+        avatarInitialLabel = new JLabel();
+        avatarInitialLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        avatarInitialLabel.setForeground(initialColor);
+        avatarInitialLabel.setHorizontalAlignment(JLabel.CENTER);
+        avatarInitialLabel.setBounds(40, 120, 100, 30);
         if (traderName != null && traderName.length() > 0) {
-            avatarletter.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
+            avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
+        sidePanel.add(avatarInitialLabel);
+        
+        loadProfileAvatar();
+
+        int menuY = 155;
+        int menuHeight = 32;
+        int menuSpacing = 2;
+
+        dashboardPanel = createMenuItem(20, menuY, 140, menuHeight);
+        dashboardIcon = createMenuItemIcon(dashboardPanel, 15, 6, dashboardIcon);
+        dashboardLabel = createMenuItemLabel(dashboardPanel, "Dashboard", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        myItemsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        myItemsIcon = createMenuItemIcon(myItemsPanel, 15, 6, myItemsIcon);
+        myItemsLabel = createMenuItemLabel(myItemsPanel, "My Items", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        findItemsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        findItemsIcon = createMenuItemIcon(findItemsPanel, 15, 6, findItemsIcon);
+        findItemsLabel = createMenuItemLabel(findItemsPanel, "Find Items", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        tradesPanel = createMenuItem(20, menuY, 140, menuHeight);
+        tradesIcon = createMenuItemIcon(tradesPanel, 15, 6, tradesIcon);
+        tradesLabel = createMenuItemLabel(tradesPanel, "Trades", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        messagesPanel = createMenuItem(20, menuY, 140, menuHeight);
+        messagesIcon = createMenuItemIcon(messagesPanel, 15, 6, messagesIcon);
+        messagesLabel = createMenuItemLabel(messagesPanel, "Messages", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        reportsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        reportsIcon = createMenuItemIcon(reportsPanel, 15, 6, reportsIcon);
+        reportsLabel = createMenuItemLabel(reportsPanel, "Reports", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        settingsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        settingsIcon = createMenuItemIcon(settingsPanel, 15, 6, settingsIcon);
+        settingsLabel = createMenuItemLabel(settingsPanel, "Settings", 45, 6);
+
+        setActivePanel(myItemsPanel);
+    }
+
+    private JPanel createMenuItem(int x, int y, int width, int height) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(themeColor);
+        panel.setBounds(x, y, width, height);
+        panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        MouseAdapter panelAdapter = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(themeColor);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMenuClick(panel);
+            }
+        };
+        
+        panel.addMouseListener(panelAdapter);
+        sidePanel.add(panel);
+        return panel;
+    }
+
+    private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
+        iconLabel.setBounds(x, y, 25, 20);
+        iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        iconLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(themeColor);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMenuClick(panel);
+            }
+        });
+        
+        panel.add(iconLabel);
+        return iconLabel;
+    }
+
+    private JLabel createMenuItemLabel(JPanel panel, String text, int x, int y) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        label.setForeground(Color.WHITE);
+        label.setBounds(x, y, 100, 20);
+        label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        label.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(themeColor);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMenuClick(panel);
+            }
+        });
+        
+        panel.add(label);
+        return label;
+    }
+
+    private void setupHeader() {
+        headerTitle = new JLabel("My Items");
+        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerTitle.setForeground(accentColor);
+        headerTitle.setBounds(20, 15, 200, 30);
+        headerPanel.add(headerTitle);
 
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-        CurrentDate.setText(sdf.format(new Date()));
+        currentDateLabel = new JLabel(sdf.format(new Date()));
+        currentDateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        currentDateLabel.setForeground(new Color(102, 102, 102));
+        currentDateLabel.setBounds(450, 25, 250, 20);
+        headerPanel.add(currentDateLabel);
+    }
 
-        JPanel contentPanel = new JPanel();
-        contentPanel.setLayout(null);
-        contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBounds(0, 0, 620, 450);
+    private void setupContentPanel() {
+        JPanel contentWrapper = new JPanel();
+        contentWrapper.setLayout(null);
+        contentWrapper.setBackground(Color.WHITE);
+        contentWrapper.setBounds(0, 0, 620, 430);
 
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(null);
@@ -174,12 +479,12 @@ public class myitems extends javax.swing.JFrame {
         searchPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
         searchPanel.setBounds(10, 10, 600, 50);
 
-        javax.swing.JLabel searchLabel = new javax.swing.JLabel("Search Items:");
+        JLabel searchLabel = new JLabel("Search Items:");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         searchLabel.setBounds(10, 15, 100, 20);
         searchPanel.add(searchLabel);
 
-        searchField = new javax.swing.JTextField();
+        searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         searchField.setBounds(120, 12, 200, 26);
         searchField.setBorder(new LineBorder(new Color(200, 200, 200)));
@@ -191,44 +496,47 @@ public class myitems extends javax.swing.JFrame {
         buttonPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
         buttonPanel.setBounds(10, 70, 600, 50);
 
-        addButton = new javax.swing.JButton("Add Item");
+        addButton = new JButton("Add Item");
         addButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         addButton.setBackground(new Color(0, 102, 102));
         addButton.setForeground(Color.WHITE);
         addButton.setBounds(10, 10, 100, 30);
         addButton.setBorder(null);
         addButton.setFocusPainted(false);
+        addButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addButton.addActionListener(e -> openAddItem());
         buttonPanel.add(addButton);
 
-        editButton = new javax.swing.JButton("Edit Item");
+        editButton = new JButton("Edit Item");
         editButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         editButton.setBackground(new Color(255, 153, 0));
         editButton.setForeground(Color.WHITE);
         editButton.setBounds(120, 10, 100, 30);
         editButton.setBorder(null);
         editButton.setFocusPainted(false);
+        editButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         editButton.addActionListener(e -> openEditItem());
         buttonPanel.add(editButton);
 
-        deleteButton = new javax.swing.JButton("Delete Item");
+        deleteButton = new JButton("Delete Item");
         deleteButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         deleteButton.setBackground(new Color(204, 0, 0));
         deleteButton.setForeground(Color.WHITE);
         deleteButton.setBounds(230, 10, 110, 30);
         deleteButton.setBorder(null);
         deleteButton.setFocusPainted(false);
+        deleteButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         deleteButton.addActionListener(e -> deleteSelectedItem());
         buttonPanel.add(deleteButton);
 
-        removeButton = new javax.swing.JButton("Remove Selection");
+        removeButton = new JButton("Remove Selection");
         removeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         removeButton.setBackground(new Color(102, 102, 102));
         removeButton.setForeground(Color.WHITE);
         removeButton.setBounds(350, 10, 140, 30);
         removeButton.setBorder(null);
         removeButton.setFocusPainted(false);
-        removeButton.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        removeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         removeButton.addActionListener(e -> clearSelection());
         buttonPanel.add(removeButton);
 
@@ -236,25 +544,20 @@ public class myitems extends javax.swing.JFrame {
         tablePanel.setLayout(null);
         tablePanel.setBackground(new Color(245, 245, 245));
         tablePanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        tablePanel.setBounds(10, 130, 600, 310);
+        tablePanel.setBounds(10, 130, 600, 290);
 
         setupTable();
 
-        jScrollPane1.setBounds(10, 10, 580, 290);
+        jScrollPane1.setBounds(10, 10, 580, 270);
         jScrollPane1.setBorder(null);
+        jScrollPane1.setViewportView(myitemstable);
         tablePanel.add(jScrollPane1);
 
-        contentPanel.add(searchPanel);
-        contentPanel.add(buttonPanel);
-        contentPanel.add(tablePanel);
+        contentWrapper.add(searchPanel);
+        contentWrapper.add(buttonPanel);
+        contentWrapper.add(tablePanel);
 
-        jPanel2.removeAll();
-        jPanel2.setLayout(null);
-        jPanel2.add(contentPanel);
-        contentPanel.setBounds(0, 0, 620, 450);
-
-        jPanel2.revalidate();
-        jPanel2.repaint();
+        contentPanel.add(contentWrapper);
     }
 
     private void setupTable() {
@@ -276,7 +579,6 @@ public class myitems extends javax.swing.JFrame {
         myitemstable.getTableHeader().setForeground(Color.WHITE);
         myitemstable.getTableHeader().setBorder(null);
         myitemstable.setSelectionBackground(new Color(184, 239, 255));
-        myitemstable.setRowHeight(60);
 
         myitemstable.getColumnModel().getColumn(0).setMinWidth(0);
         myitemstable.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -290,23 +592,23 @@ public class myitems extends javax.swing.JFrame {
         TableColumn column1 = myitemstable.getColumnModel().getColumn(1);
         column1.setPreferredWidth(120);
         column1.setMinWidth(100);
-        
+
         TableColumn column2 = myitemstable.getColumnModel().getColumn(2);
         column2.setPreferredWidth(100);
         column2.setMinWidth(80);
-        
+
         TableColumn column3 = myitemstable.getColumnModel().getColumn(3);
         column3.setPreferredWidth(80);
         column3.setMinWidth(70);
-        
+
         TableColumn column4 = myitemstable.getColumnModel().getColumn(4);
         column4.setPreferredWidth(100);
         column4.setMinWidth(80);
-        
+
         TableColumn column5 = myitemstable.getColumnModel().getColumn(5);
         column5.setPreferredWidth(150);
         column5.setMinWidth(120);
-        
+
         TableColumn column6 = myitemstable.getColumnModel().getColumn(6);
         column6.setPreferredWidth(70);
         column6.setMinWidth(60);
@@ -346,19 +648,19 @@ public class myitems extends javax.swing.JFrame {
         rowSorter = new TableRowSorter<>(myitemstable.getModel());
         myitemstable.setRowSorter(rowSorter);
 
-        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+            public void insertUpdate(DocumentEvent e) {
                 filterTable();
             }
 
             @Override
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+            public void removeUpdate(DocumentEvent e) {
                 filterTable();
             }
 
             @Override
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+            public void changedUpdate(DocumentEvent e) {
                 filterTable();
             }
         });
@@ -406,16 +708,11 @@ public class myitems extends javax.swing.JFrame {
         }
     }
 
-    private void refreshItems() {
-        loadItems();
-        JOptionPane.showMessageDialog(this, "Items refreshed!", "Success", JOptionPane.INFORMATION_MESSAGE);
-    }
-
     private void openAddItem() {
         add_items addFrame = new add_items(traderId, traderName);
         addFrame.setVisible(true);
         addFrame.setLocationRelativeTo(null);
-//        this.dispose();
+        this.dispose();
     }
 
     private void openEditItem() {
@@ -427,7 +724,7 @@ public class myitems extends javax.swing.JFrame {
         edit_items editFrame = new edit_items(traderId, traderName, selectedItemId);
         editFrame.setVisible(true);
         editFrame.setLocationRelativeTo(null);
-//        this.dispose();
+        this.dispose();
     }
 
     private void deleteSelectedItem() {
@@ -437,8 +734,10 @@ public class myitems extends javax.swing.JFrame {
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete this item?", "Confirm Delete",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Are you sure you want to delete this item?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "DELETE FROM tbl_items WHERE items_id = ? AND trader_id = ?";
@@ -450,58 +749,46 @@ public class myitems extends javax.swing.JFrame {
         }
     }
 
-    private void openDashboard() {
-        trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
-        dashboard.setVisible(true);
-        dashboard.setLocationRelativeTo(null);
-        this.dispose();
+    private void setActivePanel(JPanel panel) {
+        if (activePanel != null) {
+            activePanel.setBackground(themeColor);
+        }
+        activePanel = panel;
+        activePanel.setBackground(activeColor);
     }
 
-    private void openFindItems() {
-        finditems findItemsFrame = new finditems(traderId, traderName);
-        findItemsFrame.setVisible(true);
-        findItemsFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openTrades() {
-        trades tradesFrame = new trades(traderId, traderName);
-        tradesFrame.setVisible(true);
-        tradesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openMessages() {
-        messages messagesFrame = new messages(traderId, traderName);
-        messagesFrame.setVisible(true);
-        messagesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openReports() {
-        reports reportsFrame = new reports(traderId, traderName);
-        reportsFrame.setVisible(true);
-        reportsFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openProfile() {
-        profile profileFrame = new profile();
-        profileFrame.setVisible(true);
-        profileFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            landing.landing landingFrame = new landing.landing();
-            landingFrame.setVisible(true);
-            landingFrame.setLocationRelativeTo(null);
+    private void handleMenuClick(JPanel panel) {
+        setActivePanel(panel);
+        
+        if (panel == dashboardPanel) {
+            trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
+            dashboard.setVisible(true);
+            dashboard.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == findItemsPanel) {
+            finditems findItemsFrame = new finditems(traderId, traderName);
+            findItemsFrame.setVisible(true);
+            findItemsFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == tradesPanel) {
+            trades tradesFrame = new trades(traderId, traderName);
+            tradesFrame.setVisible(true);
+            tradesFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == messagesPanel) {
+            messages messagesFrame = new messages(traderId, traderName);
+            messagesFrame.setVisible(true);
+            messagesFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == reportsPanel) {
+            reports reportsFrame = new reports(traderId, traderName);
+            reportsFrame.setVisible(true);
+            reportsFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == settingsPanel) {
+            settings settingsFrame = new settings(traderId, traderName);
+            settingsFrame.setVisible(true);
+            settingsFrame.setLocationRelativeTo(null);
             this.dispose();
         }
     }
@@ -510,445 +797,50 @@ public class myitems extends javax.swing.JFrame {
         @Override
         public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
-            javax.swing.JLabel label = new javax.swing.JLabel();
-            label.setHorizontalAlignment(javax.swing.JLabel.CENTER);
-            label.setVerticalAlignment(javax.swing.JLabel.CENTER);
-            
-            if (value != null && !value.toString().isEmpty()) {
+
+            JPanel panel = new JPanel(new java.awt.BorderLayout());
+            panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+
+            JLabel label = new JLabel();
+            label.setHorizontalAlignment(JLabel.CENTER);
+            label.setVerticalAlignment(JLabel.CENTER);
+            label.setOpaque(false);
+
+            if (value != null && !value.toString().trim().isEmpty()) {
                 try {
-                    String imagePath = "src/" + value.toString().replace(".", "/");
-                    File imgFile = new File(imagePath);
-                    if (imgFile.exists()) {
-                        ImageIcon icon = new ImageIcon(imagePath);
-                        Image img = icon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-                        label.setIcon(new ImageIcon(img));
+                    String imagePath = value.toString().trim();
+                    String filePath = convertResourcePathToFilePath(imagePath);
+
+                    ImageIcon imageIcon = null;
+                    if (filePath != null) {
+                        imageIcon = createScaledImageIcon(filePath, 50, 50);
+                    }
+
+                    if (imageIcon != null) {
+                        label.setIcon(imageIcon);
+                        label.setText("");
                     } else {
-                        label.setText("No Image");
+                        label.setIcon(null);
+                        label.setText("Image Missing");
                         label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                        label.setForeground(Color.GRAY);
                     }
                 } catch (Exception e) {
-                    label.setText("Error");
+                    label.setIcon(null);
+                    label.setText("Image Missing");
+                    label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                    label.setForeground(Color.GRAY);
+                    System.out.println("Error loading item image: " + e.getMessage());
                 }
             } else {
+                label.setIcon(null);
                 label.setText("No Image");
                 label.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                label.setForeground(Color.GRAY);
             }
-            
-            if (isSelected) {
-                label.setBackground(table.getSelectionBackground());
-                label.setOpaque(true);
-            }
-            
-            return label;
+
+            panel.add(label, java.awt.BorderLayout.CENTER);
+            return panel;
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private void initComponents() {
-
-        tradermenu1 = new javax.swing.JPanel();
-        logotext = new javax.swing.JLabel();
-        avatar = new javax.swing.JPanel();
-        avatarletter = new javax.swing.JLabel();
-        username = new javax.swing.JLabel();
-        barterzonelogo = new javax.swing.JLabel();
-        paneldashboard = new javax.swing.JPanel();
-        dashboardicon = new javax.swing.JLabel();
-        dashboard = new javax.swing.JLabel();
-        panelmyitems = new javax.swing.JPanel();
-        myitemsicon = new javax.swing.JLabel();
-        myitems = new javax.swing.JLabel();
-        panelfinditems = new javax.swing.JPanel();
-        finditemsicon = new javax.swing.JLabel();
-        finditems = new javax.swing.JLabel();
-        paneltrades = new javax.swing.JPanel();
-        tradesicon = new javax.swing.JLabel();
-        trades = new javax.swing.JLabel();
-        panelmessages = new javax.swing.JPanel();
-        messagesicon = new javax.swing.JLabel();
-        messages = new javax.swing.JLabel();
-        panellogout = new javax.swing.JPanel();
-        logout = new javax.swing.JLabel();
-        logouticon = new javax.swing.JLabel();
-        panelreports = new javax.swing.JPanel();
-        Reports = new javax.swing.JLabel();
-        reportsicon = new javax.swing.JLabel();
-        panelprofile = new javax.swing.JPanel();
-        profileicon = new javax.swing.JLabel();
-        Profile = new javax.swing.JLabel();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        CurrentDate = new javax.swing.JLabel();
-        jPanel2 = new javax.swing.JPanel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        myitemstable = new javax.swing.JTable();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(800, 500));
-        setPreferredSize(new java.awt.Dimension(800, 500));
-        setResizable(false);
-
-        tradermenu1.setBackground(new java.awt.Color(12, 192, 223));
-        tradermenu1.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(8, 150, 175), 1, true));
-        tradermenu1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        logotext.setFont(new java.awt.Font("Segoe UI", 1, 22));
-        logotext.setForeground(new java.awt.Color(255, 255, 255));
-        logotext.setText("BarterZone");
-        logotext.setAlignmentX(0.5F);
-        tradermenu1.add(logotext, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 40));
-
-        avatar.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3));
-        avatar.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        avatarletter.setFont(new java.awt.Font("Arial", 1, 36));
-        avatarletter.setForeground(new java.awt.Color(12, 192, 223));
-        avatarletter.setText("T");
-        avatar.add(avatarletter, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 10, 50, 30));
-
-        username.setBackground(new java.awt.Color(255, 255, 255));
-        username.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        username.setForeground(new java.awt.Color(255, 255, 255));
-        avatar.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, 110, 30));
-
-        tradermenu1.add(avatar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, 110, 60));
-
-        barterzonelogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logo.png")));
-        tradermenu1.add(barterzonelogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 40, 40));
-
-        paneldashboard.setBackground(new java.awt.Color(12, 192, 223));
-
-        dashboardicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/dashboard.png")));
-
-        dashboard.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        dashboard.setForeground(new java.awt.Color(255, 255, 255));
-        dashboard.setText("Dashboard");
-
-        javax.swing.GroupLayout paneldashboardLayout = new javax.swing.GroupLayout(paneldashboard);
-        paneldashboard.setLayout(paneldashboardLayout);
-        paneldashboardLayout.setHorizontalGroup(
-            paneldashboardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneldashboardLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(dashboardicon, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(dashboard, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(14, 14, 14))
-        );
-        paneldashboardLayout.setVerticalGroup(
-            paneldashboardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(dashboardicon, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-            .addGroup(paneldashboardLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(dashboard)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(paneldashboard, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 130, 40));
-
-        panelmyitems.setBackground(new java.awt.Color(12, 192, 223));
-
-        myitemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/myitems.png")));
-
-        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        myitems.setForeground(new java.awt.Color(255, 255, 255));
-        myitems.setText("My Items");
-
-        javax.swing.GroupLayout panelmyitemsLayout = new javax.swing.GroupLayout(panelmyitems);
-        panelmyitems.setLayout(panelmyitemsLayout);
-        panelmyitemsLayout.setHorizontalGroup(
-            panelmyitemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmyitemsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(myitemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(myitems)
-                .addContainerGap(17, Short.MAX_VALUE))
-        );
-        panelmyitemsLayout.setVerticalGroup(
-            panelmyitemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmyitemsLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panelmyitemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(myitems)
-                    .addComponent(myitemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(21, 21, 21))
-        );
-
-        tradermenu1.add(panelmyitems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 160, 130, 40));
-
-        panelfinditems.setBackground(new java.awt.Color(12, 192, 223));
-
-        finditemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/finditems.png")));
-
-        finditems.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        finditems.setForeground(new java.awt.Color(255, 255, 255));
-        finditems.setText("Find Items");
-
-        javax.swing.GroupLayout panelfinditemsLayout = new javax.swing.GroupLayout(panelfinditems);
-        panelfinditems.setLayout(panelfinditemsLayout);
-        panelfinditemsLayout.setHorizontalGroup(
-            panelfinditemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelfinditemsLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(finditemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(finditems)
-                .addGap(18, 18, 18))
-        );
-        panelfinditemsLayout.setVerticalGroup(
-            panelfinditemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelfinditemsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelfinditemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(finditems)
-                    .addComponent(finditemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(panelfinditems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 130, 40));
-
-        paneltrades.setBackground(new java.awt.Color(12, 192, 223));
-
-        tradesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/trade.png")));
-
-        trades.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        trades.setForeground(new java.awt.Color(255, 255, 255));
-        trades.setText("Trades");
-
-        javax.swing.GroupLayout paneltradesLayout = new javax.swing.GroupLayout(paneltrades);
-        paneltrades.setLayout(paneltradesLayout);
-        paneltradesLayout.setHorizontalGroup(
-            paneltradesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneltradesLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(tradesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(trades)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        paneltradesLayout.setVerticalGroup(
-            paneltradesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneltradesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(paneltradesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(trades)
-                    .addComponent(tradesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(21, 21, 21))
-        );
-
-        tradermenu1.add(paneltrades, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, 130, 40));
-
-        panelmessages.setBackground(new java.awt.Color(12, 192, 223));
-
-        messagesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/messages.png")));
-
-        messages.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        messages.setForeground(new java.awt.Color(255, 255, 255));
-        messages.setText("Messages");
-
-        javax.swing.GroupLayout panelmessagesLayout = new javax.swing.GroupLayout(panelmessages);
-        panelmessages.setLayout(panelmessagesLayout);
-        panelmessagesLayout.setHorizontalGroup(
-            panelmessagesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmessagesLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(messagesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(messages)
-                .addContainerGap(14, Short.MAX_VALUE))
-        );
-        panelmessagesLayout.setVerticalGroup(
-            panelmessagesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmessagesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panelmessagesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(messages)
-                    .addComponent(messagesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22))
-        );
-
-        tradermenu1.add(panelmessages, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 280, 130, 40));
-
-        panellogout.setBackground(new java.awt.Color(12, 192, 223));
-
-        logout.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        logout.setForeground(new java.awt.Color(255, 255, 255));
-        logout.setText("Logout");
-
-        logouticon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logout.png")));
-
-        javax.swing.GroupLayout panellogoutLayout = new javax.swing.GroupLayout(panellogout);
-        panellogout.setLayout(panellogoutLayout);
-        panellogoutLayout.setHorizontalGroup(
-            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(16, 16, 16)
-                .addComponent(logout)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        panellogoutLayout.setVerticalGroup(
-            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(logout)
-                    .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22))
-        );
-
-        tradermenu1.add(panellogout, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 130, 40));
-
-        panelreports.setBackground(new java.awt.Color(12, 192, 223));
-
-        Reports.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        Reports.setForeground(new java.awt.Color(255, 255, 255));
-        Reports.setText("Reports");
-
-        reportsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/report.png")));
-
-        javax.swing.GroupLayout panelreportsLayout = new javax.swing.GroupLayout(panelreports);
-        panelreports.setLayout(panelreportsLayout);
-        panelreportsLayout.setHorizontalGroup(
-            panelreportsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelreportsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(reportsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(Reports)
-                .addContainerGap(27, Short.MAX_VALUE))
-        );
-        panelreportsLayout.setVerticalGroup(
-            panelreportsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelreportsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelreportsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(reportsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(Reports, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(panelreports, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 320, 130, 40));
-
-        panelprofile.setBackground(new java.awt.Color(12, 192, 223));
-
-        profileicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/profile.png")));
-
-        Profile.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        Profile.setForeground(new java.awt.Color(255, 255, 255));
-        Profile.setText("Profile");
-
-        javax.swing.GroupLayout panelprofileLayout = new javax.swing.GroupLayout(panelprofile);
-        panelprofile.setLayout(panelprofileLayout);
-        panelprofileLayout.setHorizontalGroup(
-            panelprofileLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelprofileLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(profileicon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(Profile)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        panelprofileLayout.setVerticalGroup(
-            panelprofileLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelprofileLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelprofileLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(Profile)
-                    .addComponent(profileicon, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(panelprofile, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 360, 130, 40));
-
-        jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153), 2));
-        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30));
-        jLabel1.setText("My Items");
-        jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, 30));
-
-        CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
-        CurrentDate.setForeground(new java.awt.Color(102, 102, 102));
-        CurrentDate.setText("jLabel2");
-        jPanel1.add(CurrentDate, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 10, 200, 30));
-
-        jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        myitemstable.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null},
-                {null, null, null, null, null, null, null, null}
-            },
-            new String [] {
-                "ID", "Item Name", "Brand", "Condition", "Date", "Description", "Status", "Photo"
-            }
-        ));
-        jScrollPane1.setViewportView(myitemstable);
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(tradermenu1, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE)))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(tradermenu1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 450, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(0, 0, 0))
-        );
-
-        pack();
-    }
-
-    private javax.swing.JLabel CurrentDate;
-    private javax.swing.JLabel Profile;
-    private javax.swing.JLabel Reports;
-    private javax.swing.JPanel avatar;
-    private javax.swing.JLabel avatarletter;
-    private javax.swing.JLabel barterzonelogo;
-    private javax.swing.JLabel dashboard;
-    private javax.swing.JLabel dashboardicon;
-    private javax.swing.JLabel finditems;
-    private javax.swing.JLabel finditemsicon;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel logotext;
-    private javax.swing.JLabel logout;
-    private javax.swing.JLabel logouticon;
-    private javax.swing.JLabel messages;
-    private javax.swing.JLabel messagesicon;
-    private javax.swing.JLabel myitems;
-    private javax.swing.JLabel myitemsicon;
-    private javax.swing.JTable myitemstable;
-    private javax.swing.JPanel paneldashboard;
-    private javax.swing.JPanel panelfinditems;
-    private javax.swing.JPanel panellogout;
-    private javax.swing.JPanel panelmessages;
-    private javax.swing.JPanel panelmyitems;
-    private javax.swing.JPanel panelprofile;
-    private javax.swing.JPanel panelreports;
-    private javax.swing.JPanel paneltrades;
-    private javax.swing.JLabel profileicon;
-    private javax.swing.JLabel reportsicon;
-    private javax.swing.JPanel tradermenu1;
-    private javax.swing.JLabel trades;
-    private javax.swing.JLabel tradesicon;
-    private javax.swing.JLabel username;
 }

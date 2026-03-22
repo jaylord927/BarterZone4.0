@@ -232,7 +232,6 @@ public class signup extends javax.swing.JFrame {
     private void homebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_homebuttonActionPerformed
         landing.landing landingFrame = new landing.landing();
         landingFrame.setVisible(true);
-        landingFrame.pack();
         landingFrame.setLocationRelativeTo(null);
         this.dispose();
 

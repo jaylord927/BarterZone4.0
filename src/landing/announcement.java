@@ -1,4 +1,4 @@
-package BarterZone.Landing;
+package landing;
 
 import database.config.config;
 import java.awt.Color;
@@ -81,7 +81,7 @@ public class announcement extends javax.swing.JFrame {
         currentDateLabel.setBounds(450, 25, 250, 30);
         headerPanel.add(currentDateLabel);
 
-        backButton = new JButton("← Back");
+        backButton = new JButton(" Back");
         backButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         backButton.setBackground(new Color(0, 102, 102));
         backButton.setForeground(Color.WHITE);
@@ -92,7 +92,7 @@ public class announcement extends javax.swing.JFrame {
         backButton.addActionListener(e -> dispose());
         headerPanel.add(backButton);
 
-        refreshButton = new JButton("↻");
+        refreshButton = new JButton("");
         refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         refreshButton.setBackground(new Color(0, 102, 102));
         refreshButton.setForeground(Color.WHITE);
@@ -199,7 +199,7 @@ public class announcement extends javax.swing.JFrame {
         card.setBounds(10, yPos, 720, cardHeight);
 
         // Type indicator
-        JLabel typeLabel = new JLabel("🔔 " + type);
+        JLabel typeLabel = new JLabel(" " + type);
         typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         typeLabel.setForeground(getTypeColor(type));
         typeLabel.setBounds(15, 10, 200, typeHeight);

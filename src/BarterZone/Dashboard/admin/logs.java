@@ -507,7 +507,8 @@ public class logs extends javax.swing.JFrame {
     }
 
     private void setupAdminTable() {
-        String[] columns = {"Log ID", "Date & Time", "Admin", "Action", "Description", "IP Address"};
+        // FIXED: Removed ip_address column since it doesn't exist in the table
+        String[] columns = {"Log ID", "Date & Time", "Admin", "Action", "Description"};
         adminTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -526,13 +527,12 @@ public class logs extends javax.swing.JFrame {
         adminTable.setSelectionBackground(new Color(184, 239, 255));
         adminTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Set column widths
+        // Set column widths - adjusted since we removed ip_address
         adminTable.getColumnModel().getColumn(0).setPreferredWidth(50);
         adminTable.getColumnModel().getColumn(1).setPreferredWidth(130);
         adminTable.getColumnModel().getColumn(2).setPreferredWidth(120);
         adminTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-        adminTable.getColumnModel().getColumn(4).setPreferredWidth(300);
-        adminTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        adminTable.getColumnModel().getColumn(4).setPreferredWidth(400);
 
         adminTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tabbedPane.getSelectedIndex() == 0) {
@@ -549,7 +549,8 @@ public class logs extends javax.swing.JFrame {
     }
 
     private void setupTraderTable() {
-        String[] columns = {"Log ID", "Date & Time", "Trader", "Action", "Description", "IP Address"};
+        // FIXED: Removed ip_address column
+        String[] columns = {"Log ID", "Date & Time", "Trader", "Action", "Description"};
         traderTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -568,13 +569,12 @@ public class logs extends javax.swing.JFrame {
         traderTable.setSelectionBackground(new Color(200, 230, 201));
         traderTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Set column widths
+        // Set column widths - adjusted since we removed ip_address
         traderTable.getColumnModel().getColumn(0).setPreferredWidth(50);
         traderTable.getColumnModel().getColumn(1).setPreferredWidth(130);
         traderTable.getColumnModel().getColumn(2).setPreferredWidth(120);
         traderTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-        traderTable.getColumnModel().getColumn(4).setPreferredWidth(300);
-        traderTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        traderTable.getColumnModel().getColumn(4).setPreferredWidth(400);
 
         traderTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tabbedPane.getSelectedIndex() == 1) {
@@ -595,9 +595,9 @@ public class logs extends javax.swing.JFrame {
         adminTableModel.setRowCount(0);
         traderTableModel.setRowCount(0);
 
-        // Load admin logs from tbl_logs
+        // FIXED: Removed ip_address from the query
         String adminSql = "SELECT l.log_id, l.log_date, l.action, l.description, "
-                + "u.user_fullname as admin_name, l.ip_address "
+                + "u.user_fullname as admin_name "
                 + "FROM tbl_logs l "
                 + "LEFT JOIN tbl_users u ON l.admin_id = u.user_id "
                 + "ORDER BY l.log_date DESC";
@@ -609,12 +609,11 @@ public class logs extends javax.swing.JFrame {
                 formatDateTime(log.get("log_date")),
                 log.get("admin_name") != null ? log.get("admin_name") : "System",
                 log.get("action") != null ? log.get("action") : "N/A",
-                log.get("description") != null ? log.get("description") : "N/A",
-                log.get("ip_address") != null ? log.get("ip_address") : "127.0.0.1"
+                log.get("description") != null ? log.get("description") : "N/A"
             });
         }
 
-        // Load trader actions from various tables (excluding messages)
+        // FIXED: Fixed the trader logs query - removed item_Status and added proper status display
         String traderSql = "SELECT 'trade' as source, t.trade_id as id, t.trade_DateRequest as date, "
                 + "'Trade Request' as action, "
                 + "u.user_fullname as trader_name, "
@@ -625,7 +624,8 @@ public class logs extends javax.swing.JFrame {
                 + "SELECT 'item' as source, i.items_id as id, i.created_date as date, "
                 + "'Item Action' as action, "
                 + "u.user_fullname as trader_name, "
-                + "('Item: ' || i.item_Name || ' - ' || i.item_Status) as description "
+                // FIXED: Changed item_Status to is_active
+                + "('Item: ' || i.item_Name || ' - ' || CASE WHEN i.is_active = 1 THEN 'Active' ELSE 'Inactive' END) as description "
                 + "FROM tbl_items i "
                 + "LEFT JOIN tbl_users u ON i.trader_id = u.user_id "
                 + "UNION ALL "
@@ -644,8 +644,7 @@ public class logs extends javax.swing.JFrame {
                 formatDateTime(log.get("date")),
                 log.get("trader_name") != null ? log.get("trader_name") : "Unknown",
                 log.get("action"),
-                log.get("description"),
-                "N/A"
+                log.get("description")
             });
         }
 
@@ -668,30 +667,11 @@ public class logs extends javax.swing.JFrame {
             adminFilterPattern.append("(?i).*").append(searchText).append(".*");
         }
         
-        // Apply date filter
-        java.util.Date now = new Date();
-        java.util.Calendar cal = java.util.Calendar.getInstance();
+        // Apply date filter - simplified for now
+        // In a real implementation, you would filter by date ranges
         
-        switch (selectedDate) {
-            case "Today":
-                cal.setTime(now);
-                cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
-                cal.set(java.util.Calendar.MINUTE, 0);
-                cal.set(java.util.Calendar.SECOND, 0);
-                Date startToday = cal.getTime();
-                // This would require more complex filtering - simplified for now
-                break;
-            case "This Week":
-                cal.setTime(now);
-                cal.set(java.util.Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
-                Date startWeek = cal.getTime();
-                break;
-        }
-        
-        // Apply action filter
-        if (!"All Actions".equals(selectedAction)) {
-            // This would need action column filtering
-        }
+        // Apply action filter - simplified for now
+        // In a real implementation, you would filter by action type
         
         if (adminRowSorter != null) {
             if (adminFilterPattern.length() > 0) {

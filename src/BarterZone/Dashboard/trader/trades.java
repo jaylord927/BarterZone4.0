@@ -1,10 +1,20 @@
 package BarterZone.Dashboard.trader;
 
 import BarterZone.resources.IconManager;
+import BarterZone.Dashboard.session.user_session;
 import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.Cursor;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -13,9 +23,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JLabel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
@@ -27,7 +40,47 @@ public class trades extends javax.swing.JFrame {
     private String traderName;
     private config db;
     private IconManager iconManager;
+    private user_session session;
 
+    private JPanel sidePanel;
+    private JPanel avatarContainer;
+    private JLabel avatarLabel;
+    private JLabel avatarInitialLabel;
+    
+    private JPanel dashboardPanel;
+    private JLabel dashboardIcon;
+    private JLabel dashboardLabel;
+    
+    private JPanel myItemsPanel;
+    private JLabel myItemsIcon;
+    private JLabel myItemsLabel;
+    
+    private JPanel findItemsPanel;
+    private JLabel findItemsIcon;
+    private JLabel findItemsLabel;
+    
+    private JPanel tradesPanel;
+    private JLabel tradesIcon;
+    private JLabel tradesLabel;
+    
+    private JPanel messagesPanel;
+    private JLabel messagesIcon;
+    private JLabel messagesLabel;
+    
+    private JPanel reportsPanel;
+    private JLabel reportsIcon;
+    private JLabel reportsLabel;
+    
+    private JPanel settingsPanel;
+    private JLabel settingsIcon;
+    private JLabel settingsLabel;
+    
+    private JPanel headerPanel;
+    private JLabel headerTitle;
+    private JLabel currentDateLabel;
+    
+    private JPanel contentPanel;
+    
     private javax.swing.JTabbedPane tabbedPane;
 
     private DefaultTableModel availableTableModel;
@@ -46,155 +99,412 @@ public class trades extends javax.swing.JFrame {
     private javax.swing.JTable completedTable;
     private JScrollPane completedScrollPane;
 
-    private javax.swing.JButton acceptButton;
-    private javax.swing.JButton declineButton;
-    private javax.swing.JButton completeButton;
-    private javax.swing.JButton cancelButton;
-    private javax.swing.JButton messageButton;
-    private javax.swing.JButton viewFullGuideButton;
-    private javax.swing.JButton manageTradeButton;
-    private javax.swing.JButton viewTraderDetailsButton;
-    private javax.swing.JButton viewMyDetailsButton;
+    private JButton acceptButton;
+    private JButton declineButton;
+    private JButton messageButton;
+    private JButton viewFullGuideButton;
+    private JButton manageTradeButton;
+    private JButton viewTraderDetailsButton;
+    private JButton viewMyDetailsButton;
 
-    private javax.swing.JLabel pendingCountLabel;
-    private javax.swing.JLabel activeCountLabel;
-    private javax.swing.JLabel completedCountLabel;
+    private JLabel pendingCountLabel;
+    private JLabel activeCountLabel;
+    private JLabel completedCountLabel;
 
     private JPanel instructionsPanel;
     private javax.swing.JTextArea instructionsArea;
     private JScrollPane instructionsScrollPane;
-    private javax.swing.JLabel selectedTradeInfoLabel;
+    private JLabel selectedTradeInfoLabel;
 
+    private Color themeColor = new Color(12, 192, 223);
     private Color hoverColor = new Color(70, 210, 235);
-    private Color defaultColor = new Color(12, 192, 223);
     private Color activeColor = new Color(0, 150, 180);
+    private Color headerBgColor = new Color(245, 245, 245);
+    private Color textColor = new Color(80, 80, 80);
+    private Color accentColor = new Color(0, 102, 102);
+    private Color initialColor = new Color(0, 102, 102);
+    
+    private Color pendingColor = new Color(255, 153, 0);
+    private Color activeColor2 = new Color(0, 102, 102);
+    private Color completedColor = new Color(46, 125, 50);
+    private Color disputedColor = new Color(204, 0, 0);
+    
     private JPanel activePanel = null;
+    
+    private int selectedTradeId = -1;
+    private int selectedOtherTraderId = -1;
+    private String selectedOtherTraderName = "";
+    private String selectedMyItem = "";
+    private String selectedTheirItem = "";
+    private String selectedTradeStatus = "";
 
     public trades(int traderId, String traderName) {
         this.traderId = traderId;
         this.traderName = traderName;
+        this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
+        
         initComponents();
-
+        initializeIconLabels();
         loadAndResizeIcons();
-
-        setActivePanel(paneltrades);
-
-        setupCustomComponents();
+        setupSidePanel();
+        setupHeader();
+        setupContentPanel();
         loadAllData();
-
-        setupSidebarHoverEffects();
+        loadProfileAvatar();
 
         setTitle("Trades - " + traderName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+    }
+
+    private void initComponents() {
+        getContentPane().setLayout(null);
+        getContentPane().setBackground(Color.WHITE);
+
+        sidePanel = new JPanel();
+        sidePanel.setLayout(null);
+        sidePanel.setBackground(themeColor);
+        sidePanel.setBounds(0, 0, 180, 500);
+        sidePanel.setBorder(new LineBorder(new Color(8, 150, 175), 1, true));
+        getContentPane().add(sidePanel);
+
+        headerPanel = new JPanel();
+        headerPanel.setLayout(null);
+        headerPanel.setBackground(headerBgColor);
+        headerPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
+        headerPanel.setBounds(180, 0, 620, 70);
+        getContentPane().add(headerPanel);
+
+        contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBackground(new Color(250, 250, 250));
+        contentPanel.setBounds(180, 70, 620, 430);
+        getContentPane().add(contentPanel);
+    }
+
+    private void initializeIconLabels() {
+        dashboardIcon = new JLabel();
+        myItemsIcon = new JLabel();
+        findItemsIcon = new JLabel();
+        tradesIcon = new JLabel();
+        messagesIcon = new JLabel();
+        reportsIcon = new JLabel();
+        settingsIcon = new JLabel();
     }
 
     private void loadAndResizeIcons() {
-        setIconSafely(dashboardicon, iconManager.getSideMenuIcon("dashboard"));
-        setIconSafely(myitemsicon, iconManager.getSideMenuIcon("myitems"));
-        setIconSafely(finditemsicon, iconManager.getSideMenuIcon("finditems"));
-        setIconSafely(tradesicon, iconManager.getSideMenuIcon("trade"));
-        setIconSafely(messagesicon, iconManager.getSideMenuIcon("messages"));
-        setIconSafely(reportsicon, iconManager.getSideMenuIcon("report"));
-        setIconSafely(profileicon, iconManager.getSideMenuIcon("profile"));
-        setIconSafely(logouticon, iconManager.getSideMenuIcon("logout"));
-
-        setIconSafely(barterzonelogo, iconManager.getLogoIcon());
+        setIconSafely(dashboardIcon, iconManager.getSideMenuIcon("dashboard"));
+        setIconSafely(myItemsIcon, iconManager.getSideMenuIcon("myitems"));
+        setIconSafely(findItemsIcon, iconManager.getSideMenuIcon("finditems"));
+        setIconSafely(tradesIcon, iconManager.getSideMenuIcon("trade"));
+        setIconSafely(messagesIcon, iconManager.getSideMenuIcon("messages"));
+        setIconSafely(reportsIcon, iconManager.getSideMenuIcon("report"));
+        setIconSafely(settingsIcon, iconManager.getSideMenuIcon("setting"));
     }
 
-    private void setIconSafely(javax.swing.JLabel label, ImageIcon icon) {
-        if (icon != null) {
+    private void setIconSafely(JLabel label, ImageIcon icon) {
+        if (label != null && icon != null) {
             label.setIcon(icon);
             label.setText("");
         }
     }
 
-    private void setupSidebarHoverEffects() {
-        applyHoverEffectToPanelAndLabel(paneldashboard, dashboard);
-        applyHoverEffectToPanelAndLabel(panelmyitems, myitems);
-        applyHoverEffectToPanelAndLabel(panelfinditems, finditems);
-        applyHoverEffectToPanelAndLabel(paneltrades, trades);
-        applyHoverEffectToPanelAndLabel(panelmessages, messages);
-        applyHoverEffectToPanelAndLabel(panelreports, Reports);
-        applyHoverEffectToPanelAndLabel(panelprofile, Profile);
-        applyHoverEffectToPanelAndLabel(panellogout, logout);
+    private String convertResourcePathToFilePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.trim().isEmpty()) {
+            return null;
+        }
+
+        resourcePath = resourcePath.trim();
+
+        int lastDot = resourcePath.lastIndexOf(".");
+        if (lastDot == -1) {
+            return null;
+        }
+
+        String extension = resourcePath.substring(lastDot + 1);
+        String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
+
+        return "src/" + pathWithoutExtension + "." + extension;
     }
 
-    private void applyHoverEffectToPanelAndLabel(JPanel panel, javax.swing.JLabel label) {
-        java.awt.event.MouseAdapter adapter = new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                setHover(panel);
+    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
+        try {
+            File file = new File(imagePath);
+            if (!file.exists()) {
+                return null;
             }
 
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                setDefault(panel);
+            ImageIcon icon = new ImageIcon(imagePath);
+            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        } catch (Exception e) {
+            System.out.println("Error creating scaled image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private ImageIcon createCircularImageIcon(String imagePath, int width, int height) {
+        try {
+            File file = new File(imagePath);
+            if (!file.exists()) {
+                return null;
             }
 
-            @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
-                if (panel == paneldashboard) {
-                    openDashboard();
-                } else if (panel == panelmyitems) {
-                    openMyItems();
-                } else if (panel == panelfinditems) {
-                    openFindItems();
-                } else if (panel == panelmessages) {
-                    openMessages();
-                } else if (panel == panelreports) {
-                    openReports();
-                } else if (panel == panelprofile) {
-                    openProfile();
-                } else if (panel == panellogout) {
-                    logout();
+            ImageIcon originalIcon = new ImageIcon(imagePath);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+
+            BufferedImage circularImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = circularImage.createGraphics();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setClip(new Ellipse2D.Float(0, 0, width, height));
+            g2.drawImage(scaledImage, 0, 0, width, height, null);
+            g2.dispose();
+
+            return new ImageIcon(circularImage);
+        } catch (Exception e) {
+            System.out.println("Error creating circular image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void loadProfileAvatar() {
+        try {
+            String sql = "SELECT user_profile_picture FROM tbl_users WHERE user_id = ?";
+            List<Map<String, Object>> result = db.fetchRecords(sql, traderId);
+
+            if (!result.isEmpty() && result.get(0).get("user_profile_picture") != null) {
+                String profilePicPath = result.get(0).get("user_profile_picture").toString().trim();
+
+                if (!profilePicPath.isEmpty()) {
+                    String fullPath = convertResourcePathToFilePath(profilePicPath);
+
+                    if (fullPath != null) {
+                        ImageIcon circularIcon = createCircularImageIcon(fullPath, 90, 90);
+
+                        if (circularIcon != null) {
+                            avatarLabel.setIcon(circularIcon);
+                            avatarLabel.setText("");
+                            avatarLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+                            avatarLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
+                            avatarInitialLabel.setVisible(false);
+                            return;
+                        }
+                    }
                 }
             }
+        } catch (Exception e) {
+            System.out.println("Error loading profile image: " + e.getMessage());
+        }
+
+        avatarLabel.setIcon(null);
+        if (traderName != null && !traderName.trim().isEmpty()) {
+            avatarInitialLabel.setText(String.valueOf(traderName.trim().charAt(0)).toUpperCase());
+        } else {
+            avatarInitialLabel.setText("U");
+        }
+        avatarInitialLabel.setVisible(true);
+        avatarLabel.setText("");
+    }
+
+    private void setupSidePanel() {
+        avatarContainer = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Color.WHITE);
+                g2.fillOval(0, 0, 100, 100);
+                g2.setColor(initialColor);
+                g2.setStroke(new java.awt.BasicStroke(3));
+                g2.drawOval(0, 0, 100, 100);
+            }
         };
+        avatarContainer.setLayout(null);
+        avatarContainer.setBounds(40, 20, 100, 100);
+        avatarContainer.setOpaque(false);
+        sidePanel.add(avatarContainer);
 
-        panel.addMouseListener(adapter);
-        label.addMouseListener(adapter);
-    }
+        avatarLabel = new JLabel();
+        avatarLabel.setBounds(0, 0, 100, 100);
+        avatarLabel.setHorizontalAlignment(JLabel.CENTER);
+        avatarLabel.setVerticalAlignment(JLabel.CENTER);
+        avatarContainer.add(avatarLabel);
 
-    private void setActivePanel(JPanel panel) {
-        if (activePanel != null) {
-            activePanel.setBackground(defaultColor);
-        }
-        activePanel = panel;
-        activePanel.setBackground(activeColor);
-    }
-
-    private void setHover(JPanel panel) {
-        if (panel != activePanel) {
-            panel.setBackground(hoverColor);
-        }
-    }
-
-    private void setDefault(JPanel panel) {
-        if (panel != activePanel) {
-            panel.setBackground(defaultColor);
-        }
-    }
-
-    private void setupCustomComponents() {
-        username.setText(traderName);
+        avatarInitialLabel = new JLabel();
+        avatarInitialLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        avatarInitialLabel.setForeground(initialColor);
+        avatarInitialLabel.setHorizontalAlignment(JLabel.CENTER);
+        avatarInitialLabel.setBounds(40, 120, 100, 30);
         if (traderName != null && traderName.length() > 0) {
-            avatarletter.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
+            avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
+        sidePanel.add(avatarInitialLabel);
+        
+        loadProfileAvatar();
+
+        int menuY = 155;
+        int menuHeight = 32;
+        int menuSpacing = 2;
+
+        dashboardPanel = createMenuItem(20, menuY, 140, menuHeight);
+        dashboardIcon = createMenuItemIcon(dashboardPanel, 15, 6, dashboardIcon);
+        dashboardLabel = createMenuItemLabel(dashboardPanel, "Dashboard", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        myItemsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        myItemsIcon = createMenuItemIcon(myItemsPanel, 15, 6, myItemsIcon);
+        myItemsLabel = createMenuItemLabel(myItemsPanel, "My Items", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        findItemsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        findItemsIcon = createMenuItemIcon(findItemsPanel, 15, 6, findItemsIcon);
+        findItemsLabel = createMenuItemLabel(findItemsPanel, "Find Items", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        tradesPanel = createMenuItem(20, menuY, 140, menuHeight);
+        tradesIcon = createMenuItemIcon(tradesPanel, 15, 6, tradesIcon);
+        tradesLabel = createMenuItemLabel(tradesPanel, "Trades", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        messagesPanel = createMenuItem(20, menuY, 140, menuHeight);
+        messagesIcon = createMenuItemIcon(messagesPanel, 15, 6, messagesIcon);
+        messagesLabel = createMenuItemLabel(messagesPanel, "Messages", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        reportsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        reportsIcon = createMenuItemIcon(reportsPanel, 15, 6, reportsIcon);
+        reportsLabel = createMenuItemLabel(reportsPanel, "Reports", 45, 6);
+        menuY += menuHeight + menuSpacing;
+
+        settingsPanel = createMenuItem(20, menuY, 140, menuHeight);
+        settingsIcon = createMenuItemIcon(settingsPanel, 15, 6, settingsIcon);
+        settingsLabel = createMenuItemLabel(settingsPanel, "Settings", 45, 6);
+
+        setActivePanel(tradesPanel);
+    }
+
+    private JPanel createMenuItem(int x, int y, int width, int height) {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+        panel.setBackground(themeColor);
+        panel.setBounds(x, y, width, height);
+        panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        MouseAdapter panelAdapter = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(themeColor);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMenuClick(panel);
+            }
+        };
+        
+        panel.addMouseListener(panelAdapter);
+        sidePanel.add(panel);
+        return panel;
+    }
+
+    private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
+        iconLabel.setBounds(x, y, 25, 20);
+        iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        iconLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(themeColor);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMenuClick(panel);
+            }
+        });
+        
+        panel.add(iconLabel);
+        return iconLabel;
+    }
+
+    private JLabel createMenuItemLabel(JPanel panel, String text, int x, int y) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        label.setForeground(Color.WHITE);
+        label.setBounds(x, y, 100, 20);
+        label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        label.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(hoverColor);
+                }
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (panel != activePanel) {
+                    panel.setBackground(themeColor);
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleMenuClick(panel);
+            }
+        });
+        
+        panel.add(label);
+        return label;
+    }
+
+    private void setupHeader() {
+        headerTitle = new JLabel("Trades");
+        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerTitle.setForeground(accentColor);
+        headerTitle.setBounds(20, 15, 200, 30);
+        headerPanel.add(headerTitle);
 
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMMM yyyy");
-        CurrentDate.setText(sdf.format(new Date()));
+        currentDateLabel = new JLabel(sdf.format(new Date()));
+        currentDateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        currentDateLabel.setForeground(new Color(102, 102, 102));
+        currentDateLabel.setBounds(450, 25, 250, 20);
+        headerPanel.add(currentDateLabel);
+    }
 
-        jPanel2.removeAll();
-        jPanel2.setLayout(null);
-
-        JPanel contentPanel = new JPanel();
+    private void setupContentPanel() {
+        contentPanel.removeAll();
         contentPanel.setLayout(null);
-        contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBounds(0, 0, 620, 450);
+
+        JPanel contentWrapper = new JPanel();
+        contentWrapper.setLayout(null);
+        contentWrapper.setBackground(Color.WHITE);
+        contentWrapper.setBounds(0, 0, 620, 430);
 
         JPanel summaryPanel = new JPanel();
         summaryPanel.setLayout(null);
@@ -204,17 +514,17 @@ public class trades extends javax.swing.JFrame {
 
         JPanel pendingCard = new JPanel();
         pendingCard.setLayout(null);
-        pendingCard.setBackground(new Color(255, 153, 0));
+        pendingCard.setBackground(pendingColor);
         pendingCard.setBounds(10, 10, 130, 50);
         pendingCard.setBorder(new LineBorder(Color.WHITE, 2));
 
-        javax.swing.JLabel pendingTitle = new javax.swing.JLabel("PENDING");
+        JLabel pendingTitle = new JLabel("PENDING");
         pendingTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         pendingTitle.setForeground(Color.WHITE);
         pendingTitle.setBounds(10, 5, 100, 20);
         pendingCard.add(pendingTitle);
 
-        pendingCountLabel = new javax.swing.JLabel("0");
+        pendingCountLabel = new JLabel("0");
         pendingCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         pendingCountLabel.setForeground(Color.WHITE);
         pendingCountLabel.setBounds(90, 15, 40, 30);
@@ -223,17 +533,17 @@ public class trades extends javax.swing.JFrame {
 
         JPanel activeCard = new JPanel();
         activeCard.setLayout(null);
-        activeCard.setBackground(new Color(0, 102, 102));
+        activeCard.setBackground(activeColor2);
         activeCard.setBounds(150, 10, 130, 50);
         activeCard.setBorder(new LineBorder(Color.WHITE, 2));
 
-        javax.swing.JLabel activeTitle = new javax.swing.JLabel("ACTIVE");
+        JLabel activeTitle = new JLabel("ACTIVE");
         activeTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         activeTitle.setForeground(Color.WHITE);
         activeTitle.setBounds(10, 5, 100, 20);
         activeCard.add(activeTitle);
 
-        activeCountLabel = new javax.swing.JLabel("0");
+        activeCountLabel = new JLabel("0");
         activeCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         activeCountLabel.setForeground(Color.WHITE);
         activeCountLabel.setBounds(90, 15, 40, 30);
@@ -242,17 +552,17 @@ public class trades extends javax.swing.JFrame {
 
         JPanel completedCard = new JPanel();
         completedCard.setLayout(null);
-        completedCard.setBackground(new Color(46, 125, 50));
+        completedCard.setBackground(completedColor);
         completedCard.setBounds(290, 10, 130, 50);
         completedCard.setBorder(new LineBorder(Color.WHITE, 2));
 
-        javax.swing.JLabel completedTitle = new javax.swing.JLabel("COMPLETED");
+        JLabel completedTitle = new JLabel("COMPLETED");
         completedTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         completedTitle.setForeground(Color.WHITE);
         completedTitle.setBounds(10, 5, 100, 20);
         completedCard.add(completedTitle);
 
-        completedCountLabel = new javax.swing.JLabel("0");
+        completedCountLabel = new JLabel("0");
         completedCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         completedCountLabel.setForeground(Color.WHITE);
         completedCountLabel.setBounds(90, 15, 40, 30);
@@ -261,31 +571,31 @@ public class trades extends javax.swing.JFrame {
 
         JPanel myItemsCard = new JPanel();
         myItemsCard.setLayout(null);
-        myItemsCard.setBackground(new Color(12, 192, 223));
+        myItemsCard.setBackground(themeColor);
         myItemsCard.setBounds(430, 10, 160, 50);
         myItemsCard.setBorder(new LineBorder(Color.WHITE, 2));
         myItemsCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        java.awt.event.MouseAdapter myItemsAdapter = new java.awt.event.MouseAdapter() {
+        MouseAdapter myItemsAdapter = new MouseAdapter() {
             @Override
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
+            public void mouseClicked(MouseEvent evt) {
                 openMyItems();
             }
             
             @Override
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
+            public void mouseEntered(MouseEvent evt) {
                 myItemsCard.setBackground(hoverColor);
             }
             
             @Override
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                myItemsCard.setBackground(new Color(12, 192, 223));
+            public void mouseExited(MouseEvent evt) {
+                myItemsCard.setBackground(themeColor);
             }
         };
         
         myItemsCard.addMouseListener(myItemsAdapter);
 
-        javax.swing.JLabel myItemsTitle = new javax.swing.JLabel("MY ITEMS →");
+        JLabel myItemsTitle = new JLabel("MY ITEMS →");
         myItemsTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         myItemsTitle.setForeground(Color.WHITE);
         myItemsTitle.setBounds(20, 15, 120, 20);
@@ -297,7 +607,7 @@ public class trades extends javax.swing.JFrame {
         tabbedPane.setBounds(10, 90, 600, 300);
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 14));
         tabbedPane.setBackground(new Color(245, 245, 245));
-        tabbedPane.setForeground(new Color(0, 102, 102));
+        tabbedPane.setForeground(accentColor);
 
         JPanel availablePanel = new JPanel();
         availablePanel.setLayout(null);
@@ -310,7 +620,7 @@ public class trades extends javax.swing.JFrame {
         availableScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         availablePanel.add(availableScrollPane);
 
-        javax.swing.JButton requestTradeButton = new javax.swing.JButton("REQUEST TRADE");
+        JButton requestTradeButton = new JButton("REQUEST TRADE");
         requestTradeButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         requestTradeButton.setBackground(new Color(255, 140, 0));
         requestTradeButton.setForeground(Color.WHITE);
@@ -334,9 +644,9 @@ public class trades extends javax.swing.JFrame {
         pendingScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         pendingPanel.add(pendingScrollPane);
 
-        acceptButton = new javax.swing.JButton("✓ ACCEPT");
+        acceptButton = new JButton("✓ ACCEPT");
         acceptButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        acceptButton.setBackground(new Color(46, 125, 50));
+        acceptButton.setBackground(completedColor);
         acceptButton.setForeground(Color.WHITE);
         acceptButton.setBounds(150, 230, 100, 35);
         acceptButton.setBorder(null);
@@ -346,9 +656,9 @@ public class trades extends javax.swing.JFrame {
         acceptButton.addActionListener(e -> acceptTrade());
         pendingPanel.add(acceptButton);
 
-        declineButton = new javax.swing.JButton("✗ DECLINE");
+        declineButton = new JButton("✗ DECLINE");
         declineButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        declineButton.setBackground(new Color(204, 0, 0));
+        declineButton.setBackground(disputedColor);
         declineButton.setForeground(Color.WHITE);
         declineButton.setBounds(260, 230, 100, 35);
         declineButton.setBorder(null);
@@ -358,9 +668,9 @@ public class trades extends javax.swing.JFrame {
         declineButton.addActionListener(e -> declineTrade());
         pendingPanel.add(declineButton);
 
-        messageButton = new javax.swing.JButton("💬 MESSAGE");
+        messageButton = new JButton("💬 MESSAGE");
         messageButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        messageButton.setBackground(new Color(0, 102, 102));
+        messageButton.setBackground(activeColor2);
         messageButton.setForeground(Color.WHITE);
         messageButton.setBounds(370, 230, 100, 35);
         messageButton.setBorder(null);
@@ -386,16 +696,16 @@ public class trades extends javax.swing.JFrame {
         instructionsPanel = new JPanel();
         instructionsPanel.setLayout(null);
         instructionsPanel.setBackground(new Color(245, 245, 245));
-        instructionsPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
+        instructionsPanel.setBorder(new LineBorder(themeColor, 2));
         instructionsPanel.setBounds(370, 10, 220, 210);
 
-        javax.swing.JLabel instructionsTitle = new javax.swing.JLabel("MANAGE TRADE");
+        JLabel instructionsTitle = new JLabel("TRADE STATUS");
         instructionsTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        instructionsTitle.setForeground(new Color(0, 102, 102));
+        instructionsTitle.setForeground(accentColor);
         instructionsTitle.setBounds(10, 5, 150, 20);
         instructionsPanel.add(instructionsTitle);
 
-        selectedTradeInfoLabel = new javax.swing.JLabel("Select a trade");
+        selectedTradeInfoLabel = new JLabel("Select a trade");
         selectedTradeInfoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 10));
         selectedTradeInfoLabel.setForeground(new Color(102, 102, 102));
         selectedTradeInfoLabel.setBounds(10, 25, 200, 15);
@@ -415,9 +725,9 @@ public class trades extends javax.swing.JFrame {
         instructionsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         instructionsPanel.add(instructionsScrollPane);
 
-        viewFullGuideButton = new javax.swing.JButton("VIEW FULL GUIDE");
+        viewFullGuideButton = new JButton("VIEW FULL GUIDE");
         viewFullGuideButton.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        viewFullGuideButton.setBackground(new Color(12, 192, 223));
+        viewFullGuideButton.setBackground(themeColor);
         viewFullGuideButton.setForeground(Color.WHITE);
         viewFullGuideButton.setBounds(55, 170, 110, 20);
         viewFullGuideButton.setBorder(null);
@@ -429,11 +739,11 @@ public class trades extends javax.swing.JFrame {
 
         activeMainPanel.add(instructionsPanel);
 
-        manageTradeButton = new javax.swing.JButton("MANAGE TRADE");
+        manageTradeButton = new JButton("MANAGE TRADE");
         manageTradeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        manageTradeButton.setBackground(new Color(0, 102, 102));
+        manageTradeButton.setBackground(activeColor2);
         manageTradeButton.setForeground(Color.WHITE);
-        manageTradeButton.setBounds(100, 230, 130, 30);
+        manageTradeButton.setBounds(150, 230, 130, 30);
         manageTradeButton.setBorder(null);
         manageTradeButton.setFocusPainted(false);
         manageTradeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -441,11 +751,11 @@ public class trades extends javax.swing.JFrame {
         manageTradeButton.addActionListener(e -> openManageTrade());
         activeMainPanel.add(manageTradeButton);
 
-        viewTraderDetailsButton = new javax.swing.JButton("VIEW TRADER");
+        viewTraderDetailsButton = new JButton("VIEW TRADER");
         viewTraderDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         viewTraderDetailsButton.setBackground(new Color(255, 153, 0));
         viewTraderDetailsButton.setForeground(Color.WHITE);
-        viewTraderDetailsButton.setBounds(240, 230, 110, 30);
+        viewTraderDetailsButton.setBounds(290, 230, 110, 30);
         viewTraderDetailsButton.setBorder(null);
         viewTraderDetailsButton.setFocusPainted(false);
         viewTraderDetailsButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -453,29 +763,17 @@ public class trades extends javax.swing.JFrame {
         viewTraderDetailsButton.addActionListener(e -> viewTraderDetails());
         activeMainPanel.add(viewTraderDetailsButton);
 
-        viewMyDetailsButton = new javax.swing.JButton("MY DETAILS");
+        viewMyDetailsButton = new JButton("MY DETAILS");
         viewMyDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        viewMyDetailsButton.setBackground(new Color(46, 125, 50));
+        viewMyDetailsButton.setBackground(completedColor);
         viewMyDetailsButton.setForeground(Color.WHITE);
-        viewMyDetailsButton.setBounds(360, 230, 100, 30);
+        viewMyDetailsButton.setBounds(410, 230, 100, 30);
         viewMyDetailsButton.setBorder(null);
         viewMyDetailsButton.setFocusPainted(false);
         viewMyDetailsButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         viewMyDetailsButton.setEnabled(false);
         viewMyDetailsButton.addActionListener(e -> viewMyDetails());
         activeMainPanel.add(viewMyDetailsButton);
-
-        completeButton = new javax.swing.JButton("✓ COMPLETE");
-        completeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        completeButton.setBackground(new Color(46, 125, 50));
-        completeButton.setForeground(Color.WHITE);
-        completeButton.setBounds(470, 230, 110, 30);
-        completeButton.setBorder(null);
-        completeButton.setFocusPainted(false);
-        completeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        completeButton.setEnabled(false);
-        completeButton.addActionListener(e -> completeTrade());
-        activeMainPanel.add(completeButton);
 
         tabbedPane.addTab("Active Trades", activeMainPanel);
 
@@ -492,14 +790,12 @@ public class trades extends javax.swing.JFrame {
 
         tabbedPane.addTab("History", historyPanel);
 
-        contentPanel.add(summaryPanel);
-        contentPanel.add(tabbedPane);
+        contentWrapper.add(summaryPanel);
+        contentWrapper.add(tabbedPane);
 
-        jPanel2.add(contentPanel);
-        contentPanel.setBounds(0, 0, 620, 450);
-
-        jPanel2.revalidate();
-        jPanel2.repaint();
+        contentPanel.add(contentWrapper);
+        contentPanel.revalidate();
+        contentPanel.repaint();
     }
 
     private void setupAvailableTable() {
@@ -515,9 +811,9 @@ public class trades extends javax.swing.JFrame {
         availableTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         availableTable.setRowHeight(25);
         availableTable.setShowGrid(true);
-        availableTable.setGridColor(new Color(12, 192, 223));
+        availableTable.setGridColor(themeColor);
         availableTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        availableTable.getTableHeader().setBackground(new Color(12, 192, 223));
+        availableTable.getTableHeader().setBackground(themeColor);
         availableTable.getTableHeader().setForeground(Color.WHITE);
         availableTable.getTableHeader().setBorder(null);
         availableTable.setSelectionBackground(new Color(184, 239, 255));
@@ -533,7 +829,7 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void setupPendingTable() {
-        String[] columns = {"ID", "Their Item", "Their Item Owner", "My Item", "Date", "Status", "Trade ID"};
+        String[] columns = {"ID", "Their Item", "Trader", "My Item", "Date", "Status", "Trade ID"};
         pendingTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -545,9 +841,9 @@ public class trades extends javax.swing.JFrame {
         pendingTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         pendingTable.setRowHeight(25);
         pendingTable.setShowGrid(true);
-        pendingTable.setGridColor(new Color(12, 192, 223));
+        pendingTable.setGridColor(themeColor);
         pendingTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        pendingTable.getTableHeader().setBackground(new Color(255, 153, 0));
+        pendingTable.getTableHeader().setBackground(pendingColor);
         pendingTable.getTableHeader().setForeground(Color.WHITE);
         pendingTable.getTableHeader().setBorder(null);
         pendingTable.setSelectionBackground(new Color(255, 235, 204));
@@ -575,7 +871,7 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void setupActiveTable() {
-        String[] columns = {"ID", "Their Item", "Owner", "My Item", "Date Started", "Status", "Trade ID"};
+        String[] columns = {"ID", "Their Item", "Owner", "My Item", "Date", "Status", "Trade ID"};
         activeTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -587,9 +883,9 @@ public class trades extends javax.swing.JFrame {
         activeTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         activeTable.setRowHeight(25);
         activeTable.setShowGrid(true);
-        activeTable.setGridColor(new Color(12, 192, 223));
+        activeTable.setGridColor(themeColor);
         activeTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        activeTable.getTableHeader().setBackground(new Color(0, 102, 102));
+        activeTable.getTableHeader().setBackground(activeColor2);
         activeTable.getTableHeader().setForeground(Color.WHITE);
         activeTable.getTableHeader().setBorder(null);
         activeTable.setSelectionBackground(new Color(184, 239, 255));
@@ -608,18 +904,16 @@ public class trades extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting()) {
                     boolean hasSelection = activeTable.getSelectedRow() != -1;
-                    manageTradeButton.setEnabled(hasSelection);
-                    viewTraderDetailsButton.setEnabled(hasSelection);
-                    viewMyDetailsButton.setEnabled(hasSelection);
-                    viewFullGuideButton.setEnabled(hasSelection);
-                    completeButton.setEnabled(hasSelection);
-
                     if (hasSelection) {
                         int modelRow = activeTable.convertRowIndexToModel(activeTable.getSelectedRow());
                         displayTradeInfo(modelRow);
                     } else {
                         selectedTradeInfoLabel.setText("Select a trade");
                         instructionsArea.setText("Select a trade to see options.");
+                        manageTradeButton.setEnabled(false);
+                        viewTraderDetailsButton.setEnabled(false);
+                        viewMyDetailsButton.setEnabled(false);
+                        viewFullGuideButton.setEnabled(false);
                     }
                 }
             }
@@ -639,9 +933,9 @@ public class trades extends javax.swing.JFrame {
         completedTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         completedTable.setRowHeight(25);
         completedTable.setShowGrid(true);
-        completedTable.setGridColor(new Color(12, 192, 223));
+        completedTable.setGridColor(themeColor);
         completedTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        completedTable.getTableHeader().setBackground(new Color(46, 125, 50));
+        completedTable.getTableHeader().setBackground(completedColor);
         completedTable.getTableHeader().setForeground(Color.WHITE);
         completedTable.getTableHeader().setBorder(null);
         completedTable.setSelectionBackground(new Color(200, 230, 201));
@@ -670,10 +964,10 @@ public class trades extends javax.swing.JFrame {
                 + "WHERE i.trader_id != ? AND i.is_active = 1 "
                 + "AND i.items_id NOT IN ("
                 + "    SELECT DISTINCT target_item_id FROM tbl_trade "
-                + "    WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed') "
+                + "    WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed') "
                 + "    UNION "
                 + "    SELECT DISTINCT offer_item_id FROM tbl_trade "
-                + "    WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed')"
+                + "    WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')"
                 + ") "
                 + "ORDER BY i.created_date DESC";
 
@@ -728,8 +1022,7 @@ public class trades extends javax.swing.JFrame {
                 + "CASE WHEN t.offer_trader_id = ? THEN i_target.item_Name ELSE i_offer.item_Name END as their_item, "
                 + "CASE WHEN t.offer_trader_id = ? THEN u_target.user_fullname ELSE u_offer.user_fullname END as other_trader, "
                 + "CASE WHEN t.offer_trader_id = ? THEN i_offer.item_Name ELSE i_target.item_Name END as my_item, "
-                + "t.trade_DateRequest as date, t.trade_status, "
-                + "t.offer_trader_id, t.target_trader_id "
+                + "t.trade_DateRequest as date, t.trade_status "
                 + "FROM tbl_trade t "
                 + "JOIN tbl_items i_offer ON t.offer_item_id = i_offer.items_id "
                 + "JOIN tbl_items i_target ON t.target_item_id = i_target.items_id "
@@ -744,6 +1037,7 @@ public class trades extends javax.swing.JFrame {
         for (Map<String, Object> trade : trades) {
             String status = trade.get("trade_status").toString();
             String displayStatus = "";
+            
             switch (status) {
                 case "negotiating":
                     displayStatus = "Negotiating";
@@ -798,94 +1092,175 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void displayTradeInfo(int modelRow) {
-        int tradeId = Integer.parseInt(activeTableModel.getValueAt(modelRow, 6).toString());
-        String theirItem = activeTableModel.getValueAt(modelRow, 1).toString();
-        String owner = activeTableModel.getValueAt(modelRow, 2).toString();
-        String myItem = activeTableModel.getValueAt(modelRow, 3).toString();
+        selectedTradeId = Integer.parseInt(activeTableModel.getValueAt(modelRow, 6).toString());
+        selectedTheirItem = activeTableModel.getValueAt(modelRow, 1).toString();
+        selectedOtherTraderName = activeTableModel.getValueAt(modelRow, 2).toString();
+        selectedMyItem = activeTableModel.getValueAt(modelRow, 3).toString();
+        selectedTradeStatus = activeTableModel.getValueAt(modelRow, 5).toString();
 
-        selectedTradeInfoLabel.setText("Trade #" + tradeId);
+        String sql = "SELECT offer_trader_id, target_trader_id FROM tbl_trade WHERE trade_id = ?";
+        List<Map<String, Object>> result = db.fetchRecords(sql, selectedTradeId);
+        if (!result.isEmpty()) {
+            int offerId = Integer.parseInt(result.get(0).get("offer_trader_id").toString());
+            int targetId = Integer.parseInt(result.get(0).get("target_trader_id").toString());
+            selectedOtherTraderId = (offerId == traderId) ? targetId : offerId;
+        }
 
-        String info = "TRADE DETAILS\n"
-                + "============\n\n"
-                + "Your Item: " + myItem + "\n"
-                + "Their Item: " + theirItem + "\n"
-                + "Trading With: " + owner + "\n\n"
-                + "OPTIONS AVAILABLE:\n"
-                + "• Manage Trade - Set exchange method and details\n"
-                + "• View Trader - See trader's profile\n"
-                + "• My Details - View your contact information\n"
-                + "• View Full Guide - Complete step-by-step process";
+        selectedTradeInfoLabel.setText("Trade #" + selectedTradeId);
 
-        instructionsArea.setText(info);
+        String detailsSql = "SELECT * FROM tbl_trade WHERE trade_id = ?";
+        List<Map<String, Object>> tradeDetails = db.fetchRecords(detailsSql, selectedTradeId);
+        
+        StringBuilder info = new StringBuilder();
+        info.append("TRADE DETAILS\n");
+        info.append("=============\n\n");
+        info.append("Your Item: ").append(selectedMyItem).append("\n");
+        info.append("Their Item: ").append(selectedTheirItem).append("\n");
+        info.append("Trading With: ").append(selectedOtherTraderName).append("\n\n");
+        
+        if (!tradeDetails.isEmpty()) {
+            Map<String, Object> trade = tradeDetails.get(0);
+            
+            String method = trade.get("exchange_method") != null ? trade.get("exchange_method").toString() : "Not set";
+            info.append("Exchange Method: ").append(method).append("\n");
+            
+            int mySubmitted = trade.get("my_details_submitted") != null ? 
+                Integer.parseInt(trade.get("my_details_submitted").toString()) : 0;
+            int otherSubmitted = trade.get("other_details_submitted") != null ? 
+                Integer.parseInt(trade.get("other_details_submitted").toString()) : 0;
+            
+            info.append("Your Details: ").append(mySubmitted == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
+            info.append("Their Details: ").append(otherSubmitted == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
+            
+            int detailsAgreed = trade.get("details_agreed") != null ? 
+                Integer.parseInt(trade.get("details_agreed").toString()) : 0;
+            info.append("Agreement: ").append(detailsAgreed == 1 ? "✓ Both agreed" : "⏳ Waiting").append("\n");
+            
+            int myPayment = trade.get("my_payment_submitted") != null ? 
+                Integer.parseInt(trade.get("my_payment_submitted").toString()) : 0;
+            int otherPayment = trade.get("other_payment_submitted") != null ? 
+                Integer.parseInt(trade.get("other_payment_submitted").toString()) : 0;
+            int paymentVerified = trade.get("payment_verified") != null ? 
+                Integer.parseInt(trade.get("payment_verified").toString()) : 0;
+            
+            info.append("Your Payment: ").append(myPayment == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
+            info.append("Their Payment: ").append(otherPayment == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
+            info.append("Payment Verified: ").append(paymentVerified == 1 ? "✓ Yes" : "⏳ Pending").append("\n");
+            
+            int myReceived = trade.get("my_item_received") != null ? 
+                Integer.parseInt(trade.get("my_item_received").toString()) : 0;
+            int otherReceived = trade.get("other_item_received") != null ? 
+                Integer.parseInt(trade.get("other_item_received").toString()) : 0;
+            
+            info.append("You Received Item: ").append(myReceived == 1 ? "✓ Yes" : "✗ No").append("\n");
+            info.append("They Received Item: ").append(otherReceived == 1 ? "✓ Yes" : "✗ No").append("\n");
+        }
+        
+        info.append("\nAVAILABLE ACTIONS:\n");
+        info.append("• Manage Trade - Set exchange method and details\n");
+        info.append("• View Trader - See trader's profile\n");
+        info.append("• My Details - View your contact information\n");
+        info.append("• View Full Guide - Complete step-by-step process");
+
+        instructionsArea.setText(info.toString());
+        
+        manageTradeButton.setEnabled(true);
+        viewTraderDetailsButton.setEnabled(true);
+        viewMyDetailsButton.setEnabled(true);
+        viewFullGuideButton.setEnabled(true);
     }
 
     private void showFullGuide() {
-        int selectedRow = activeTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
-
-        int modelRow = activeTable.convertRowIndexToModel(selectedRow);
-        int tradeId = Integer.parseInt(activeTableModel.getValueAt(modelRow, 6).toString());
-
-        String guide = "TRADE PROCESS GUIDE\n"
-                + "===================\n\n"
-                + "STEP 1: Propose Exchange Method\n"
-                + "--------------------------------\n"
-                + "• Click 'Manage Trade' button\n"
-                + "• Choose between Delivery or Meetup\n"
-                + "• Both traders must agree on the method\n\n"
-                + "STEP 2: Exchange Details\n"
-                + "------------------------\n"
-                + "• If Delivery: Enter address, courier, tracking\n"
-                + "• If Meetup: Enter location, date, time, contact info\n"
-                + "• Both traders can see the details\n\n"
-                + "STEP 3: Review & Confirm\n"
-                + "------------------------\n"
-                + "• Review all exchange details\n"
-                + "• Click 'Confirm' when both are ready\n"
-                + "• Admin can assist if needed\n\n"
-                + "STEP 4: Item Receipt\n"
-                + "--------------------\n"
-                + "• Confirm when you have received the item\n"
-                + "• Wait for the other trader to confirm\n\n"
-                + "STEP 5: Complete Trade\n"
-                + "----------------------\n"
-                + "• When both have received items\n"
-                + "• Click 'Complete' to finalize\n"
-                + "• Trade moves to History\n\n"
-                + "NEED HELP?\n"
-                + "----------\n"
-                + "• Contact admin for disputes\n"
-                + "• Use Messages to communicate\n"
-                + "• Admin can mediate if issues arise";
+        String guide = "══════════════════════════════════════════════════════════════\n" +
+                      "                    COMPLETE TRADE GUIDE\n" +
+                      "══════════════════════════════════════════════════════════════\n\n" +
+                      
+                      "STEP 1: PROPOSE EXCHANGE METHOD\n" +
+                      "--------------------------------\n" +
+                      "• Click 'Manage Trade' button\n" +
+                      "• Choose between Delivery or Meetup\n" +
+                      "• Both traders must agree on the method\n" +
+                      "• Once agreed, you'll proceed to Step 2\n\n" +
+                      
+                      "STEP 2: EXCHANGE DETAILS\n" +
+                      "------------------------\n" +
+                      "• Enter your exchange details:\n" +
+                      "  - For Delivery: Address, courier, tracking, special instructions\n" +
+                      "  - For Meetup: Location, date, time, contact info\n" +
+                      "  - OPTIONAL: You can share Google Maps link for meetup location\n" +
+                      "• Both traders enter their details\n" +
+                      "• Review each other's details\n" +
+                      "• When both traders confirm, you proceed to Step 3\n\n" +
+                      
+                      "STEP 3: PAYMENT PROCESSING\n" +
+                      "--------------------------\n" +
+                      "• Admin fee: ₱15.00\n" +
+                      "• Decide who will pay the admin fee:\n" +
+                      "  - Fee payer pays: ₱215 (₱200 item + ₱15 fee)\n" +
+                      "  - Other trader pays: ₱200\n\n" +
+                      
+                      "⚠️  PAYMENT DETAILS - CRITICAL:\n" +
+                      "   You MUST provide your payment information:\n" +
+                      "   • GCash number with registered name\n" +
+                      "   • OR PayMaya number with registered name\n\n" +
+                      
+                      "❗ WARNING: Money is NON-REFUNDABLE if sent to wrong number!\n" +
+                      "   • Double-check your payment details before submitting\n" +
+                      "   • Verify the number is correct and active\n" +
+                      "   • Make sure the name matches your account\n\n" +
+                      
+                      "STEP 4: SHIPPING & RECEIVING\n" +
+                      "----------------------------\n" +
+                      "• Ship your item (if delivery) or prepare for meetup\n" +
+                      "• Update tracking numbers if applicable\n" +
+                      "• Wait for item to arrive\n" +
+                      "• Once you receive the item, mark as received\n" +
+                      "• When both traders mark received, proceed to Step 5\n\n" +
+                      
+                      "STEP 5: COMPLETION & REFUND\n" +
+                      "---------------------------\n" +
+                      "• Admin processes refunds using your provided payment details\n" +
+                      "• Both traders receive ₱200 back\n" +
+                      "• Admin keeps the ₱15 fee\n" +
+                      "• Trade moves to History\n\n" +
+                      
+                      "TRADE COMPLETED! ✓\n\n" +
+                      
+                      "══════════════════════════════════════════════════════════════\n" +
+                      "                    IMPORTANT REMINDERS\n" +
+                      "══════════════════════════════════════════════════════════════\n" +
+                      "• Always communicate through BarterZone messages\n" +
+                      "• Keep all payment receipts and screenshots\n" +
+                      "• Verify trader identity before shipping\n" +
+                      "• Report any suspicious activity immediately\n" +
+                      "• Contact admin for disputes or issues\n\n" +
+                      
+                      "══════════════════════════════════════════════════════════════\n" +
+                      "                NEED HELP? CONTACT ADMIN\n" +
+                      "══════════════════════════════════════════════════════════════";
 
         JOptionPane.showMessageDialog(this, guide,
-                "Trade Process Guide - Trade #" + tradeId,
+                "Trade Process Guide",
                 JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void viewTraderDetails() {
-        int selectedRow = activeTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
+        if (selectedOtherTraderId == -1) return;
 
-        int modelRow = activeTable.convertRowIndexToModel(selectedRow);
-        String traderName = activeTableModel.getValueAt(modelRow, 2).toString();
-
-        String sql = "SELECT user_fullname, user_username, user_email, user_status FROM tbl_users WHERE user_fullname = ?";
-        List<Map<String, Object>> traders = db.fetchRecords(sql, traderName);
+        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
+                     "FROM tbl_users WHERE user_id = ?";
+        List<Map<String, Object>> traders = db.fetchRecords(sql, selectedOtherTraderId);
 
         if (!traders.isEmpty()) {
             Map<String, Object> trader = traders.get(0);
             
-            String details = "TRADER DETAILS\n"
-                    + "==============\n\n"
-                    + "Name: " + trader.get("user_fullname") + "\n"
-                    + "Username: " + trader.get("user_username") + "\n"
-                    + "Email: " + trader.get("user_email") + "\n"
-                    + "Status: " + trader.get("user_status");
+            String details = "TRADER DETAILS\n" +
+                    "==============\n\n" +
+                    "Name: " + trader.get("user_fullname") + "\n" +
+                    "Username: " + trader.get("user_username") + "\n" +
+                    "Email: " + trader.get("user_email") + "\n" +
+                    "Status: " + trader.get("user_status") + "\n" +
+                    "Member Since: " + formatDate(trader.get("created_date"));
 
             JOptionPane.showMessageDialog(this, details,
                     "Trader Information",
@@ -894,18 +1269,20 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void viewMyDetails() {
-        String sql = "SELECT user_fullname, user_username, user_email, user_status FROM tbl_users WHERE user_id = ?";
+        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
+                     "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> users = db.fetchRecords(sql, traderId);
 
         if (!users.isEmpty()) {
             Map<String, Object> user = users.get(0);
             
-            String details = "YOUR DETAILS\n"
-                    + "============\n\n"
-                    + "Name: " + user.get("user_fullname") + "\n"
-                    + "Username: " + user.get("user_username") + "\n"
-                    + "Email: " + user.get("user_email") + "\n"
-                    + "Status: " + user.get("user_status");
+            String details = "YOUR DETAILS\n" +
+                    "============\n\n" +
+                    "Name: " + user.get("user_fullname") + "\n" +
+                    "Username: " + user.get("user_username") + "\n" +
+                    "Email: " + user.get("user_email") + "\n" +
+                    "Status: " + user.get("user_status") + "\n" +
+                    "Member Since: " + formatDate(user.get("created_date"));
 
             JOptionPane.showMessageDialog(this, details,
                     "My Information",
@@ -914,25 +1291,13 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void openManageTrade() {
-        int selectedRow = activeTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
+        if (selectedTradeId == -1) return;
 
-        int modelRow = activeTable.convertRowIndexToModel(selectedRow);
-        int tradeId = Integer.parseInt(activeTableModel.getValueAt(modelRow, 6).toString());
-        String theirItem = activeTableModel.getValueAt(modelRow, 1).toString();
-        String trader = activeTableModel.getValueAt(modelRow, 2).toString();
-        String myItem = activeTableModel.getValueAt(modelRow, 3).toString();
-
-        JOptionPane.showMessageDialog(this,
-                "Manage Trade feature coming soon!\n\n"
-                + "Trade ID: " + tradeId + "\n"
-                + "Your Item: " + myItem + "\n"
-                + "Their Item: " + theirItem + "\n"
-                + "Trading With: " + trader,
-                "Manage Trade",
-                JOptionPane.INFORMATION_MESSAGE);
+        manage_trades manageFrame = new manage_trades(selectedTradeId, selectedMyItem, 
+            selectedTheirItem, selectedOtherTraderName, selectedOtherTraderId);
+        manageFrame.setVisible(true);
+        manageFrame.setLocationRelativeTo(null);
+        this.dispose();
     }
 
     private void updateCounts() {
@@ -987,10 +1352,10 @@ public class trades extends javax.swing.JFrame {
                 + "WHERE trader_id = ? AND is_active = 1 "
                 + "AND items_id NOT IN ("
                 + "    SELECT DISTINCT target_item_id FROM tbl_trade "
-                + "    WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed') "
+                + "    WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed') "
                 + "    UNION "
                 + "    SELECT DISTINCT offer_item_id FROM tbl_trade "
-                + "    WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed')"
+                + "    WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')"
                 + ")";
 
         List<Map<String, Object>> myItems = db.fetchRecords(sql, traderId);
@@ -1012,51 +1377,45 @@ public class trades extends javax.swing.JFrame {
             itemIds[i] = Integer.parseInt(myItems.get(i).get("items_id").toString());
         }
 
-        javax.swing.JDialog tradeDialog = new javax.swing.JDialog(this, "Request Trade", true);
+        JDialog tradeDialog = new JDialog(this, "Request Trade", true);
         tradeDialog.setSize(400, 300);
         tradeDialog.setLayout(null);
         tradeDialog.setLocationRelativeTo(this);
         tradeDialog.getContentPane().setBackground(Color.WHITE);
 
         JPanel titlePanel = new JPanel();
-        titlePanel.setBackground(new Color(12, 192, 223));
+        titlePanel.setBackground(themeColor);
         titlePanel.setBounds(0, 0, 400, 40);
         titlePanel.setLayout(null);
 
-        javax.swing.JLabel titleLabel = new javax.swing.JLabel("REQUEST TRADE");
+        JLabel titleLabel = new JLabel("REQUEST TRADE");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBounds(20, 5, 200, 30);
         titlePanel.add(titleLabel);
         tradeDialog.add(titlePanel);
 
-        javax.swing.JLabel infoLabel = new javax.swing.JLabel("Trading with: " + ownerName);
+        JLabel infoLabel = new JLabel("Trading with: " + ownerName);
         infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         infoLabel.setBounds(20, 60, 300, 25);
         tradeDialog.add(infoLabel);
 
-        javax.swing.JLabel theirItemLabel = new javax.swing.JLabel("Their Item: Selected from list");
-        theirItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        theirItemLabel.setForeground(new Color(0, 102, 102));
-        theirItemLabel.setBounds(20, 90, 300, 20);
-        tradeDialog.add(theirItemLabel);
-
-        javax.swing.JLabel selectLabel = new javax.swing.JLabel("Your Item to offer:");
+        JLabel selectLabel = new JLabel("Your Item to offer:");
         selectLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        selectLabel.setBounds(20, 120, 150, 20);
+        selectLabel.setBounds(20, 100, 150, 20);
         tradeDialog.add(selectLabel);
 
-        javax.swing.JComboBox<String> itemCombo = new javax.swing.JComboBox<>(itemNames);
+        JComboBox<String> itemCombo = new JComboBox<>(itemNames);
         itemCombo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        itemCombo.setBounds(20, 145, 250, 30);
+        itemCombo.setBounds(20, 125, 250, 30);
         itemCombo.setBackground(Color.WHITE);
         tradeDialog.add(itemCombo);
 
-        javax.swing.JButton sendButton = new javax.swing.JButton("SEND REQUEST");
+        JButton sendButton = new JButton("SEND REQUEST");
         sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        sendButton.setBackground(new Color(0, 102, 102));
+        sendButton.setBackground(activeColor2);
         sendButton.setForeground(Color.WHITE);
-        sendButton.setBounds(80, 200, 150, 35);
+        sendButton.setBounds(80, 180, 150, 35);
         sendButton.setBorder(null);
         sendButton.setFocusPainted(false);
         sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1071,11 +1430,11 @@ public class trades extends javax.swing.JFrame {
         });
         tradeDialog.add(sendButton);
 
-        javax.swing.JButton cancelButton = new javax.swing.JButton("CANCEL");
+        JButton cancelButton = new JButton("CANCEL");
         cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        cancelButton.setBackground(new Color(204, 0, 0));
+        cancelButton.setBackground(disputedColor);
         cancelButton.setForeground(Color.WHITE);
-        cancelButton.setBounds(240, 200, 100, 35);
+        cancelButton.setBounds(240, 180, 100, 35);
         cancelButton.setBorder(null);
         cancelButton.setFocusPainted(false);
         cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1134,9 +1493,7 @@ public class trades extends javax.swing.JFrame {
 
     private void acceptTrade() {
         int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
+        if (selectedRow == -1) return;
 
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
@@ -1167,9 +1524,7 @@ public class trades extends javax.swing.JFrame {
 
     private void declineTrade() {
         int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
+        if (selectedRow == -1) return;
 
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
@@ -1187,80 +1542,10 @@ public class trades extends javax.swing.JFrame {
         }
     }
 
-    private void completeTrade() {
-        int selectedRow = activeTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
-
-        int modelRow = activeTable.convertRowIndexToModel(selectedRow);
-        int tradeId = Integer.parseInt(activeTableModel.getValueAt(modelRow, 6).toString());
-        String theirItem = activeTableModel.getValueAt(modelRow, 1).toString();
-        String trader = activeTableModel.getValueAt(modelRow, 2).toString();
-        String myItem = activeTableModel.getValueAt(modelRow, 3).toString();
-
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Have you completed the exchange?\n\n"
-                + "✓ You should have received: " + theirItem + "\n"
-                + "✓ Trader should have received: " + myItem + "\n\n"
-                + "Make sure you have both received your items before marking complete.",
-                "Confirm Complete",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            String getSql = "SELECT * FROM tbl_trade WHERE trade_id = ?";
-            List<Map<String, Object>> trade = db.fetchRecords(getSql, tradeId);
-
-            if (!trade.isEmpty()) {
-                Map<String, Object> t = trade.get(0);
-
-                String historySql = "INSERT INTO tbl_trade_history "
-                        + "(trade_id, offer_trader_id, target_trader_id, offer_item_id, "
-                        + "target_item_id, trade_status, trade_DateRequest, trade_DateCompleted) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))";
-
-                db.addRecord(historySql,
-                        tradeId,
-                        t.get("offer_trader_id"),
-                        t.get("target_trader_id"),
-                        t.get("offer_item_id"),
-                        t.get("target_item_id"),
-                        "completed",
-                        t.get("trade_DateRequest"));
-
-                String deleteSql = "DELETE FROM tbl_trade WHERE trade_id = ?";
-                db.deleteRecord(deleteSql, tradeId);
-
-                JOptionPane.showMessageDialog(this,
-                        "Trade completed successfully!\n\n"
-                        + "The trade has been moved to History.",
-                        "Success", JOptionPane.INFORMATION_MESSAGE);
-                loadAllData();
-            }
-        }
-    }
-
     private void sendMessage() {
-        int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) {
-            return;
-        }
-
-        int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
-        String trader = pendingTableModel.getValueAt(modelRow, 2).toString();
-        String theirItem = pendingTableModel.getValueAt(modelRow, 1).toString();
-
         messages messagesFrame = new messages(traderId, traderName);
         messagesFrame.setVisible(true);
         messagesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openDashboard() {
-        trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
-        dashboard.setVisible(true);
-        dashboard.setLocationRelativeTo(null);
         this.dispose();
     }
 
@@ -1271,437 +1556,47 @@ public class trades extends javax.swing.JFrame {
         this.dispose();
     }
 
-    private void openFindItems() {
-        finditems findItemsFrame = new finditems(traderId, traderName);
-        findItemsFrame.setVisible(true);
-        findItemsFrame.setLocationRelativeTo(null);
-        this.dispose();
+    private void setActivePanel(JPanel panel) {
+        if (activePanel != null) {
+            activePanel.setBackground(themeColor);
+        }
+        activePanel = panel;
+        activePanel.setBackground(activeColor);
     }
 
-    private void openMessages() {
-        messages messagesFrame = new messages(traderId, traderName);
-        messagesFrame.setVisible(true);
-        messagesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openReports() {
-        reports reportsFrame = new reports(traderId, traderName);
-        reportsFrame.setVisible(true);
-        reportsFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void openProfile() {
-        profile profileFrame = new profile();
-        profileFrame.setVisible(true);
-        profileFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to logout?",
-                "Confirm Logout",
-                JOptionPane.YES_NO_OPTION);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            landing.landing landingFrame = new landing.landing();
-            landingFrame.setVisible(true);
-            landingFrame.setLocationRelativeTo(null);
+    private void handleMenuClick(JPanel panel) {
+        setActivePanel(panel);
+        
+        if (panel == dashboardPanel) {
+            trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
+            dashboard.setVisible(true);
+            dashboard.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == myItemsPanel) {
+            myitems myItemsFrame = new myitems(traderId, traderName);
+            myItemsFrame.setVisible(true);
+            myItemsFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == findItemsPanel) {
+            finditems findItemsFrame = new finditems(traderId, traderName);
+            findItemsFrame.setVisible(true);
+            findItemsFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == messagesPanel) {
+            messages messagesFrame = new messages(traderId, traderName);
+            messagesFrame.setVisible(true);
+            messagesFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == reportsPanel) {
+            reports reportsFrame = new reports(traderId, traderName);
+            reportsFrame.setVisible(true);
+            reportsFrame.setLocationRelativeTo(null);
+            this.dispose();
+        } else if (panel == settingsPanel) {
+            settings settingsFrame = new settings(traderId, traderName);
+            settingsFrame.setVisible(true);
+            settingsFrame.setLocationRelativeTo(null);
             this.dispose();
         }
     }
-
-    @SuppressWarnings("unchecked")
-    private void initComponents() {
-
-        tradermenu1 = new javax.swing.JPanel();
-        logotext = new javax.swing.JLabel();
-        avatar = new javax.swing.JPanel();
-        avatarletter = new javax.swing.JLabel();
-        username = new javax.swing.JLabel();
-        barterzonelogo = new javax.swing.JLabel();
-        paneldashboard = new javax.swing.JPanel();
-        dashboardicon = new javax.swing.JLabel();
-        dashboard = new javax.swing.JLabel();
-        panelmyitems = new javax.swing.JPanel();
-        myitemsicon = new javax.swing.JLabel();
-        myitems = new javax.swing.JLabel();
-        panelfinditems = new javax.swing.JPanel();
-        finditemsicon = new javax.swing.JLabel();
-        finditems = new javax.swing.JLabel();
-        paneltrades = new javax.swing.JPanel();
-        tradesicon = new javax.swing.JLabel();
-        trades = new javax.swing.JLabel();
-        panelmessages = new javax.swing.JPanel();
-        messagesicon = new javax.swing.JLabel();
-        messages = new javax.swing.JLabel();
-        panellogout = new javax.swing.JPanel();
-        logout = new javax.swing.JLabel();
-        logouticon = new javax.swing.JLabel();
-        panelreports = new javax.swing.JPanel();
-        Reports = new javax.swing.JLabel();
-        reportsicon = new javax.swing.JLabel();
-        panelprofile = new javax.swing.JPanel();
-        profileicon = new javax.swing.JLabel();
-        Profile = new javax.swing.JLabel();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        CurrentDate = new javax.swing.JLabel();
-        jPanel2 = new javax.swing.JPanel();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(800, 500));
-        setPreferredSize(new java.awt.Dimension(800, 500));
-        setResizable(false);
-
-        tradermenu1.setBackground(new java.awt.Color(12, 192, 223));
-        tradermenu1.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(8, 150, 175), 1, true));
-        tradermenu1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        logotext.setFont(new java.awt.Font("Segoe UI", 1, 22));
-        logotext.setForeground(new java.awt.Color(255, 255, 255));
-        logotext.setText("BarterZone");
-        logotext.setAlignmentX(0.5F);
-        tradermenu1.add(logotext, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 0, -1, 40));
-
-        avatar.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(255, 255, 255), 3));
-        avatar.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        avatarletter.setFont(new java.awt.Font("Arial", 1, 36));
-        avatarletter.setForeground(new java.awt.Color(12, 192, 223));
-        avatarletter.setText("T");
-        avatar.add(avatarletter, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 10, 50, 30));
-
-        username.setBackground(new java.awt.Color(255, 255, 255));
-        username.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        username.setForeground(new java.awt.Color(255, 255, 255));
-        avatar.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, 110, 30));
-
-        tradermenu1.add(avatar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 50, 110, 60));
-
-        barterzonelogo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logo.png")));
-        tradermenu1.add(barterzonelogo, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 40, 40));
-
-        paneldashboard.setBackground(new java.awt.Color(12, 192, 223));
-
-        dashboardicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/dashboard.png")));
-
-        dashboard.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        dashboard.setForeground(new java.awt.Color(255, 255, 255));
-        dashboard.setText("Dashboard");
-
-        javax.swing.GroupLayout paneldashboardLayout = new javax.swing.GroupLayout(paneldashboard);
-        paneldashboard.setLayout(paneldashboardLayout);
-        paneldashboardLayout.setHorizontalGroup(
-            paneldashboardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneldashboardLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(dashboardicon, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(dashboard, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(14, 14, 14))
-        );
-        paneldashboardLayout.setVerticalGroup(
-            paneldashboardLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(dashboardicon, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-            .addGroup(paneldashboardLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(dashboard)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(paneldashboard, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 120, 130, 40));
-
-        panelmyitems.setBackground(new java.awt.Color(12, 192, 223));
-
-        myitemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/myitems.png")));
-
-        myitems.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        myitems.setForeground(new java.awt.Color(255, 255, 255));
-        myitems.setText("My Items");
-
-        javax.swing.GroupLayout panelmyitemsLayout = new javax.swing.GroupLayout(panelmyitems);
-        panelmyitems.setLayout(panelmyitemsLayout);
-        panelmyitemsLayout.setHorizontalGroup(
-            panelmyitemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmyitemsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(myitemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(myitems)
-                .addContainerGap(17, Short.MAX_VALUE))
-        );
-        panelmyitemsLayout.setVerticalGroup(
-            panelmyitemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmyitemsLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panelmyitemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(myitems)
-                    .addComponent(myitemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(21, 21, 21))
-        );
-
-        tradermenu1.add(panelmyitems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 160, 130, 40));
-
-        panelfinditems.setBackground(new java.awt.Color(12, 192, 223));
-
-        finditemsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/finditems.png")));
-
-        finditems.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        finditems.setForeground(new java.awt.Color(255, 255, 255));
-        finditems.setText("Find Items");
-
-        javax.swing.GroupLayout panelfinditemsLayout = new javax.swing.GroupLayout(panelfinditems);
-        panelfinditems.setLayout(panelfinditemsLayout);
-        panelfinditemsLayout.setHorizontalGroup(
-            panelfinditemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelfinditemsLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(finditemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(finditems)
-                .addGap(18, 18, 18))
-        );
-        panelfinditemsLayout.setVerticalGroup(
-            panelfinditemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelfinditemsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelfinditemsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(finditems)
-                    .addComponent(finditemsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(panelfinditems, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 130, 40));
-
-        paneltrades.setBackground(new java.awt.Color(12, 192, 223));
-
-        tradesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/trade.png")));
-
-        trades.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        trades.setForeground(new java.awt.Color(255, 255, 255));
-        trades.setText("Trades");
-
-        javax.swing.GroupLayout paneltradesLayout = new javax.swing.GroupLayout(paneltrades);
-        paneltrades.setLayout(paneltradesLayout);
-        paneltradesLayout.setHorizontalGroup(
-            paneltradesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneltradesLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(tradesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(trades)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        paneltradesLayout.setVerticalGroup(
-            paneltradesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, paneltradesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(paneltradesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(trades)
-                    .addComponent(tradesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(21, 21, 21))
-        );
-
-        tradermenu1.add(paneltrades, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, 130, 40));
-
-        panelmessages.setBackground(new java.awt.Color(12, 192, 223));
-
-        messagesicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/messages.png")));
-
-        messages.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        messages.setForeground(new java.awt.Color(255, 255, 255));
-        messages.setText("Messages");
-
-        javax.swing.GroupLayout panelmessagesLayout = new javax.swing.GroupLayout(panelmessages);
-        panelmessages.setLayout(panelmessagesLayout);
-        panelmessagesLayout.setHorizontalGroup(
-            panelmessagesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmessagesLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(messagesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(messages)
-                .addContainerGap(14, Short.MAX_VALUE))
-        );
-        panelmessagesLayout.setVerticalGroup(
-            panelmessagesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelmessagesLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panelmessagesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(messages)
-                    .addComponent(messagesicon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22))
-        );
-
-        tradermenu1.add(panelmessages, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 280, 130, 40));
-
-        panellogout.setBackground(new java.awt.Color(12, 192, 223));
-
-        logout.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        logout.setForeground(new java.awt.Color(255, 255, 255));
-        logout.setText("Logout");
-
-        logouticon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/logout.png")));
-
-        javax.swing.GroupLayout panellogoutLayout = new javax.swing.GroupLayout(panellogout);
-        panellogout.setLayout(panellogoutLayout);
-        panellogoutLayout.setHorizontalGroup(
-            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(16, 16, 16)
-                .addComponent(logout)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        panellogoutLayout.setVerticalGroup(
-            panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panellogoutLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(panellogoutLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(logout)
-                    .addComponent(logouticon, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(22, 22, 22))
-        );
-
-        tradermenu1.add(panellogout, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 400, 130, 40));
-
-        panelreports.setBackground(new java.awt.Color(12, 192, 223));
-
-        Reports.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        Reports.setForeground(new java.awt.Color(255, 255, 255));
-        Reports.setText("Reports");
-
-        reportsicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/report.png")));
-
-        javax.swing.GroupLayout panelreportsLayout = new javax.swing.GroupLayout(panelreports);
-        panelreports.setLayout(panelreportsLayout);
-        panelreportsLayout.setHorizontalGroup(
-            panelreportsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelreportsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(reportsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(Reports)
-                .addContainerGap(27, Short.MAX_VALUE))
-        );
-        panelreportsLayout.setVerticalGroup(
-            panelreportsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelreportsLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelreportsLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(reportsicon, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(Reports, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(panelreports, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 320, 130, 40));
-
-        panelprofile.setBackground(new java.awt.Color(12, 192, 223));
-
-        profileicon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/BarterZone/resources/icon/profile.png")));
-
-        Profile.setFont(new java.awt.Font("Segoe UI", 1, 14));
-        Profile.setForeground(new java.awt.Color(255, 255, 255));
-        Profile.setText("Profile");
-
-        javax.swing.GroupLayout panelprofileLayout = new javax.swing.GroupLayout(panelprofile);
-        panelprofile.setLayout(panelprofileLayout);
-        panelprofileLayout.setHorizontalGroup(
-            panelprofileLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelprofileLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(profileicon, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(Profile)
-                .addContainerGap(34, Short.MAX_VALUE))
-        );
-        panelprofileLayout.setVerticalGroup(
-            panelprofileLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelprofileLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelprofileLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(Profile)
-                    .addComponent(profileicon, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        tradermenu1.add(panelprofile, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 360, 130, 40));
-
-        jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153), 2));
-        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 30));
-        jLabel1.setText("Trades");
-        jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 10, -1, 30));
-
-        CurrentDate.setFont(new java.awt.Font("Segoe UI", 0, 14));
-        CurrentDate.setForeground(new java.awt.Color(102, 102, 102));
-        CurrentDate.setText("jLabel2");
-        jPanel1.add(CurrentDate, new org.netbeans.lib.awtextra.AbsoluteConstraints(480, 10, 200, 30));
-
-        jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(tradermenu1, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 620, Short.MAX_VALUE)))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(tradermenu1, javax.swing.GroupLayout.PREFERRED_SIZE, 500, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, 0)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 450, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(0, 0, 0))
-        );
-
-        pack();
-    }
-
-    private javax.swing.JLabel CurrentDate;
-    private javax.swing.JLabel Profile;
-    javax.swing.JLabel Reports;
-    javax.swing.JPanel avatar;
-    javax.swing.JLabel avatarletter;
-    javax.swing.JLabel barterzonelogo;
-    javax.swing.JLabel dashboard;
-    javax.swing.JLabel dashboardicon;
-    javax.swing.JLabel finditems;
-    javax.swing.JLabel finditemsicon;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel1;
-    javax.swing.JPanel jPanel2;
-    javax.swing.JLabel logotext;
-    javax.swing.JLabel logout;
-    javax.swing.JLabel logouticon;
-    javax.swing.JLabel messages;
-    javax.swing.JLabel messagesicon;
-    javax.swing.JLabel myitems;
-    javax.swing.JLabel myitemsicon;
-    javax.swing.JPanel paneldashboard;
-    javax.swing.JPanel panelfinditems;
-    javax.swing.JPanel panellogout;
-    javax.swing.JPanel panelmessages;
-    javax.swing.JPanel panelmyitems;
-    javax.swing.JPanel panelprofile;
-    javax.swing.JPanel panelreports;
-    javax.swing.JPanel paneltrades;
-    javax.swing.JLabel profileicon;
-    javax.swing.JLabel reportsicon;
-    javax.swing.JPanel tradermenu1;
-    javax.swing.JLabel trades;
-    javax.swing.JLabel tradesicon;
-    javax.swing.JLabel username;
 }

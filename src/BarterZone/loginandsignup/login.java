@@ -202,7 +202,6 @@ public class login extends javax.swing.JFrame {
     private void homebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_homebuttonActionPerformed
         landing landingFrame = new landing();
         landingFrame.setVisible(true);
-        landingFrame.pack();
         landingFrame.setLocationRelativeTo(null);
         this.dispose();
 
@@ -220,78 +219,76 @@ public class login extends javax.swing.JFrame {
     private void loginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginActionPerformed
 
         String usernameOrEmail = emailuser.getText().trim();
-        String password = new String(pass.getPassword());
+    String password = new String(pass.getPassword());
 
-        if (usernameOrEmail.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter username/email and password!", "Error", JOptionPane.ERROR_MESSAGE);
+    if (usernameOrEmail.isEmpty() || password.isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Please enter username/email and password!", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    try {
+        config dbConfig = new config();
+
+        String checkUserSQL = "SELECT user_id, user_fullname, user_username, user_email, user_pass, user_type, user_status, created_date FROM tbl_users WHERE user_username = ? OR user_email = ?";
+
+        java.util.List<java.util.Map<String, Object>> users = dbConfig.fetchRecords(checkUserSQL, usernameOrEmail, usernameOrEmail);
+
+        if (users.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "User not found!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        try {
-            config dbConfig = new config();
+        java.util.Map<String, Object> user = users.get(0);
+        String storedHashedPassword = (String) user.get("user_pass");
+        String userFullName = (String) user.get("user_fullname");
+        int userId = (int) user.get("user_id");
+        String userType = (String) user.get("user_type");
+        String userStatus = (String) user.get("user_status");
 
-            String checkUserSQL = "SELECT user_id, user_fullname, user_username, user_email, user_pass, user_type, user_status, created_date FROM tbl_users WHERE user_username = ? OR user_email = ?";
-
-            java.util.List<java.util.Map<String, Object>> users = dbConfig.fetchRecords(checkUserSQL, usernameOrEmail, usernameOrEmail);
-
-            if (users.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "User not found!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            java.util.Map<String, Object> user = users.get(0);
-            String storedHashedPassword = (String) user.get("user_pass");
-            String userFullName = (String) user.get("user_fullname");
-            int userId = (int) user.get("user_id");
-            String userType = (String) user.get("user_type");
-            String userStatus = (String) user.get("user_status");
-
-            if (!"active".equalsIgnoreCase(userStatus)) {
-                JOptionPane.showMessageDialog(this, "Your account is inactive. Please wait for admin approval.", "Account Inactive", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            String inputHashedPassword = dbConfig.hashPassword(password);
-
-            if (inputHashedPassword.equals(storedHashedPassword)) {
-                user_session session = user_session.getInstance();
-                session.setUserId(userId);
-                session.setFullName(userFullName);
-                session.setUsername((String) user.get("user_username"));
-                session.setEmail((String) user.get("user_email"));
-                session.setUserType(userType);
-                session.setStatus(userStatus);
-                session.setCreatedDate(user.get("created_date") != null ? user.get("created_date").toString() : null);
-
-                JOptionPane.showMessageDialog(this, "Login successful!\nWelcome " + userFullName + " (" + userType + ")", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-                if ("admin".equalsIgnoreCase(userType)) {
-                    BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard(userId, userFullName);
-                    adminFrame.setVisible(true);
-                    adminFrame.setLocationRelativeTo(null);
-                    this.dispose();
-                } else if ("trader".equalsIgnoreCase(userType)) {
-                    BarterZone.Dashboard.trader.trader_dashboard traderDashboard = new BarterZone.Dashboard.trader.trader_dashboard(userId, userFullName);
-                    traderDashboard.setVisible(true);
-                    traderDashboard.setLocationRelativeTo(null);
-                    this.dispose();
-                } else {
-                    landing landingFrame = new landing(userId, userFullName);
-                    landingFrame.setVisible(true);
-                    landingFrame.setLocationRelativeTo(null);
-                    this.dispose();
-                }
-
-                pass.setText("");
-
-            } else {
-                JOptionPane.showMessageDialog(this, "Incorrect password!", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
+        if (!"active".equalsIgnoreCase(userStatus)) {
+            JOptionPane.showMessageDialog(this, "Your account is inactive. Please wait for admin approval.", "Account Inactive", JOptionPane.WARNING_MESSAGE);
+            return;
         }
+
+        String inputHashedPassword = dbConfig.hashPassword(password);
+
+        if (inputHashedPassword.equals(storedHashedPassword)) {
+            // Set session data
+            user_session session = user_session.getInstance();
+            session.setUserId(userId);
+            session.setFullName(userFullName);
+            session.setUsername((String) user.get("user_username"));
+            session.setEmail((String) user.get("user_email"));
+            session.setUserType(userType);
+            session.setStatus(userStatus);
+            session.setCreatedDate(user.get("created_date") != null ? user.get("created_date").toString() : null);
+            
+            JOptionPane.showMessageDialog(this, "Login successful!\nWelcome " + userFullName + " (" + userType + ")", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            if ("admin".equalsIgnoreCase(userType)) {
+                // Redirect admin directly to admin dashboard
+                BarterZone.Dashboard.admin.admin_dashboard adminFrame = new BarterZone.Dashboard.admin.admin_dashboard(userId, userFullName);
+                adminFrame.setVisible(true);
+                adminFrame.setLocationRelativeTo(null);
+                this.dispose();
+            } else if ("trader".equalsIgnoreCase(userType)) {
+                // Redirect trader to landing with logged-in state
+                landing landingFrame = new landing(userId, userFullName);
+                landingFrame.setVisible(true);
+                landingFrame.setLocationRelativeTo(null);
+                this.dispose();
+            }
+
+            pass.setText("");
+
+        } else {
+            JOptionPane.showMessageDialog(this, "Incorrect password!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+    } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
 
     }//GEN-LAST:event_loginActionPerformed
 
