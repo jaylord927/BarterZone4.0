@@ -1,6 +1,5 @@
 package BarterZone.loginandsignup;
 
-import BarterZone.dialmessage.successmessage;
 import database.config.config;
 import javax.swing.JOptionPane;
 
@@ -300,11 +299,17 @@ public class signup extends javax.swing.JFrame {
 
             dbConfig.addRecord(sqltrader, fullName, usernameInput, emails, hashedPassword, "trader", "active");
 
-            successmessage successFrame = new successmessage();
-            successFrame.setVisible(true);
-            successFrame.pack();
-            successFrame.setLocationRelativeTo(null);
+            JOptionPane.showMessageDialog(this,
+                    "✓ Successfully Registered!\n\n"
+                    + "Welcome to BarterZone, " + fullName + "!\n\n"
+                    + "Your account has been created successfully.\n"
+                    + "Please proceed to login to continue.",
+                    "Registration Successful",
+                    JOptionPane.INFORMATION_MESSAGE);
 
+            landing.landing landingFrame = new landing.landing();
+            landingFrame.setVisible(true);
+            landingFrame.setLocationRelativeTo(null);
             this.dispose();
 
         } catch (Exception e) {
