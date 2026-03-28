@@ -46,41 +46,41 @@ public class trades extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-    
+
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-    
+
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-    
+
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-    
+
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-    
+
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-    
+
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-    
+
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-    
+
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     private JPanel contentPanel;
-    
+
     private javax.swing.JTabbedPane tabbedPane;
 
     private DefaultTableModel availableTableModel;
@@ -123,14 +123,14 @@ public class trades extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-    
+
     private Color pendingColor = new Color(255, 153, 0);
     private Color activeColor2 = new Color(0, 102, 102);
     private Color completedColor = new Color(46, 125, 50);
     private Color disputedColor = new Color(204, 0, 0);
-    
+
     private JPanel activePanel = null;
-    
+
     private int selectedTradeId = -1;
     private int selectedOtherTraderId = -1;
     private String selectedOtherTraderName = "";
@@ -144,7 +144,7 @@ public class trades extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-        
+
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -154,7 +154,9 @@ public class trades extends javax.swing.JFrame {
         loadAllData();
         loadProfileAvatar();
 
-        setTitle("Trades - " + traderName);
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -344,7 +346,7 @@ public class trades extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-        
+
         loadProfileAvatar();
 
         int menuY = 155;
@@ -415,7 +417,7 @@ public class trades extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-        
+
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -424,7 +426,7 @@ public class trades extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -445,7 +447,7 @@ public class trades extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -456,7 +458,7 @@ public class trades extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -477,7 +479,7 @@ public class trades extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(label);
         return label;
     }
@@ -575,24 +577,24 @@ public class trades extends javax.swing.JFrame {
         myItemsCard.setBounds(430, 10, 160, 50);
         myItemsCard.setBorder(new LineBorder(Color.WHITE, 2));
         myItemsCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         MouseAdapter myItemsAdapter = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent evt) {
                 openMyItems();
             }
-            
+
             @Override
             public void mouseEntered(MouseEvent evt) {
                 myItemsCard.setBackground(hoverColor);
             }
-            
+
             @Override
             public void mouseExited(MouseEvent evt) {
                 myItemsCard.setBackground(themeColor);
             }
         };
-        
+
         myItemsCard.addMouseListener(myItemsAdapter);
 
         JLabel myItemsTitle = new JLabel("MY ITEMS →");
@@ -1037,7 +1039,7 @@ public class trades extends javax.swing.JFrame {
         for (Map<String, Object> trade : trades) {
             String status = trade.get("trade_status").toString();
             String displayStatus = "";
-            
+
             switch (status) {
                 case "negotiating":
                     displayStatus = "Negotiating";
@@ -1110,52 +1112,52 @@ public class trades extends javax.swing.JFrame {
 
         String detailsSql = "SELECT * FROM tbl_trade WHERE trade_id = ?";
         List<Map<String, Object>> tradeDetails = db.fetchRecords(detailsSql, selectedTradeId);
-        
+
         StringBuilder info = new StringBuilder();
         info.append("TRADE DETAILS\n");
         info.append("=============\n\n");
         info.append("Your Item: ").append(selectedMyItem).append("\n");
         info.append("Their Item: ").append(selectedTheirItem).append("\n");
         info.append("Trading With: ").append(selectedOtherTraderName).append("\n\n");
-        
+
         if (!tradeDetails.isEmpty()) {
             Map<String, Object> trade = tradeDetails.get(0);
-            
+
             String method = trade.get("exchange_method") != null ? trade.get("exchange_method").toString() : "Not set";
             info.append("Exchange Method: ").append(method).append("\n");
-            
-            int mySubmitted = trade.get("my_details_submitted") != null ? 
-                Integer.parseInt(trade.get("my_details_submitted").toString()) : 0;
-            int otherSubmitted = trade.get("other_details_submitted") != null ? 
-                Integer.parseInt(trade.get("other_details_submitted").toString()) : 0;
-            
+
+            int mySubmitted = trade.get("my_details_submitted") != null
+                    ? Integer.parseInt(trade.get("my_details_submitted").toString()) : 0;
+            int otherSubmitted = trade.get("other_details_submitted") != null
+                    ? Integer.parseInt(trade.get("other_details_submitted").toString()) : 0;
+
             info.append("Your Details: ").append(mySubmitted == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
             info.append("Their Details: ").append(otherSubmitted == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
-            
-            int detailsAgreed = trade.get("details_agreed") != null ? 
-                Integer.parseInt(trade.get("details_agreed").toString()) : 0;
+
+            int detailsAgreed = trade.get("details_agreed") != null
+                    ? Integer.parseInt(trade.get("details_agreed").toString()) : 0;
             info.append("Agreement: ").append(detailsAgreed == 1 ? "✓ Both agreed" : "⏳ Waiting").append("\n");
-            
-            int myPayment = trade.get("my_payment_submitted") != null ? 
-                Integer.parseInt(trade.get("my_payment_submitted").toString()) : 0;
-            int otherPayment = trade.get("other_payment_submitted") != null ? 
-                Integer.parseInt(trade.get("other_payment_submitted").toString()) : 0;
-            int paymentVerified = trade.get("payment_verified") != null ? 
-                Integer.parseInt(trade.get("payment_verified").toString()) : 0;
-            
+
+            int myPayment = trade.get("my_payment_submitted") != null
+                    ? Integer.parseInt(trade.get("my_payment_submitted").toString()) : 0;
+            int otherPayment = trade.get("other_payment_submitted") != null
+                    ? Integer.parseInt(trade.get("other_payment_submitted").toString()) : 0;
+            int paymentVerified = trade.get("payment_verified") != null
+                    ? Integer.parseInt(trade.get("payment_verified").toString()) : 0;
+
             info.append("Your Payment: ").append(myPayment == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
             info.append("Their Payment: ").append(otherPayment == 1 ? "✓ Submitted" : "✗ Not submitted").append("\n");
             info.append("Payment Verified: ").append(paymentVerified == 1 ? "✓ Yes" : "⏳ Pending").append("\n");
-            
-            int myReceived = trade.get("my_item_received") != null ? 
-                Integer.parseInt(trade.get("my_item_received").toString()) : 0;
-            int otherReceived = trade.get("other_item_received") != null ? 
-                Integer.parseInt(trade.get("other_item_received").toString()) : 0;
-            
+
+            int myReceived = trade.get("my_item_received") != null
+                    ? Integer.parseInt(trade.get("my_item_received").toString()) : 0;
+            int otherReceived = trade.get("other_item_received") != null
+                    ? Integer.parseInt(trade.get("other_item_received").toString()) : 0;
+
             info.append("You Received Item: ").append(myReceived == 1 ? "✓ Yes" : "✗ No").append("\n");
             info.append("They Received Item: ").append(otherReceived == 1 ? "✓ Yes" : "✗ No").append("\n");
         }
-        
+
         info.append("\nAVAILABLE ACTIONS:\n");
         info.append("• Manage Trade - Set exchange method and details\n");
         info.append("• View Trader - See trader's profile\n");
@@ -1163,7 +1165,7 @@ public class trades extends javax.swing.JFrame {
         info.append("• View Full Guide - Complete step-by-step process");
 
         instructionsArea.setText(info.toString());
-        
+
         manageTradeButton.setEnabled(true);
         viewTraderDetailsButton.setEnabled(true);
         viewMyDetailsButton.setEnabled(true);
@@ -1171,73 +1173,63 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void showFullGuide() {
-        String guide = "══════════════════════════════════════════════════════════════\n" +
-                      "                    COMPLETE TRADE GUIDE\n" +
-                      "══════════════════════════════════════════════════════════════\n\n" +
-                      
-                      "STEP 1: PROPOSE EXCHANGE METHOD\n" +
-                      "--------------------------------\n" +
-                      "• Click 'Manage Trade' button\n" +
-                      "• Choose between Delivery or Meetup\n" +
-                      "• Both traders must agree on the method\n" +
-                      "• Once agreed, you'll proceed to Step 2\n\n" +
-                      
-                      "STEP 2: EXCHANGE DETAILS\n" +
-                      "------------------------\n" +
-                      "• Enter your exchange details:\n" +
-                      "  - For Delivery: Address, courier, tracking, special instructions\n" +
-                      "  - For Meetup: Location, date, time, contact info\n" +
-                      "  - OPTIONAL: You can share Google Maps link for meetup location\n" +
-                      "• Both traders enter their details\n" +
-                      "• Review each other's details\n" +
-                      "• When both traders confirm, you proceed to Step 3\n\n" +
-                      
-                      "STEP 3: PAYMENT PROCESSING\n" +
-                      "--------------------------\n" +
-                      "• Admin fee: ₱15.00\n" +
-                      "• Decide who will pay the admin fee:\n" +
-                      "  - Fee payer pays: ₱215 (₱200 item + ₱15 fee)\n" +
-                      "  - Other trader pays: ₱200\n\n" +
-                      
-                      "⚠️  PAYMENT DETAILS - CRITICAL:\n" +
-                      "   You MUST provide your payment information:\n" +
-                      "   • GCash number with registered name\n" +
-                      "   • OR PayMaya number with registered name\n\n" +
-                      
-                      "❗ WARNING: Money is NON-REFUNDABLE if sent to wrong number!\n" +
-                      "   • Double-check your payment details before submitting\n" +
-                      "   • Verify the number is correct and active\n" +
-                      "   • Make sure the name matches your account\n\n" +
-                      
-                      "STEP 4: SHIPPING & RECEIVING\n" +
-                      "----------------------------\n" +
-                      "• Ship your item (if delivery) or prepare for meetup\n" +
-                      "• Update tracking numbers if applicable\n" +
-                      "• Wait for item to arrive\n" +
-                      "• Once you receive the item, mark as received\n" +
-                      "• When both traders mark received, proceed to Step 5\n\n" +
-                      
-                      "STEP 5: COMPLETION & REFUND\n" +
-                      "---------------------------\n" +
-                      "• Admin processes refunds using your provided payment details\n" +
-                      "• Both traders receive ₱200 back\n" +
-                      "• Admin keeps the ₱15 fee\n" +
-                      "• Trade moves to History\n\n" +
-                      
-                      "TRADE COMPLETED! ✓\n\n" +
-                      
-                      "══════════════════════════════════════════════════════════════\n" +
-                      "                    IMPORTANT REMINDERS\n" +
-                      "══════════════════════════════════════════════════════════════\n" +
-                      "• Always communicate through BarterZone messages\n" +
-                      "• Keep all payment receipts and screenshots\n" +
-                      "• Verify trader identity before shipping\n" +
-                      "• Report any suspicious activity immediately\n" +
-                      "• Contact admin for disputes or issues\n\n" +
-                      
-                      "══════════════════════════════════════════════════════════════\n" +
-                      "                NEED HELP? CONTACT ADMIN\n" +
-                      "══════════════════════════════════════════════════════════════";
+        String guide = "══════════════════════════════════════════════════════════════\n"
+                + "                    COMPLETE TRADE GUIDE\n"
+                + "══════════════════════════════════════════════════════════════\n\n"
+                + "STEP 1: PROPOSE EXCHANGE METHOD\n"
+                + "--------------------------------\n"
+                + "• Click 'Manage Trade' button\n"
+                + "• Choose between Delivery or Meetup\n"
+                + "• Both traders must agree on the method\n"
+                + "• Once agreed, you'll proceed to Step 2\n\n"
+                + "STEP 2: EXCHANGE DETAILS\n"
+                + "------------------------\n"
+                + "• Enter your exchange details:\n"
+                + "  - For Delivery: Address, courier, tracking, special instructions\n"
+                + "  - For Meetup: Location, date, time, contact info\n"
+                + "  - OPTIONAL: You can share Google Maps link for meetup location\n"
+                + "• Both traders enter their details\n"
+                + "• Review each other's details\n"
+                + "• When both traders confirm, you proceed to Step 3\n\n"
+                + "STEP 3: PAYMENT PROCESSING\n"
+                + "--------------------------\n"
+                + "• Admin fee: ₱15.00\n"
+                + "• Decide who will pay the admin fee:\n"
+                + "  - Fee payer pays: ₱215 (₱200 item + ₱15 fee)\n"
+                + "  - Other trader pays: ₱200\n\n"
+                + "⚠️  PAYMENT DETAILS - CRITICAL:\n"
+                + "   You MUST provide your payment information:\n"
+                + "   • GCash number with registered name\n"
+                + "   • OR PayMaya number with registered name\n\n"
+                + "❗ WARNING: Money is NON-REFUNDABLE if sent to wrong number!\n"
+                + "   • Double-check your payment details before submitting\n"
+                + "   • Verify the number is correct and active\n"
+                + "   • Make sure the name matches your account\n\n"
+                + "STEP 4: SHIPPING & RECEIVING\n"
+                + "----------------------------\n"
+                + "• Ship your item (if delivery) or prepare for meetup\n"
+                + "• Update tracking numbers if applicable\n"
+                + "• Wait for item to arrive\n"
+                + "• Once you receive the item, mark as received\n"
+                + "• When both traders mark received, proceed to Step 5\n\n"
+                + "STEP 5: COMPLETION & REFUND\n"
+                + "---------------------------\n"
+                + "• Admin processes refunds using your provided payment details\n"
+                + "• Both traders receive ₱200 back\n"
+                + "• Admin keeps the ₱15 fee\n"
+                + "• Trade moves to History\n\n"
+                + "TRADE COMPLETED! ✓\n\n"
+                + "══════════════════════════════════════════════════════════════\n"
+                + "                    IMPORTANT REMINDERS\n"
+                + "══════════════════════════════════════════════════════════════\n"
+                + "• Always communicate through BarterZone messages\n"
+                + "• Keep all payment receipts and screenshots\n"
+                + "• Verify trader identity before shipping\n"
+                + "• Report any suspicious activity immediately\n"
+                + "• Contact admin for disputes or issues\n\n"
+                + "══════════════════════════════════════════════════════════════\n"
+                + "                NEED HELP? CONTACT ADMIN\n"
+                + "══════════════════════════════════════════════════════════════";
 
         JOptionPane.showMessageDialog(this, guide,
                 "Trade Process Guide",
@@ -1245,22 +1237,24 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void viewTraderDetails() {
-        if (selectedOtherTraderId == -1) return;
+        if (selectedOtherTraderId == -1) {
+            return;
+        }
 
-        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
-                     "FROM tbl_users WHERE user_id = ?";
+        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date "
+                + "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> traders = db.fetchRecords(sql, selectedOtherTraderId);
 
         if (!traders.isEmpty()) {
             Map<String, Object> trader = traders.get(0);
-            
-            String details = "TRADER DETAILS\n" +
-                    "==============\n\n" +
-                    "Name: " + trader.get("user_fullname") + "\n" +
-                    "Username: " + trader.get("user_username") + "\n" +
-                    "Email: " + trader.get("user_email") + "\n" +
-                    "Status: " + trader.get("user_status") + "\n" +
-                    "Member Since: " + formatDate(trader.get("created_date"));
+
+            String details = "TRADER DETAILS\n"
+                    + "==============\n\n"
+                    + "Name: " + trader.get("user_fullname") + "\n"
+                    + "Username: " + trader.get("user_username") + "\n"
+                    + "Email: " + trader.get("user_email") + "\n"
+                    + "Status: " + trader.get("user_status") + "\n"
+                    + "Member Since: " + formatDate(trader.get("created_date"));
 
             JOptionPane.showMessageDialog(this, details,
                     "Trader Information",
@@ -1269,20 +1263,20 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void viewMyDetails() {
-        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
-                     "FROM tbl_users WHERE user_id = ?";
+        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date "
+                + "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> users = db.fetchRecords(sql, traderId);
 
         if (!users.isEmpty()) {
             Map<String, Object> user = users.get(0);
-            
-            String details = "YOUR DETAILS\n" +
-                    "============\n\n" +
-                    "Name: " + user.get("user_fullname") + "\n" +
-                    "Username: " + user.get("user_username") + "\n" +
-                    "Email: " + user.get("user_email") + "\n" +
-                    "Status: " + user.get("user_status") + "\n" +
-                    "Member Since: " + formatDate(user.get("created_date"));
+
+            String details = "YOUR DETAILS\n"
+                    + "============\n\n"
+                    + "Name: " + user.get("user_fullname") + "\n"
+                    + "Username: " + user.get("user_username") + "\n"
+                    + "Email: " + user.get("user_email") + "\n"
+                    + "Status: " + user.get("user_status") + "\n"
+                    + "Member Since: " + formatDate(user.get("created_date"));
 
             JOptionPane.showMessageDialog(this, details,
                     "My Information",
@@ -1291,10 +1285,12 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void openManageTrade() {
-        if (selectedTradeId == -1) return;
+        if (selectedTradeId == -1) {
+            return;
+        }
 
-        manage_trades manageFrame = new manage_trades(selectedTradeId, selectedMyItem, 
-            selectedTheirItem, selectedOtherTraderName, selectedOtherTraderId);
+        manage_trades manageFrame = new manage_trades(selectedTradeId, selectedMyItem,
+                selectedTheirItem, selectedOtherTraderName, selectedOtherTraderId);
         manageFrame.setVisible(true);
         manageFrame.setLocationRelativeTo(null);
         this.dispose();
@@ -1307,7 +1303,9 @@ public class trades extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -1320,7 +1318,9 @@ public class trades extends javax.swing.JFrame {
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -1361,11 +1361,11 @@ public class trades extends javax.swing.JFrame {
         List<Map<String, Object>> myItems = db.fetchRecords(sql, traderId);
 
         if (myItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this, 
+            JOptionPane.showMessageDialog(this,
                     "You don't have any items available for trade.\n\n"
                     + "All your items may be already in active/completed trades.\n"
                     + "Add new items in 'My Items' to start trading.",
-                    "No Items Available", 
+                    "No Items Available",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -1493,7 +1493,9 @@ public class trades extends javax.swing.JFrame {
 
     private void acceptTrade() {
         int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) return;
+        if (selectedRow == -1) {
+            return;
+        }
 
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
@@ -1524,7 +1526,9 @@ public class trades extends javax.swing.JFrame {
 
     private void declineTrade() {
         int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) return;
+        if (selectedRow == -1) {
+            return;
+        }
 
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
@@ -1566,7 +1570,7 @@ public class trades extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);

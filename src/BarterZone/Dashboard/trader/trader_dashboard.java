@@ -132,7 +132,7 @@ public class trader_dashboard extends javax.swing.JFrame {
         setupContentPanel();
         loadDashboardStats();
 
-        setTitle("Trader Dashboard - " + traderName);
+        setTitle("BarterZone - " + traderName);
         setIconImage(new ImageIcon(getClass().getResource(
                 "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);

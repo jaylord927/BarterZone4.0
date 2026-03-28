@@ -54,11 +54,11 @@ public class profile extends javax.swing.JFrame {
     private JPanel logoutOptionPanel;
     private JLabel logoutIcon;
     private JLabel logoutLabel;
-    
+
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     private JPanel contentPanel;
     private JPanel profileCard;
     private JPanel avatarPanel;
@@ -78,31 +78,31 @@ public class profile extends javax.swing.JFrame {
     private JLabel memberLabel;
     private JLabel memberValue;
     private JButton editProfileButton;
-    
+
     private Color themeColor = new Color(12, 192, 223);
     private Color hoverColor = new Color(70, 210, 235);
     private Color headerBgColor = new Color(245, 245, 245);
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-    
+
     private JPanel currentHoverPanel = null;
-    
+
     private static final String PROFILE_IMAGE_PATH = "src/BarterZone/resources/images/";
 
     public profile() {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-        
+
         if (!session.isLoggedIn()) {
             JOptionPane.showMessageDialog(this, "No active session. Please login again.", "Session Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         this.traderId = session.getUserId();
         this.traderName = session.getFullName();
-        
+
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -110,13 +110,15 @@ public class profile extends javax.swing.JFrame {
         setupHeader();
         setupContentPanel();
         loadUserData();
-        
-        setTitle("Profile - " + traderName);
+
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        
+
         createImageDirectory();
     }
 
@@ -144,7 +146,7 @@ public class profile extends javax.swing.JFrame {
         contentPanel.setBounds(180, 70, 620, 430);
         getContentPane().add(contentPanel);
     }
-    
+
     private void createImageDirectory() {
         File directory = new File(PROFILE_IMAGE_PATH);
         if (!directory.exists()) {
@@ -278,33 +280,33 @@ public class profile extends javax.swing.JFrame {
         backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         backButton.addActionListener(e -> goBackToSettings());
         sidePanel.add(backButton);
-        
+
         int menuY = 80;
         int menuHeight = 40;
         int menuSpacing = 5;
-        
+
         profileOptionPanel = createOptionPanel(20, menuY, 140, menuHeight);
         profileIcon = createOptionIcon(profileOptionPanel, 15, 10, profileIcon);
         profileLabel = createOptionLabel(profileOptionPanel, "Profile", 45, 12);
         menuY += menuHeight + menuSpacing;
-        
+
         privacyOptionPanel = createOptionPanel(20, menuY, 140, menuHeight);
         privacyIcon = createOptionIcon(privacyOptionPanel, 15, 10, privacyIcon);
         privacyLabel = createOptionLabel(privacyOptionPanel, "Privacy", 45, 12);
         menuY += menuHeight + menuSpacing;
-        
+
         logoutOptionPanel = createOptionPanel(20, menuY, 140, menuHeight);
         logoutIcon = createOptionIcon(logoutOptionPanel, 15, 10, logoutIcon);
         logoutLabel = createOptionLabel(logoutOptionPanel, "Logout", 45, 12);
     }
-    
+
     private JPanel createOptionPanel(int x, int y, int width, int height) {
         JPanel panel = new JPanel();
         panel.setLayout(null);
         panel.setBackground(themeColor);
         panel.setBounds(x, y, width, height);
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         MouseAdapter adapter = new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -314,6 +316,7 @@ public class profile extends javax.swing.JFrame {
                 panel.setBackground(hoverColor);
                 currentHoverPanel = panel;
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 panel.setBackground(themeColor);
@@ -321,21 +324,22 @@ public class profile extends javax.swing.JFrame {
                     currentHoverPanel = null;
                 }
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleOptionClick(panel);
             }
         };
-        
+
         panel.addMouseListener(adapter);
         sidePanel.add(panel);
         return panel;
     }
-    
+
     private JLabel createOptionIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -345,6 +349,7 @@ public class profile extends javax.swing.JFrame {
                 panel.setBackground(hoverColor);
                 currentHoverPanel = panel;
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 panel.setBackground(themeColor);
@@ -352,23 +357,24 @@ public class profile extends javax.swing.JFrame {
                     currentHoverPanel = null;
                 }
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleOptionClick(panel);
             }
         });
-        
+
         panel.add(iconLabel);
         return iconLabel;
     }
-    
+
     private JLabel createOptionLabel(JPanel panel, String text, int x, int y) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.BOLD, 13));
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -378,6 +384,7 @@ public class profile extends javax.swing.JFrame {
                 panel.setBackground(hoverColor);
                 currentHoverPanel = panel;
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 panel.setBackground(themeColor);
@@ -385,16 +392,17 @@ public class profile extends javax.swing.JFrame {
                     currentHoverPanel = null;
                 }
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleOptionClick(panel);
             }
         });
-        
+
         panel.add(label);
         return label;
     }
-    
+
     private void handleOptionClick(JPanel panel) {
         if (panel == privacyOptionPanel) {
             showPrivacyMessage();
@@ -425,7 +433,7 @@ public class profile extends javax.swing.JFrame {
         profileCard.setBorder(new LineBorder(new Color(220, 220, 220), 1));
         profileCard.setBounds(20, 20, 580, 390);
         contentPanel.add(profileCard);
-        
+
         avatarPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -443,13 +451,13 @@ public class profile extends javax.swing.JFrame {
         avatarPanel.setBounds(240, 20, 100, 100);
         avatarPanel.setOpaque(false);
         profileCard.add(avatarPanel);
-        
+
         avatarLabel = new JLabel();
         avatarLabel.setBounds(0, 0, 100, 100);
         avatarLabel.setHorizontalAlignment(JLabel.CENTER);
         avatarLabel.setVerticalAlignment(JLabel.CENTER);
         avatarPanel.add(avatarLabel);
-        
+
         avatarInitialLabel = new JLabel();
         avatarInitialLabel.setBounds(0, 0, 100, 100);
         avatarInitialLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -457,9 +465,9 @@ public class profile extends javax.swing.JFrame {
         avatarInitialLabel.setFont(new Font("Segoe UI", Font.BOLD, 36));
         avatarInitialLabel.setForeground(accentColor);
         avatarPanel.add(avatarInitialLabel);
-        
+
         loadAvatar();
-        
+
         changePhotoButton = new JButton("Change Photo");
         changePhotoButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         changePhotoButton.setBackground(themeColor);
@@ -470,88 +478,88 @@ public class profile extends javax.swing.JFrame {
         changePhotoButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         changePhotoButton.addActionListener(e -> changeProfilePhoto());
         profileCard.add(changePhotoButton);
-        
+
         int startY = 170;
         int labelWidth = 100;
         int valueX = 120;
         int rowHeight = 32;
-        
+
         nameLabel = new JLabel("Full Name:");
         nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         nameLabel.setForeground(textColor);
         nameLabel.setBounds(40, startY, labelWidth, 25);
         profileCard.add(nameLabel);
-        
+
         nameValue = new JLabel();
         nameValue.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         nameValue.setForeground(accentColor);
         nameValue.setBounds(valueX, startY, 300, 25);
         profileCard.add(nameValue);
         startY += rowHeight;
-        
+
         usernameLabel = new JLabel("Username:");
         usernameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         usernameLabel.setForeground(textColor);
         usernameLabel.setBounds(40, startY, labelWidth, 25);
         profileCard.add(usernameLabel);
-        
+
         usernameValue = new JLabel();
         usernameValue.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         usernameValue.setForeground(textColor);
         usernameValue.setBounds(valueX, startY, 300, 25);
         profileCard.add(usernameValue);
         startY += rowHeight;
-        
+
         emailLabel = new JLabel("Email:");
         emailLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         emailLabel.setForeground(textColor);
         emailLabel.setBounds(40, startY, labelWidth, 25);
         profileCard.add(emailLabel);
-        
+
         emailValue = new JLabel();
         emailValue.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         emailValue.setForeground(textColor);
         emailValue.setBounds(valueX, startY, 300, 25);
         profileCard.add(emailValue);
         startY += rowHeight;
-        
+
         typeLabel = new JLabel("Account Type:");
         typeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         typeLabel.setForeground(textColor);
         typeLabel.setBounds(40, startY, labelWidth, 25);
         profileCard.add(typeLabel);
-        
+
         typeValue = new JLabel();
         typeValue.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         typeValue.setForeground(textColor);
         typeValue.setBounds(valueX, startY, 300, 25);
         profileCard.add(typeValue);
         startY += rowHeight;
-        
+
         statusLabel = new JLabel("Status:");
         statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         statusLabel.setForeground(textColor);
         statusLabel.setBounds(40, startY, labelWidth, 25);
         profileCard.add(statusLabel);
-        
+
         statusValue = new JLabel();
         statusValue.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statusValue.setBounds(valueX, startY, 300, 25);
         profileCard.add(statusValue);
         startY += rowHeight;
-        
+
         memberLabel = new JLabel("Member Since:");
         memberLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         memberLabel.setForeground(textColor);
         memberLabel.setBounds(40, startY, labelWidth, 25);
         profileCard.add(memberLabel);
-        
+
         memberValue = new JLabel();
         memberValue.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         memberValue.setForeground(textColor);
         memberValue.setBounds(valueX, startY, 300, 25);
         profileCard.add(memberValue);
-        
+
         editProfileButton = new JButton("EDIT PROFILE");
         editProfileButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         editProfileButton.setBackground(accentColor);
@@ -566,16 +574,16 @@ public class profile extends javax.swing.JFrame {
 
     private void loadUserData() {
         Map<String, Object> userData = session.getAllUserData();
-        
+
         nameValue.setText((String) userData.get("user_fullname"));
         usernameValue.setText((String) userData.get("user_username"));
         emailValue.setText((String) userData.get("user_email"));
-        
+
         String type = (String) userData.get("user_type");
         if (type != null) {
             typeValue.setText(type.substring(0, 1).toUpperCase() + type.substring(1));
         }
-        
+
         String status = (String) userData.get("user_status");
         if (status != null) {
             if (status.equalsIgnoreCase("active")) {
@@ -586,7 +594,7 @@ public class profile extends javax.swing.JFrame {
                 statusValue.setForeground(new Color(204, 0, 0));
             }
         }
-        
+
         String memberSince = getMemberSinceDate();
         memberValue.setText(memberSince);
     }
@@ -595,7 +603,7 @@ public class profile extends javax.swing.JFrame {
         try {
             String sql = "SELECT created_date FROM tbl_users WHERE user_id = ?";
             List<Map<String, Object>> result = db.fetchRecords(sql, traderId);
-            
+
             if (!result.isEmpty() && result.get(0).get("created_date") != null) {
                 String dateStr = result.get(0).get("created_date").toString();
                 if (dateStr.length() >= 10) {
@@ -604,10 +612,10 @@ public class profile extends javax.swing.JFrame {
                         int year = Integer.parseInt(dateParts[0]);
                         int month = Integer.parseInt(dateParts[1]);
                         int day = Integer.parseInt(dateParts[2]);
-                        
+
                         String[] monthNames = {"January", "February", "March", "April", "May", "June",
-                                              "July", "August", "September", "October", "November", "December"};
-                        
+                            "July", "August", "September", "October", "November", "December"};
+
                         return monthNames[month - 1] + " " + day + ", " + year;
                     }
                 }
@@ -633,7 +641,7 @@ public class profile extends javax.swing.JFrame {
             File sourceFile = new File(sourcePath);
             String fileName = sourceFile.getName();
             String destinationPath = PROFILE_IMAGE_PATH + fileName;
-            
+
             File destFile = new File(destinationPath);
             if (destFile.exists()) {
                 String nameWithoutExt = fileName.substring(0, fileName.lastIndexOf("."));
@@ -643,14 +651,14 @@ public class profile extends javax.swing.JFrame {
             }
 
             Files.copy(Paths.get(sourcePath), Paths.get(destinationPath), StandardCopyOption.REPLACE_EXISTING);
-            
+
             File savedFile = new File(destinationPath);
             System.out.println("Image saved to: " + destinationPath);
             System.out.println("File exists: " + savedFile.exists());
             System.out.println("File size: " + savedFile.length());
-            
+
             return "BarterZone.resources.images." + fileName;
-            
+
         } catch (IOException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error saving image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -665,33 +673,33 @@ public class profile extends javax.swing.JFrame {
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             selectedImagePath = selectedFile.getAbsolutePath();
-            
+
             System.out.println("Selected file: " + selectedImagePath);
             System.out.println("Original filename: " + selectedFile.getName());
-            
+
             String savedPath = saveProfileImage(selectedImagePath);
-            
+
             if (!savedPath.isEmpty()) {
                 String sql = "UPDATE tbl_users SET user_profile_picture = ? WHERE user_id = ?";
                 db.updateRecord(sql, savedPath, traderId);
-                
+
                 session.setProfilePicture(savedPath);
                 session.refreshData();
-                
+
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
                 }
-                
+
                 loadAvatar();
-                
+
                 avatarPanel.revalidate();
                 avatarPanel.repaint();
-                
-                JOptionPane.showMessageDialog(this, 
-                    "Profile photo updated successfully!", 
-                    "Success", 
-                    JOptionPane.INFORMATION_MESSAGE);
+
+                JOptionPane.showMessageDialog(this,
+                        "Profile photo updated successfully!",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -702,20 +710,20 @@ public class profile extends javax.swing.JFrame {
         editFrame.setLocationRelativeTo(null);
         this.dispose();
     }
-    
+
     private void showPrivacyMessage() {
         JOptionPane.showMessageDialog(this,
-            "Privacy Settings\n\n"
-            + "This feature is coming soon!\n\n"
-            + "You will be able to manage:\n"
-            + "• Who can view your profile\n"
-            + "• Data sharing preferences\n"
-            + "• Account visibility settings\n"
-            + "• And more...",
-            "Privacy Settings",
-            JOptionPane.INFORMATION_MESSAGE);
+                "Privacy Settings\n\n"
+                + "This feature is coming soon!\n\n"
+                + "You will be able to manage:\n"
+                + "• Who can view your profile\n"
+                + "• Data sharing preferences\n"
+                + "• Account visibility settings\n"
+                + "• And more...",
+                "Privacy Settings",
+                JOptionPane.INFORMATION_MESSAGE);
     }
-    
+
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to logout?",
@@ -730,7 +738,7 @@ public class profile extends javax.swing.JFrame {
             this.dispose();
         }
     }
-    
+
     private void goBackToSettings() {
         settings settingsFrame = new settings(traderId, traderName);
         settingsFrame.setVisible(true);

@@ -150,6 +150,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         updateBadges();
         
         setTitle("Admin Dashboard - " + adminName);
+        
         setSize(1100, 650);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -452,7 +453,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         int buttonSpacing = 10;
 
         addAdminButton = createActionButton(buttonX, buttonY, buttonWidth, buttonHeight, 
-            "➕ Add New Admin", new Color(8, 78, 128));
+            " Add New Admin", new Color(8, 78, 128));
         addAdminButton.addActionListener(e -> {
             manage_users usersFrame = new manage_users(adminId, adminName);
             usersFrame.setVisible(true);
@@ -462,7 +463,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         quickActionsPanel.add(addAdminButton);
 
         newAnnouncementButton = createActionButton(buttonX + buttonWidth + buttonSpacing, buttonY, 
-            buttonWidth, buttonHeight, "📢 New Announcement", accentColor, new Color(8, 78, 128));
+            buttonWidth, buttonHeight, " New Announcement", accentColor, new Color(8, 78, 128));
         newAnnouncementButton.addActionListener(e -> {
             manage_announcement announcementFrame = new manage_announcement(adminId, adminName);
             announcementFrame.setVisible(true);
@@ -472,7 +473,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         quickActionsPanel.add(newAnnouncementButton);
 
         viewReportsButton = createActionButton(buttonX, buttonY + buttonHeight + buttonSpacing, 
-            buttonWidth, buttonHeight, "⚠️ View Pending Reports", new Color(204, 0, 0));
+            buttonWidth, buttonHeight, " View Pending Reports", new Color(204, 0, 0));
         viewReportsButton.addActionListener(e -> {
             manage_reports reportsFrame = new manage_reports(adminId, adminName);
             reportsFrame.setVisible(true);
@@ -483,7 +484,7 @@ public class admin_dashboard extends javax.swing.JFrame {
 
         refreshDataButton = createActionButton(buttonX + buttonWidth + buttonSpacing, 
             buttonY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, 
-            "🔄 Refresh Dashboard", new Color(46, 125, 50));
+            " Refresh Dashboard", new Color(46, 125, 50));
         refreshDataButton.addActionListener(e -> {
             loadStats();
             loadRecentActivities();
@@ -526,37 +527,37 @@ public class admin_dashboard extends javax.swing.JFrame {
         systemHealthTitle.setBounds(15, 10, 150, 25);
         systemHealthPanel.add(systemHealthTitle);
 
-        dbStatusLabel = new JLabel("✓ Database: Connected");
+        dbStatusLabel = new JLabel(" Database: Connected");
         dbStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dbStatusLabel.setForeground(new Color(46, 125, 50));
         dbStatusLabel.setBounds(30, 45, 200, 25);
         systemHealthPanel.add(dbStatusLabel);
 
-        serverTimeLabel = new JLabel("🕒 Server Time: " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+        serverTimeLabel = new JLabel(" Server Time: " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
         serverTimeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         serverTimeLabel.setForeground(new Color(8, 78, 128));
         serverTimeLabel.setBounds(30, 70, 250, 25);
         systemHealthPanel.add(serverTimeLabel);
 
-        uptimeLabel = new JLabel("⏱️ System Uptime: 24d 13h");
+        uptimeLabel = new JLabel(" System Uptime: 24d 13h");
         uptimeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         uptimeLabel.setForeground(new Color(8, 78, 128));
         uptimeLabel.setBounds(30, 95, 200, 25);
         systemHealthPanel.add(uptimeLabel);
 
-        lastBackupLabel = new JLabel("💾 Last Backup: " + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
+        lastBackupLabel = new JLabel(" Last Backup: " + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date()));
         lastBackupLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lastBackupLabel.setForeground(new Color(8, 78, 128));
         lastBackupLabel.setBounds(400, 45, 250, 25);
         systemHealthPanel.add(lastBackupLabel);
 
-        JLabel versionLabel = new JLabel("📦 Version: 3.0.0");
+        JLabel versionLabel = new JLabel(" Version: 3.0.0");
         versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         versionLabel.setForeground(new Color(8, 78, 128));
         versionLabel.setBounds(400, 70, 200, 25);
         systemHealthPanel.add(versionLabel);
 
-        JLabel environmentLabel = new JLabel("🌐 Environment: Production");
+        JLabel environmentLabel = new JLabel(" Environment: Production");
         environmentLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         environmentLabel.setForeground(new Color(8, 78, 128));
         environmentLabel.setBounds(400, 95, 200, 25);

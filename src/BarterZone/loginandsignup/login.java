@@ -3,12 +3,16 @@ package BarterZone.loginandsignup;
 //import Barterzone.ui.Transition;
 import BarterZone.Dashboard.session.user_session;
 import database.config.config;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import landing.landing;
 
 public class login extends javax.swing.JFrame {
 
     public login() {
+        setTitle("BarterZone");
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         initComponents();
         setSize(800, 500);
         setResizable(false);

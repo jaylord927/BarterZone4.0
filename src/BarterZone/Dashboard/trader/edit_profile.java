@@ -32,7 +32,6 @@ public class edit_profile extends javax.swing.JFrame {
         initComponents();
         loadUserData();
         
-        setTitle("Edit Profile");
         setSize(500, 550);
         setResizable(false);
         setLocationRelativeTo(null);

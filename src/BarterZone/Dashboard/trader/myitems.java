@@ -50,47 +50,47 @@ public class myitems extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-    
+
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-    
+
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-    
+
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-    
+
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-    
+
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-    
+
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-    
+
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-    
+
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     private JPanel contentPanel;
-    
+
     private JTextField searchField;
     private JButton addButton;
     private JButton editButton;
     private JButton deleteButton;
     private JButton removeButton;
-    
+
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable myitemstable;
 
@@ -101,7 +101,7 @@ public class myitems extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-    
+
     private JPanel activePanel = null;
 
     public myitems(int traderId, String traderName) {
@@ -110,7 +110,7 @@ public class myitems extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-        
+
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -121,7 +121,9 @@ public class myitems extends javax.swing.JFrame {
         setupLiveSearch();
         loadProfileAvatar();
 
-        setTitle("My Items - " + traderName);
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -151,7 +153,7 @@ public class myitems extends javax.swing.JFrame {
         contentPanel.setBackground(new Color(250, 250, 250));
         contentPanel.setBounds(180, 70, 620, 430);
         getContentPane().add(contentPanel);
-        
+
         jScrollPane1 = new javax.swing.JScrollPane();
         myitemstable = new javax.swing.JTable();
     }
@@ -314,7 +316,7 @@ public class myitems extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-        
+
         loadProfileAvatar();
 
         int menuY = 155;
@@ -385,7 +387,7 @@ public class myitems extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-        
+
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -394,7 +396,7 @@ public class myitems extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -415,7 +417,7 @@ public class myitems extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -426,7 +428,7 @@ public class myitems extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -447,7 +449,7 @@ public class myitems extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(label);
         return label;
     }
@@ -759,7 +761,7 @@ public class myitems extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);
@@ -794,6 +796,7 @@ public class myitems extends javax.swing.JFrame {
     }
 
     class ImageRenderer extends javax.swing.table.DefaultTableCellRenderer {
+
         @Override
         public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {

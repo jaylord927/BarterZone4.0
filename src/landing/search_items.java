@@ -54,7 +54,9 @@ public class search_items extends JFrame {
         initComponents();
         loadSearchResults();
 
-        setTitle("Search Results - " + searchQuery);
+        setTitle("BarterZone");
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 600);
         setResizable(false);
         setLocationRelativeTo(null);

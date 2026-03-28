@@ -143,10 +143,11 @@ public class finditems extends javax.swing.JFrame {
         setupContentPanel();
         loadAllItems();
         loadTraderOwnItems();
-        setupLiveSearch();
+        setupLiveSearch(); 
         loadProfileAvatar();
-
-        setTitle("Find Items - " + traderName);
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);

@@ -47,6 +47,9 @@ public class edit_items extends javax.swing.JFrame {
         this.traderName = traderName;
         this.itemId = itemId;
         this.db = new config();
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         initComponents();
         setupDialog();
         loadItemData();

@@ -46,41 +46,41 @@ public class reports extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-    
+
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-    
+
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-    
+
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-    
+
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-    
+
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-    
+
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-    
+
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-    
+
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     private JPanel contentPanel;
-    
+
     private DefaultTableModel myReportsTableModel;
     private javax.swing.JTable myReportsTable;
     private JScrollPane myReportsScrollPane;
@@ -107,7 +107,7 @@ public class reports extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-    
+
     private JPanel activePanel = null;
 
     public reports(int traderId, String traderName) {
@@ -116,7 +116,7 @@ public class reports extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-        
+
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -127,7 +127,9 @@ public class reports extends javax.swing.JFrame {
         loadTraders();
         loadProfileAvatar();
 
-        setTitle("Reports - " + traderName);
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -317,7 +319,7 @@ public class reports extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-        
+
         loadProfileAvatar();
 
         int menuY = 155;
@@ -388,7 +390,7 @@ public class reports extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-        
+
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -397,7 +399,7 @@ public class reports extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -418,7 +420,7 @@ public class reports extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -429,7 +431,7 @@ public class reports extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -450,7 +452,7 @@ public class reports extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(label);
         return label;
     }
@@ -543,7 +545,7 @@ public class reports extends javax.swing.JFrame {
             "Violation of Terms",
             "Other"
         };
-        
+
         reasonComboBox = new JComboBox<>(reportReasons);
         reasonComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         reasonComboBox.setBounds(10, 125, 320, 30);
@@ -666,7 +668,7 @@ public class reports extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting()) {
                     int selectedRow = myReportsTable.getSelectedRow();
-                    
+
                     if (selectedRow == lastSelectedRow && selectedRow != -1) {
                         myReportsTable.clearSelection();
                         clearReportDetails();
@@ -707,7 +709,7 @@ public class reports extends javax.swing.JFrame {
         for (Map<String, Object> report : reports) {
             String status = report.get("report_status") != null ? report.get("report_status").toString() : "pending";
             String displayStatus = "";
-            
+
             switch (status.toLowerCase()) {
                 case "resolved":
                     displayStatus = "Resolved";
@@ -753,10 +755,10 @@ public class reports extends javax.swing.JFrame {
         List<Map<String, Object>> report = db.fetchRecords(sql, selectedReportId);
 
         if (!report.isEmpty()) {
-            String adminNotes = report.get(0).get("admin_notes") != null ? 
-                report.get(0).get("admin_notes").toString() : "No admin reply yet.";
-            String reportStatus = report.get(0).get("report_status") != null ? 
-                report.get(0).get("report_status").toString() : "pending";
+            String adminNotes = report.get(0).get("admin_notes") != null
+                    ? report.get(0).get("admin_notes").toString() : "No admin reply yet.";
+            String reportStatus = report.get(0).get("report_status") != null
+                    ? report.get(0).get("report_status").toString() : "pending";
 
             String statusDisplay = "";
             switch (reportStatus.toLowerCase()) {
@@ -809,7 +811,7 @@ public class reports extends javax.swing.JFrame {
         }
 
         String selectedTraderName = traderComboBox.getSelectedItem().toString();
-        
+
         String getTraderIdSql = "SELECT user_id FROM tbl_users WHERE user_fullname = ? AND user_type = 'trader'";
         List<Map<String, Object>> traders = db.fetchRecords(getTraderIdSql, selectedTraderName);
 
@@ -825,9 +827,9 @@ public class reports extends javax.swing.JFrame {
         double pendingCount = db.getSingleValue(checkSql, traderId, reportedTraderId);
 
         if (pendingCount > 0) {
-            JOptionPane.showMessageDialog(this, 
-                "You already have a pending report against this trader.\nPlease wait for admin resolution.",
-                "Duplicate Report", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "You already have a pending report against this trader.\nPlease wait for admin resolution.",
+                    "Duplicate Report", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -836,20 +838,20 @@ public class reports extends javax.swing.JFrame {
 
         try {
             db.addRecord(insertSql, traderId, reportedTraderId, reason, description);
-            
-            JOptionPane.showMessageDialog(this, 
-                "Report submitted successfully!\n\n"
-                + "Reported Trader: " + selectedTraderName + "\n"
-                + "Reason: " + reason + "\n\n"
-                + "An admin will review your report.",
-                "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            JOptionPane.showMessageDialog(this,
+                    "Report submitted successfully!\n\n"
+                    + "Reported Trader: " + selectedTraderName + "\n"
+                    + "Reason: " + reason + "\n\n"
+                    + "An admin will review your report.",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
 
             traderComboBox.setSelectedIndex(0);
             reasonComboBox.setSelectedIndex(0);
             descriptionArea.setText("");
-            
+
             loadMyReports();
-            
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to submit report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -862,11 +864,11 @@ public class reports extends javax.swing.JFrame {
         }
 
         if (!selectedReportStatus.equalsIgnoreCase("Pending") && !selectedReportStatus.equalsIgnoreCase("Under Review")) {
-            JOptionPane.showMessageDialog(this, 
-                "This report cannot be cancelled as it is already " + selectedReportStatus + ".\n\n"
-                + "It will be removed from your view only.",
-                "Cannot Cancel", JOptionPane.INFORMATION_MESSAGE);
-            
+            JOptionPane.showMessageDialog(this,
+                    "This report cannot be cancelled as it is already " + selectedReportStatus + ".\n\n"
+                    + "It will be removed from your view only.",
+                    "Cannot Cancel", JOptionPane.INFORMATION_MESSAGE);
+
             removeFromDisplay();
             return;
         }
@@ -883,14 +885,14 @@ public class reports extends javax.swing.JFrame {
             try {
                 String sql = "DELETE FROM tbl_reports WHERE report_id = ? AND reporter_id = ? AND report_status IN ('pending', 'under_review')";
                 db.deleteRecord(sql, selectedReportId, traderId);
-                
-                JOptionPane.showMessageDialog(this, 
-                    "Report cancelled successfully!",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-                
+
+                JOptionPane.showMessageDialog(this,
+                        "Report cancelled successfully!",
+                        "Success", JOptionPane.INFORMATION_MESSAGE);
+
                 loadMyReports();
                 clearReportDetails();
-                
+
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Failed to cancel report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -913,10 +915,10 @@ public class reports extends javax.swing.JFrame {
                 int modelRow = myReportsTable.convertRowIndexToModel(currentRow);
                 myReportsTableModel.removeRow(modelRow);
                 clearReportDetails();
-                
-                JOptionPane.showMessageDialog(this, 
-                    "Report removed from display.",
-                    "Removed", JOptionPane.INFORMATION_MESSAGE);
+
+                JOptionPane.showMessageDialog(this,
+                        "Report removed from display.",
+                        "Removed", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -929,7 +931,9 @@ public class reports extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -951,7 +955,7 @@ public class reports extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);

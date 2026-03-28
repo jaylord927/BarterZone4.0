@@ -49,6 +49,9 @@ public class landing extends JFrame {
         this.session = user_session.getInstance();
         this.traderId = -1;
         this.traderName = "";
+        setTitle("BarterZone");
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         initComponents();
         updateButtonsForSession();
         setupFrame();
@@ -58,8 +61,9 @@ public class landing extends JFrame {
         this.session = user_session.getInstance();
         this.traderId = traderId;
         this.traderName = traderName;
-        
-        // Update session with the logged-in user data
+        setTitle("BarterZone - " +traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         if (traderId != -1 && traderName != null) {
             this.session.login(traderId, "trader", traderName);
         }
@@ -70,7 +74,7 @@ public class landing extends JFrame {
     }
     
     private void setupFrame() {
-        setTitle("BarterZone - Home");
+        setTitle("BarterZone - " + traderName);
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);

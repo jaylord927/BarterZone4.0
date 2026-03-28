@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JLabel;
@@ -33,7 +34,7 @@ public class announcement extends javax.swing.JFrame {
     private Color borderColor = new Color(12, 192, 223);
     private Color textColor = new Color(80, 80, 80);
     private Color titleColor = new Color(0, 102, 102);
-    
+
     // Type colors
     private Color generalColor = new Color(0, 102, 102);
     private Color featureColor = new Color(46, 125, 50);
@@ -44,12 +45,14 @@ public class announcement extends javax.swing.JFrame {
 
     public announcement() {
         this.db = new config();
-        
+
         initComponents();
         setupHeader();
         loadAnnouncements();
-        
-        setTitle("Announcements");
+
+        setTitle("BarterZone");
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 600);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -117,14 +120,14 @@ public class announcement extends javax.swing.JFrame {
         mainScrollPane.setBorder(new LineBorder(headerColor, 1));
         mainScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         mainScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        
+
         announcementsContainer = new JPanel();
         announcementsContainer.setLayout(null);
         announcementsContainer.setBackground(Color.WHITE);
-        
+
         mainScrollPane.setViewportView(announcementsContainer);
         contentPanel.add(mainScrollPane);
-        
+
         getContentPane().add(contentPanel);
     }
 
@@ -151,13 +154,13 @@ public class announcement extends javax.swing.JFrame {
             emptyPanel.setBackground(cardBgColor);
             emptyPanel.setBorder(new LineBorder(borderColor, 1));
             emptyPanel.setBounds(10, 10, 720, 100);
-            
+
             JLabel emptyLabel = new JLabel("No announcements at this time.");
             emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 16));
             emptyLabel.setForeground(textColor);
             emptyLabel.setBounds(250, 35, 300, 30);
             emptyPanel.add(emptyLabel);
-            
+
             announcementsContainer.add(emptyPanel);
             announcementsContainer.setPreferredSize(new java.awt.Dimension(740, 130));
         } else {
@@ -180,9 +183,13 @@ public class announcement extends javax.swing.JFrame {
         String date = formatDateTime(ann.get("announcement_date"));
         String type = (String) ann.get("type");
         String admin = (String) ann.get("admin_name");
-        
-        if (type == null) type = "General Announcement";
-        if (admin == null) admin = "Administrator";
+
+        if (type == null) {
+            type = "General Announcement";
+        }
+        if (admin == null) {
+            admin = "Administrator";
+        }
 
         // Calculate heights based on content
         int titleHeight = 25;
@@ -237,8 +244,10 @@ public class announcement extends javax.swing.JFrame {
     }
 
     private int calculateMessageHeight(String message) {
-        if (message == null) return 50;
-        
+        if (message == null) {
+            return 50;
+        }
+
         // Rough estimation: average 50 characters per line, 20px per line
         int charsPerLine = 80;
         int lines = message.length() / charsPerLine + 1;
@@ -251,19 +260,35 @@ public class announcement extends javax.swing.JFrame {
     }
 
     private Color getTypeColor(String type) {
-        if (type == null) return generalColor;
-        
-        if (type.contains("General")) return generalColor;
-        if (type.contains("Feature")) return featureColor;
-        if (type.contains("Scammer")) return scammerColor;
-        if (type.contains("Maintenance")) return maintenanceColor;
-        if (type.contains("Policy")) return policyColor;
-        if (type.contains("Warning")) return warningColor;
+        if (type == null) {
+            return generalColor;
+        }
+
+        if (type.contains("General")) {
+            return generalColor;
+        }
+        if (type.contains("Feature")) {
+            return featureColor;
+        }
+        if (type.contains("Scammer")) {
+            return scammerColor;
+        }
+        if (type.contains("Maintenance")) {
+            return maintenanceColor;
+        }
+        if (type.contains("Policy")) {
+            return policyColor;
+        }
+        if (type.contains("Warning")) {
+            return warningColor;
+        }
         return generalColor;
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {

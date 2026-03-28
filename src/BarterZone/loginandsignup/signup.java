@@ -1,11 +1,15 @@
 package BarterZone.loginandsignup;
 
 import database.config.config;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 public class signup extends javax.swing.JFrame {
 
     public signup() {
+        setTitle("BarterZone");
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         initComponents();
         setSize(800, 500);
         setResizable(false);

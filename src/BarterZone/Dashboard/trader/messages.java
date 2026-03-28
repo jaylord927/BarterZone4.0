@@ -50,41 +50,41 @@ public class messages extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-    
+
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-    
+
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-    
+
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-    
+
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-    
+
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-    
+
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-    
+
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-    
+
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     private JPanel contentPanel;
-    
+
     private DefaultTableModel conversationsTableModel;
     private javax.swing.JTable conversationsTable;
     private JScrollPane conversationsScrollPane;
@@ -113,7 +113,7 @@ public class messages extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-    
+
     private JPanel activePanel = null;
 
     public messages(int traderId, String traderName) {
@@ -122,7 +122,7 @@ public class messages extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-        
+
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -133,7 +133,9 @@ public class messages extends javax.swing.JFrame {
         setupLiveSearch();
         loadProfileAvatar();
 
-        setTitle("Messages - " + traderName);
+        setTitle("BarterZone - " + traderName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 500);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -323,7 +325,7 @@ public class messages extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-        
+
         loadProfileAvatar();
 
         int menuY = 155;
@@ -394,7 +396,7 @@ public class messages extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-        
+
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -403,7 +405,7 @@ public class messages extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -424,7 +426,7 @@ public class messages extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -435,7 +437,7 @@ public class messages extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -456,7 +458,7 @@ public class messages extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-        
+
         panel.add(label);
         return label;
     }
@@ -756,8 +758,8 @@ public class messages extends javax.swing.JFrame {
                 + "JOIN tbl_users u ON cl.other_id = u.user_id "
                 + "ORDER BY last_date DESC";
 
-        List<Map<String, Object>> conversations = db.fetchRecords(sql, 
-            traderId, traderId, traderId, traderId, traderId, traderId, traderId);
+        List<Map<String, Object>> conversations = db.fetchRecords(sql,
+                traderId, traderId, traderId, traderId, traderId, traderId, traderId);
 
         for (Map<String, Object> conv : conversations) {
             conversationsTableModel.addRow(new Object[]{
@@ -788,8 +790,8 @@ public class messages extends javax.swing.JFrame {
                 + "   OR (m.sender_id = ? AND m.receiver_id = ?) "
                 + "ORDER BY m.message_date ASC";
 
-        List<Map<String, Object>> messages = db.fetchRecords(sql, 
-            traderId, selectedOtherTraderId, selectedOtherTraderId, traderId);
+        List<Map<String, Object>> messages = db.fetchRecords(sql,
+                traderId, selectedOtherTraderId, selectedOtherTraderId, traderId);
 
         for (Map<String, Object> msg : messages) {
             String sender = msg.get("sender_id").toString().equals(String.valueOf(traderId)) ? "You" : msg.get("sender_name").toString();
@@ -828,7 +830,7 @@ public class messages extends javax.swing.JFrame {
 
         try {
             db.addRecord(sql, traderId, selectedOtherTraderId, messageText);
-            
+
             messageInputField.setText("");
             int selectedRow = conversationsTable.getSelectedRow();
             if (selectedRow != -1) {
@@ -836,7 +838,7 @@ public class messages extends javax.swing.JFrame {
                 loadConversationMessages(modelRow);
             }
             loadConversations();
-            
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to send message: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -916,10 +918,10 @@ public class messages extends javax.swing.JFrame {
                 if (!msgText.isEmpty()) {
                     int receiverId = traderIds[selectedIndex];
                     String receiverName = traderNames[selectedIndex];
-                    
+
                     String insertSql = "INSERT INTO tbl_trade_messages (sender_id, receiver_id, message_text, message_date) "
                             + "VALUES (?, ?, ?, datetime('now'))";
-                    
+
                     try {
                         db.addRecord(insertSql, traderId, receiverId, msgText);
                         JOptionPane.showMessageDialog(dialog, "Message sent to " + receiverName + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -956,7 +958,9 @@ public class messages extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -969,7 +973,9 @@ public class messages extends javax.swing.JFrame {
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -991,7 +997,7 @@ public class messages extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);
