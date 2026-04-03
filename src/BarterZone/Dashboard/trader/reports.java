@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -27,6 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JTextArea;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
@@ -46,41 +48,41 @@ public class reports extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-
+    
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-
+    
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-
+    
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-
+    
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-
+    
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-
+    
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-
+    
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-
+    
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-
+    
     private JPanel contentPanel;
-
+    
     private DefaultTableModel myReportsTableModel;
     private javax.swing.JTable myReportsTable;
     private JScrollPane myReportsScrollPane;
@@ -92,9 +94,7 @@ public class reports extends javax.swing.JFrame {
     private JButton submitReportButton;
     private JButton refreshButton;
     private JButton cancelReportButton;
-    private JLabel selectedReportLabel;
-    private JTextArea adminReplyArea;
-    private JScrollPane replyScrollPane;
+    private JButton viewRespondButton;
 
     private int selectedReportId = -1;
     private String selectedReportStatus = "";
@@ -107,7 +107,10 @@ public class reports extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-
+    private Color successColor = new Color(46, 125, 50);
+    private Color warningColor = new Color(255, 153, 0);
+    private Color errorColor = new Color(204, 0, 0);
+    
     private JPanel activePanel = null;
 
     public reports(int traderId, String traderName) {
@@ -116,7 +119,7 @@ public class reports extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-
+        
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -206,42 +209,41 @@ public class reports extends javax.swing.JFrame {
         return "src/" + pathWithoutExtension + "." + extension;
     }
 
-    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
-        try {
-            File file = new File(imagePath);
-            if (!file.exists()) {
-                return null;
-            }
-
-            ImageIcon icon = new ImageIcon(imagePath);
-            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(img);
-        } catch (Exception e) {
-            System.out.println("Error creating scaled image: " + e.getMessage());
-            return null;
-        }
+    private BufferedImage createCircularImage(BufferedImage sourceImage, int size) {
+        BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = circularImage.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        Image scaledImage = sourceImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        BufferedImage scaledBuffered = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledBuffered.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, size, size, null);
+        g2d.dispose();
+        
+        g2.setClip(new Ellipse2D.Float(0, 0, size, size));
+        g2.drawImage(scaledBuffered, 0, 0, size, size, null);
+        g2.dispose();
+        
+        return circularImage;
     }
 
-    private ImageIcon createCircularImageIcon(String imagePath, int width, int height) {
+    private ImageIcon loadAndCircleImage(String imagePath, int size) {
         try {
             File file = new File(imagePath);
             if (!file.exists()) {
                 return null;
             }
-
-            ImageIcon originalIcon = new ImageIcon(imagePath);
-            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-
-            BufferedImage circularImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = circularImage.createGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setClip(new Ellipse2D.Float(0, 0, width, height));
-            g2.drawImage(scaledImage, 0, 0, width, height, null);
-            g2.dispose();
-
+            
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage == null) {
+                return null;
+            }
+            
+            BufferedImage circularImage = createCircularImage(originalImage, size);
             return new ImageIcon(circularImage);
+            
         } catch (Exception e) {
-            System.out.println("Error creating circular image: " + e.getMessage());
+            System.out.println("Error loading circular image: " + e.getMessage());
             return null;
         }
     }
@@ -258,13 +260,11 @@ public class reports extends javax.swing.JFrame {
                     String fullPath = convertResourcePathToFilePath(profilePicPath);
 
                     if (fullPath != null) {
-                        ImageIcon circularIcon = createCircularImageIcon(fullPath, 90, 90);
-
-                        if (circularIcon != null) {
+                        ImageIcon circularIcon = loadAndCircleImage(fullPath, 90);
+                        
+                        if (circularIcon != null && circularIcon.getIconWidth() > 0) {
                             avatarLabel.setIcon(circularIcon);
                             avatarLabel.setText("");
-                            avatarLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-                            avatarLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
                             avatarInitialLabel.setVisible(false);
                             return;
                         }
@@ -282,7 +282,6 @@ public class reports extends javax.swing.JFrame {
             avatarInitialLabel.setText("U");
         }
         avatarInitialLabel.setVisible(true);
-        avatarLabel.setText("");
     }
 
     private void setupSidePanel() {
@@ -319,7 +318,7 @@ public class reports extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-
+        
         loadProfileAvatar();
 
         int menuY = 155;
@@ -390,7 +389,7 @@ public class reports extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-
+        
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -399,7 +398,7 @@ public class reports extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -420,7 +419,7 @@ public class reports extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-
+        
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -431,7 +430,7 @@ public class reports extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -452,7 +451,7 @@ public class reports extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-
+        
         panel.add(label);
         return label;
     }
@@ -545,7 +544,7 @@ public class reports extends javax.swing.JFrame {
             "Violation of Terms",
             "Other"
         };
-
+        
         reasonComboBox = new JComboBox<>(reportReasons);
         reasonComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         reasonComboBox.setBounds(10, 125, 320, 30);
@@ -570,9 +569,9 @@ public class reports extends javax.swing.JFrame {
 
         submitReportButton = new JButton("SUBMIT REPORT");
         submitReportButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        submitReportButton.setBackground(new Color(204, 0, 0));
+        submitReportButton.setBackground(errorColor);
         submitReportButton.setForeground(Color.WHITE);
-        submitReportButton.setBounds(20, 255, 140, 30);
+        submitReportButton.setBounds(20, 280, 140, 35);
         submitReportButton.setBorder(null);
         submitReportButton.setFocusPainted(false);
         submitReportButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -583,7 +582,7 @@ public class reports extends javax.swing.JFrame {
         cancelReportButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         cancelReportButton.setBackground(new Color(102, 102, 102));
         cancelReportButton.setForeground(Color.WHITE);
-        cancelReportButton.setBounds(170, 255, 140, 30);
+        cancelReportButton.setBounds(180, 280, 140, 35);
         cancelReportButton.setBorder(null);
         cancelReportButton.setFocusPainted(false);
         cancelReportButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -593,38 +592,26 @@ public class reports extends javax.swing.JFrame {
 
         refreshButton = new JButton("REFRESH");
         refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        refreshButton.setBackground(new Color(0, 102, 102));
+        refreshButton.setBackground(accentColor);
         refreshButton.setForeground(Color.WHITE);
-        refreshButton.setBounds(100, 295, 130, 30);
+        refreshButton.setBounds(20, 330, 140, 35);
         refreshButton.setBorder(null);
         refreshButton.setFocusPainted(false);
         refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> refreshReports());
         rightPanel.add(refreshButton);
 
-        JLabel statusLabel = new JLabel("Admin Reply:");
-        statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        statusLabel.setBounds(10, 335, 100, 20);
-        rightPanel.add(statusLabel);
-
-        selectedReportLabel = new JLabel("Select a report");
-        selectedReportLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        selectedReportLabel.setForeground(new Color(102, 102, 102));
-        selectedReportLabel.setBounds(10, 350, 320, 15);
-        rightPanel.add(selectedReportLabel);
-
-        adminReplyArea = new JTextArea();
-        adminReplyArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        adminReplyArea.setLineWrap(true);
-        adminReplyArea.setWrapStyleWord(true);
-        adminReplyArea.setEditable(false);
-        adminReplyArea.setBackground(new Color(245, 245, 245));
-        replyScrollPane = new JScrollPane(adminReplyArea);
-        replyScrollPane.setBounds(10, 365, 320, 35);
-        replyScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        replyScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        replyScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        rightPanel.add(replyScrollPane);
+        viewRespondButton = new JButton("VIEW RESPOND");
+        viewRespondButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        viewRespondButton.setBackground(themeColor);
+        viewRespondButton.setForeground(Color.WHITE);
+        viewRespondButton.setBounds(180, 330, 140, 35);
+        viewRespondButton.setBorder(null);
+        viewRespondButton.setFocusPainted(false);
+        viewRespondButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        viewRespondButton.setEnabled(false);
+        viewRespondButton.addActionListener(e -> viewRespond());
+        rightPanel.add(viewRespondButton);
 
         contentWrapper.add(leftPanel);
         contentWrapper.add(rightPanel);
@@ -668,7 +655,7 @@ public class reports extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting()) {
                     int selectedRow = myReportsTable.getSelectedRow();
-
+                    
                     if (selectedRow == lastSelectedRow && selectedRow != -1) {
                         myReportsTable.clearSelection();
                         clearReportDetails();
@@ -709,7 +696,7 @@ public class reports extends javax.swing.JFrame {
         for (Map<String, Object> report : reports) {
             String status = report.get("report_status") != null ? report.get("report_status").toString() : "pending";
             String displayStatus = "";
-
+            
             switch (status.toLowerCase()) {
                 case "resolved":
                     displayStatus = "Resolved";
@@ -750,15 +737,21 @@ public class reports extends javax.swing.JFrame {
         selectedReportId = Integer.parseInt(myReportsTableModel.getValueAt(modelRow, 0).toString());
         String status = myReportsTableModel.getValueAt(modelRow, 3).toString();
         selectedReportStatus = status;
-
+        
         String sql = "SELECT admin_notes, report_status FROM tbl_reports WHERE report_id = ?";
         List<Map<String, Object>> report = db.fetchRecords(sql, selectedReportId);
 
         if (!report.isEmpty()) {
-            String adminNotes = report.get(0).get("admin_notes") != null
-                    ? report.get(0).get("admin_notes").toString() : "No admin reply yet.";
-            String reportStatus = report.get(0).get("report_status") != null
-                    ? report.get(0).get("report_status").toString() : "pending";
+            String adminNotes = report.get(0).get("admin_notes") != null ? 
+                report.get(0).get("admin_notes").toString() : "";
+            String reportStatus = report.get(0).get("report_status") != null ? 
+                report.get(0).get("report_status").toString() : "pending";
+
+            if (adminNotes != null && !adminNotes.isEmpty() && !adminNotes.equals("No admin reply yet.")) {
+                viewRespondButton.setEnabled(true);
+            } else {
+                viewRespondButton.setEnabled(false);
+            }
 
             String statusDisplay = "";
             switch (reportStatus.toLowerCase()) {
@@ -776,19 +769,117 @@ public class reports extends javax.swing.JFrame {
                     cancelReportButton.setEnabled(true);
                     break;
             }
-
-            selectedReportLabel.setText("Report #" + selectedReportId + " - " + statusDisplay);
-            adminReplyArea.setText(adminNotes);
-            adminReplyArea.setCaretPosition(0);
         }
     }
 
     private void clearReportDetails() {
         selectedReportId = -1;
         selectedReportStatus = "";
-        selectedReportLabel.setText("Select a report");
-        adminReplyArea.setText("");
+        viewRespondButton.setEnabled(false);
         cancelReportButton.setEnabled(false);
+    }
+
+    private void viewRespond() {
+        if (selectedReportId == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a report first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sql = "SELECT admin_notes, report_status FROM tbl_reports WHERE report_id = ?";
+        List<Map<String, Object>> report = db.fetchRecords(sql, selectedReportId);
+
+        if (!report.isEmpty()) {
+            String adminNotes = report.get(0).get("admin_notes") != null ? 
+                report.get(0).get("admin_notes").toString() : "";
+            String reportStatus = report.get(0).get("report_status") != null ? 
+                report.get(0).get("report_status").toString() : "pending";
+
+            if (adminNotes != null && !adminNotes.isEmpty() && !adminNotes.equals("No admin reply yet.")) {
+                JDialog respondDialog = new JDialog(this, "Admin Response", true);
+                respondDialog.setSize(500, 450);
+                respondDialog.setLayout(null);
+                respondDialog.setLocationRelativeTo(this);
+                respondDialog.getContentPane().setBackground(Color.WHITE);
+
+                JPanel titlePanel = new JPanel();
+                titlePanel.setBackground(themeColor);
+                titlePanel.setBounds(0, 0, 500, 45);
+                titlePanel.setLayout(null);
+
+                JLabel titleLabel = new JLabel("ADMIN RESPONSE");
+                titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+                titleLabel.setForeground(Color.WHITE);
+                titleLabel.setBounds(20, 8, 200, 30);
+                titlePanel.add(titleLabel);
+                respondDialog.add(titlePanel);
+
+                JLabel reportLabel = new JLabel("Report #" + selectedReportId);
+                reportLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                reportLabel.setForeground(accentColor);
+                reportLabel.setBounds(20, 65, 200, 25);
+                respondDialog.add(reportLabel);
+
+                String statusText = "";
+                Color statusColor = null;
+                switch (reportStatus.toLowerCase()) {
+                    case "resolved":
+                        statusText = "RESOLVED";
+                        statusColor = successColor;
+                        break;
+                    case "under_review":
+                        statusText = "UNDER REVIEW";
+                        statusColor = warningColor;
+                        break;
+                    default:
+                        statusText = "PENDING";
+                        statusColor = errorColor;
+                        break;
+                }
+                
+                JLabel statusLabel = new JLabel("Status: " + statusText);
+                statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                statusLabel.setForeground(statusColor);
+                statusLabel.setBounds(20, 95, 200, 25);
+                respondDialog.add(statusLabel);
+
+                JLabel respondLabel = new JLabel("Admin Message:");
+                respondLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                respondLabel.setBounds(20, 135, 150, 25);
+                respondDialog.add(respondLabel);
+
+                JTextArea respondArea = new JTextArea();
+                respondArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                respondArea.setLineWrap(true);
+                respondArea.setWrapStyleWord(true);
+                respondArea.setEditable(false);
+                respondArea.setBackground(new Color(250, 250, 250));
+                respondArea.setText(adminNotes);
+                JScrollPane respondScrollPane = new JScrollPane(respondArea);
+                respondScrollPane.setBounds(20, 165, 460, 150);
+                respondScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+                respondDialog.add(respondScrollPane);
+
+                JButton closeButton = new JButton("CLOSE");
+                closeButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                closeButton.setBackground(accentColor);
+                closeButton.setForeground(Color.WHITE);
+                closeButton.setBounds(200, 340, 100, 35);
+                closeButton.setBorder(null);
+                closeButton.setFocusPainted(false);
+                closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                closeButton.addActionListener(e -> respondDialog.dispose());
+                respondDialog.add(closeButton);
+
+                respondDialog.setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "No admin response available for this report yet.\n\n"
+                    + "The admin will review your report and provide a response.\n"
+                    + "Please check back later.",
+                    "No Response",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
     }
 
     private void submitReport() {
@@ -811,7 +902,7 @@ public class reports extends javax.swing.JFrame {
         }
 
         String selectedTraderName = traderComboBox.getSelectedItem().toString();
-
+        
         String getTraderIdSql = "SELECT user_id FROM tbl_users WHERE user_fullname = ? AND user_type = 'trader'";
         List<Map<String, Object>> traders = db.fetchRecords(getTraderIdSql, selectedTraderName);
 
@@ -827,9 +918,9 @@ public class reports extends javax.swing.JFrame {
         double pendingCount = db.getSingleValue(checkSql, traderId, reportedTraderId);
 
         if (pendingCount > 0) {
-            JOptionPane.showMessageDialog(this,
-                    "You already have a pending report against this trader.\nPlease wait for admin resolution.",
-                    "Duplicate Report", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                "You already have a pending report against this trader.\nPlease wait for admin resolution.",
+                "Duplicate Report", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -838,20 +929,20 @@ public class reports extends javax.swing.JFrame {
 
         try {
             db.addRecord(insertSql, traderId, reportedTraderId, reason, description);
-
-            JOptionPane.showMessageDialog(this,
-                    "Report submitted successfully!\n\n"
-                    + "Reported Trader: " + selectedTraderName + "\n"
-                    + "Reason: " + reason + "\n\n"
-                    + "An admin will review your report.",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
+            
+            JOptionPane.showMessageDialog(this, 
+                "Report submitted successfully!\n\n"
+                + "Reported Trader: " + selectedTraderName + "\n"
+                + "Reason: " + reason + "\n\n"
+                + "An admin will review your report.",
+                "Success", JOptionPane.INFORMATION_MESSAGE);
 
             traderComboBox.setSelectedIndex(0);
             reasonComboBox.setSelectedIndex(0);
             descriptionArea.setText("");
-
+            
             loadMyReports();
-
+            
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to submit report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -864,11 +955,11 @@ public class reports extends javax.swing.JFrame {
         }
 
         if (!selectedReportStatus.equalsIgnoreCase("Pending") && !selectedReportStatus.equalsIgnoreCase("Under Review")) {
-            JOptionPane.showMessageDialog(this,
-                    "This report cannot be cancelled as it is already " + selectedReportStatus + ".\n\n"
-                    + "It will be removed from your view only.",
-                    "Cannot Cancel", JOptionPane.INFORMATION_MESSAGE);
-
+            JOptionPane.showMessageDialog(this, 
+                "This report cannot be cancelled as it is already " + selectedReportStatus + ".\n\n"
+                + "It will be removed from your view only.",
+                "Cannot Cancel", JOptionPane.INFORMATION_MESSAGE);
+            
             removeFromDisplay();
             return;
         }
@@ -885,14 +976,14 @@ public class reports extends javax.swing.JFrame {
             try {
                 String sql = "DELETE FROM tbl_reports WHERE report_id = ? AND reporter_id = ? AND report_status IN ('pending', 'under_review')";
                 db.deleteRecord(sql, selectedReportId, traderId);
-
-                JOptionPane.showMessageDialog(this,
-                        "Report cancelled successfully!",
-                        "Success", JOptionPane.INFORMATION_MESSAGE);
-
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Report cancelled successfully!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                
                 loadMyReports();
                 clearReportDetails();
-
+                
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Failed to cancel report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -915,10 +1006,10 @@ public class reports extends javax.swing.JFrame {
                 int modelRow = myReportsTable.convertRowIndexToModel(currentRow);
                 myReportsTableModel.removeRow(modelRow);
                 clearReportDetails();
-
-                JOptionPane.showMessageDialog(this,
-                        "Report removed from display.",
-                        "Removed", JOptionPane.INFORMATION_MESSAGE);
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Report removed from display.",
+                    "Removed", JOptionPane.INFORMATION_MESSAGE);
             }
         }
     }
@@ -931,9 +1022,7 @@ public class reports extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) {
-            return "-";
-        }
+        if (dateObj == null) return "-";
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -955,7 +1044,7 @@ public class reports extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-
+        
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);

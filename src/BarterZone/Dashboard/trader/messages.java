@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -50,41 +51,41 @@ public class messages extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-
+    
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-
+    
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-
+    
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-
+    
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-
+    
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-
+    
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-
+    
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-
+    
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-
+    
     private JPanel contentPanel;
-
+    
     private DefaultTableModel conversationsTableModel;
     private javax.swing.JTable conversationsTable;
     private JScrollPane conversationsScrollPane;
@@ -94,7 +95,8 @@ public class messages extends javax.swing.JFrame {
     private JScrollPane messagesScrollPane;
 
     private JTextField searchField;
-    private JTextField messageInputField;
+    private JTextArea messageInputArea;
+    private JScrollPane messageInputScroll;
     private JButton sendButton;
     private JButton newMessageButton;
     private JButton refreshButton;
@@ -113,7 +115,9 @@ public class messages extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-
+    private Color successColor = new Color(46, 125, 50);
+    private Color errorColor = new Color(204, 0, 0);
+    
     private JPanel activePanel = null;
 
     public messages(int traderId, String traderName) {
@@ -122,7 +126,7 @@ public class messages extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-
+        
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -212,42 +216,41 @@ public class messages extends javax.swing.JFrame {
         return "src/" + pathWithoutExtension + "." + extension;
     }
 
-    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
-        try {
-            File file = new File(imagePath);
-            if (!file.exists()) {
-                return null;
-            }
-
-            ImageIcon icon = new ImageIcon(imagePath);
-            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(img);
-        } catch (Exception e) {
-            System.out.println("Error creating scaled image: " + e.getMessage());
-            return null;
-        }
+    private BufferedImage createCircularImage(BufferedImage sourceImage, int size) {
+        BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = circularImage.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        Image scaledImage = sourceImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        BufferedImage scaledBuffered = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledBuffered.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, size, size, null);
+        g2d.dispose();
+        
+        g2.setClip(new Ellipse2D.Float(0, 0, size, size));
+        g2.drawImage(scaledBuffered, 0, 0, size, size, null);
+        g2.dispose();
+        
+        return circularImage;
     }
 
-    private ImageIcon createCircularImageIcon(String imagePath, int width, int height) {
+    private ImageIcon loadAndCircleImage(String imagePath, int size) {
         try {
             File file = new File(imagePath);
             if (!file.exists()) {
                 return null;
             }
-
-            ImageIcon originalIcon = new ImageIcon(imagePath);
-            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-
-            BufferedImage circularImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = circularImage.createGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setClip(new Ellipse2D.Float(0, 0, width, height));
-            g2.drawImage(scaledImage, 0, 0, width, height, null);
-            g2.dispose();
-
+            
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage == null) {
+                return null;
+            }
+            
+            BufferedImage circularImage = createCircularImage(originalImage, size);
             return new ImageIcon(circularImage);
+            
         } catch (Exception e) {
-            System.out.println("Error creating circular image: " + e.getMessage());
+            System.out.println("Error loading circular image: " + e.getMessage());
             return null;
         }
     }
@@ -264,13 +267,11 @@ public class messages extends javax.swing.JFrame {
                     String fullPath = convertResourcePathToFilePath(profilePicPath);
 
                     if (fullPath != null) {
-                        ImageIcon circularIcon = createCircularImageIcon(fullPath, 90, 90);
-
-                        if (circularIcon != null) {
+                        ImageIcon circularIcon = loadAndCircleImage(fullPath, 90);
+                        
+                        if (circularIcon != null && circularIcon.getIconWidth() > 0) {
                             avatarLabel.setIcon(circularIcon);
                             avatarLabel.setText("");
-                            avatarLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-                            avatarLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
                             avatarInitialLabel.setVisible(false);
                             return;
                         }
@@ -288,7 +289,6 @@ public class messages extends javax.swing.JFrame {
             avatarInitialLabel.setText("U");
         }
         avatarInitialLabel.setVisible(true);
-        avatarLabel.setText("");
     }
 
     private void setupSidePanel() {
@@ -325,7 +325,7 @@ public class messages extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-
+        
         loadProfileAvatar();
 
         int menuY = 155;
@@ -396,7 +396,7 @@ public class messages extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-
+        
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -405,7 +405,7 @@ public class messages extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -426,7 +426,7 @@ public class messages extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-
+        
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -437,7 +437,7 @@ public class messages extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -458,7 +458,7 @@ public class messages extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-
+        
         panel.add(label);
         return label;
     }
@@ -491,7 +491,7 @@ public class messages extends javax.swing.JFrame {
         topPanel.setLayout(null);
         topPanel.setBackground(new Color(245, 245, 245));
         topPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
-        topPanel.setBounds(10, 10, 600, 60);
+        topPanel.setBounds(10, 10, 600, 70);
 
         JLabel searchLabel = new JLabel("Search Conversations:");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -501,7 +501,7 @@ public class messages extends javax.swing.JFrame {
 
         searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchField.setBounds(15, 35, 300, 25);
+        searchField.setBounds(15, 35, 300, 30);
         searchField.setBorder(new LineBorder(new Color(12, 192, 223)));
         topPanel.add(searchField);
 
@@ -509,7 +509,7 @@ public class messages extends javax.swing.JFrame {
         newMessageButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         newMessageButton.setBackground(new Color(0, 102, 102));
         newMessageButton.setForeground(Color.WHITE);
-        newMessageButton.setBounds(330, 30, 130, 30);
+        newMessageButton.setBounds(330, 35, 130, 30);
         newMessageButton.setBorder(null);
         newMessageButton.setFocusPainted(false);
         newMessageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -520,7 +520,7 @@ public class messages extends javax.swing.JFrame {
         refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         refreshButton.setBackground(new Color(12, 192, 223));
         refreshButton.setForeground(Color.WHITE);
-        refreshButton.setBounds(470, 30, 100, 30);
+        refreshButton.setBounds(470, 35, 100, 30);
         refreshButton.setBorder(null);
         refreshButton.setFocusPainted(false);
         refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -531,7 +531,7 @@ public class messages extends javax.swing.JFrame {
         leftPanel.setLayout(null);
         leftPanel.setBackground(new Color(245, 245, 245));
         leftPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
-        leftPanel.setBounds(10, 80, 250, 270);
+        leftPanel.setBounds(10, 90, 250, 270);
 
         JLabel conversationsTitle = new JLabel("Conversations");
         conversationsTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -550,7 +550,7 @@ public class messages extends javax.swing.JFrame {
         rightPanel.setLayout(null);
         rightPanel.setBackground(new Color(245, 245, 245));
         rightPanel.setBorder(new LineBorder(new Color(12, 192, 223), 2));
-        rightPanel.setBounds(270, 80, 340, 340);
+        rightPanel.setBounds(270, 90, 340, 340);
 
         selectedConversationLabel = new JLabel("Select a conversation");
         selectedConversationLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -560,7 +560,7 @@ public class messages extends javax.swing.JFrame {
 
         setupMessagesTable();
         messagesScrollPane = new JScrollPane(messagesTable);
-        messagesScrollPane.setBounds(10, 30, 320, 200);
+        messagesScrollPane.setBounds(10, 30, 320, 160);
         messagesScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
         messagesScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         rightPanel.add(messagesScrollPane);
@@ -572,23 +572,26 @@ public class messages extends javax.swing.JFrame {
         messagePreviewArea.setEditable(false);
         messagePreviewArea.setBackground(new Color(245, 245, 245));
         previewScrollPane = new JScrollPane(messagePreviewArea);
-        previewScrollPane.setBounds(10, 235, 320, 50);
+        previewScrollPane.setBounds(10, 200, 320, 50);
         previewScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
         previewScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         rightPanel.add(previewScrollPane);
 
-        messageInputField = new JTextField();
-        messageInputField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        messageInputField.setBounds(10, 290, 230, 30);
-        messageInputField.setBorder(new LineBorder(new Color(12, 192, 223)));
-        messageInputField.setEnabled(false);
-        rightPanel.add(messageInputField);
+        messageInputArea = new JTextArea();
+        messageInputArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        messageInputArea.setLineWrap(true);
+        messageInputArea.setWrapStyleWord(true);
+        messageInputScroll = new JScrollPane(messageInputArea);
+        messageInputScroll.setBounds(10, 265, 260, 65);
+        messageInputScroll.setBorder(new LineBorder(new Color(12, 192, 223)));
+        messageInputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        rightPanel.add(messageInputScroll);
 
         sendButton = new JButton("SEND");
         sendButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        sendButton.setBackground(new Color(0, 102, 102));
+        sendButton.setBackground(successColor);
         sendButton.setForeground(Color.WHITE);
-        sendButton.setBounds(250, 290, 80, 30);
+        sendButton.setBounds(280, 280, 50, 30);
         sendButton.setBorder(null);
         sendButton.setFocusPainted(false);
         sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -758,8 +761,8 @@ public class messages extends javax.swing.JFrame {
                 + "JOIN tbl_users u ON cl.other_id = u.user_id "
                 + "ORDER BY last_date DESC";
 
-        List<Map<String, Object>> conversations = db.fetchRecords(sql,
-                traderId, traderId, traderId, traderId, traderId, traderId, traderId);
+        List<Map<String, Object>> conversations = db.fetchRecords(sql, 
+            traderId, traderId, traderId, traderId, traderId, traderId, traderId);
 
         for (Map<String, Object> conv : conversations) {
             conversationsTableModel.addRow(new Object[]{
@@ -777,7 +780,7 @@ public class messages extends javax.swing.JFrame {
         selectedOtherTraderName = conversationsTableModel.getValueAt(modelRow, 1).toString();
 
         selectedConversationLabel.setText("Conversation with: " + selectedOtherTraderName);
-        messageInputField.setEnabled(true);
+        messageInputArea.setEnabled(true);
         sendButton.setEnabled(true);
 
         messagesTableModel.setRowCount(0);
@@ -790,8 +793,8 @@ public class messages extends javax.swing.JFrame {
                 + "   OR (m.sender_id = ? AND m.receiver_id = ?) "
                 + "ORDER BY m.message_date ASC";
 
-        List<Map<String, Object>> messages = db.fetchRecords(sql,
-                traderId, selectedOtherTraderId, selectedOtherTraderId, traderId);
+        List<Map<String, Object>> messages = db.fetchRecords(sql, 
+            traderId, selectedOtherTraderId, selectedOtherTraderId, traderId);
 
         for (Map<String, Object> msg : messages) {
             String sender = msg.get("sender_id").toString().equals(String.valueOf(traderId)) ? "You" : msg.get("sender_name").toString();
@@ -807,19 +810,22 @@ public class messages extends javax.swing.JFrame {
         if (messagesTableModel.getRowCount() > 0) {
             messagesTable.scrollRectToVisible(messagesTable.getCellRect(messagesTableModel.getRowCount() - 1, 0, true));
         }
+        
+        messageInputArea.setText("");
+        messageInputArea.requestFocus();
     }
 
     private void clearMessagePanel() {
         selectedConversationLabel.setText("Select a conversation");
-        messageInputField.setEnabled(false);
+        messageInputArea.setEnabled(false);
         sendButton.setEnabled(false);
-        messageInputField.setText("");
+        messageInputArea.setText("");
         messagePreviewArea.setText("");
         messagesTableModel.setRowCount(0);
     }
 
     private void sendMessage() {
-        String messageText = messageInputField.getText().trim();
+        String messageText = messageInputArea.getText().trim();
         if (messageText.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter a message.", "Empty Message", JOptionPane.WARNING_MESSAGE);
             return;
@@ -830,15 +836,44 @@ public class messages extends javax.swing.JFrame {
 
         try {
             db.addRecord(sql, traderId, selectedOtherTraderId, messageText);
-
-            messageInputField.setText("");
+            
+            messageInputArea.setText("");
+            
             int selectedRow = conversationsTable.getSelectedRow();
             if (selectedRow != -1) {
                 int modelRow = conversationsTable.convertRowIndexToModel(selectedRow);
-                loadConversationMessages(modelRow);
+                
+                String refreshSql = "SELECT m.message_id, m.sender_id, m.message_text, m.message_date, "
+                        + "u.user_fullname as sender_name "
+                        + "FROM tbl_trade_messages m "
+                        + "JOIN tbl_users u ON m.sender_id = u.user_id "
+                        + "WHERE (m.sender_id = ? AND m.receiver_id = ?) "
+                        + "   OR (m.sender_id = ? AND m.receiver_id = ?) "
+                        + "ORDER BY m.message_date ASC";
+                
+                List<Map<String, Object>> messages = db.fetchRecords(refreshSql, 
+                    traderId, selectedOtherTraderId, selectedOtherTraderId, traderId);
+                
+                messagesTableModel.setRowCount(0);
+                
+                for (Map<String, Object> msg : messages) {
+                    String sender = msg.get("sender_id").toString().equals(String.valueOf(traderId)) ? "You" : msg.get("sender_name").toString();
+                    messagesTableModel.addRow(new Object[]{
+                        msg.get("message_id"),
+                        sender,
+                        msg.get("message_text"),
+                        formatDateTime(msg.get("message_date")),
+                        msg.get("sender_id")
+                    });
+                }
+                
+                if (messagesTableModel.getRowCount() > 0) {
+                    messagesTable.scrollRectToVisible(messagesTable.getCellRect(messagesTableModel.getRowCount() - 1, 0, true));
+                }
             }
+            
             loadConversations();
-
+            
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Failed to send message: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -861,37 +896,38 @@ public class messages extends javax.swing.JFrame {
         }
 
         JDialog dialog = new JDialog(this, "New Message", true);
-        dialog.setSize(400, 250);
+        dialog.setSize(450, 400);
         dialog.setLayout(null);
         dialog.setLocationRelativeTo(this);
         dialog.getContentPane().setBackground(Color.WHITE);
 
         JPanel titlePanel = new JPanel();
-        titlePanel.setBackground(new Color(12, 192, 223));
-        titlePanel.setBounds(0, 0, 400, 40);
+        titlePanel.setBackground(themeColor);
+        titlePanel.setBounds(0, 0, 450, 45);
         titlePanel.setLayout(null);
 
         JLabel titleLabel = new JLabel("NEW MESSAGE");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBounds(20, 5, 200, 30);
+        titleLabel.setBounds(20, 8, 200, 30);
         titlePanel.add(titleLabel);
         dialog.add(titlePanel);
 
         JLabel toLabel = new JLabel("To:");
         toLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        toLabel.setBounds(20, 60, 50, 25);
+        toLabel.setBounds(20, 65, 50, 25);
         dialog.add(toLabel);
 
         JComboBox<String> traderCombo = new JComboBox<>(traderNames);
         traderCombo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        traderCombo.setBounds(80, 60, 250, 30);
+        traderCombo.setBounds(80, 65, 300, 35);
         traderCombo.setBackground(Color.WHITE);
+        traderCombo.setBorder(new LineBorder(new Color(12, 192, 223), 1));
         dialog.add(traderCombo);
 
         JLabel messageLabel = new JLabel("Message:");
         messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        messageLabel.setBounds(20, 100, 80, 25);
+        messageLabel.setBounds(20, 120, 80, 25);
         dialog.add(messageLabel);
 
         JTextArea messageArea = new JTextArea();
@@ -899,15 +935,15 @@ public class messages extends javax.swing.JFrame {
         messageArea.setLineWrap(true);
         messageArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(messageArea);
-        scrollPane.setBounds(20, 130, 350, 60);
+        scrollPane.setBounds(20, 150, 410, 130);
         scrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
         dialog.add(scrollPane);
 
-        JButton sendBtn = new JButton("SEND");
+        JButton sendBtn = new JButton("SEND MESSAGE");
         sendBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        sendBtn.setBackground(new Color(0, 102, 102));
+        sendBtn.setBackground(successColor);
         sendBtn.setForeground(Color.WHITE);
-        sendBtn.setBounds(100, 200, 100, 30);
+        sendBtn.setBounds(100, 310, 150, 35);
         sendBtn.setBorder(null);
         sendBtn.setFocusPainted(false);
         sendBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -918,15 +954,30 @@ public class messages extends javax.swing.JFrame {
                 if (!msgText.isEmpty()) {
                     int receiverId = traderIds[selectedIndex];
                     String receiverName = traderNames[selectedIndex];
-
+                    
                     String insertSql = "INSERT INTO tbl_trade_messages (sender_id, receiver_id, message_text, message_date) "
                             + "VALUES (?, ?, ?, datetime('now'))";
-
+                    
                     try {
                         db.addRecord(insertSql, traderId, receiverId, msgText);
                         JOptionPane.showMessageDialog(dialog, "Message sent to " + receiverName + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
                         dialog.dispose();
                         loadConversations();
+                        
+                        int newConversationRow = -1;
+                        for (int i = 0; i < conversationsTableModel.getRowCount(); i++) {
+                            int otherId = Integer.parseInt(conversationsTableModel.getValueAt(i, 4).toString());
+                            if (otherId == receiverId) {
+                                newConversationRow = i;
+                                break;
+                            }
+                        }
+                        
+                        if (newConversationRow != -1) {
+                            conversationsTable.setRowSelectionInterval(newConversationRow, newConversationRow);
+                            loadConversationMessages(newConversationRow);
+                        }
+                        
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(dialog, "Failed to send message: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
@@ -939,9 +990,9 @@ public class messages extends javax.swing.JFrame {
 
         JButton cancelBtn = new JButton("CANCEL");
         cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        cancelBtn.setBackground(new Color(204, 0, 0));
+        cancelBtn.setBackground(errorColor);
         cancelBtn.setForeground(Color.WHITE);
-        cancelBtn.setBounds(210, 200, 100, 30);
+        cancelBtn.setBounds(270, 310, 100, 35);
         cancelBtn.setBorder(null);
         cancelBtn.setFocusPainted(false);
         cancelBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -958,9 +1009,7 @@ public class messages extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) {
-            return "-";
-        }
+        if (dateObj == null) return "-";
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -973,9 +1022,7 @@ public class messages extends javax.swing.JFrame {
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) {
-            return "-";
-        }
+        if (dateObj == null) return "-";
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -997,7 +1044,7 @@ public class messages extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-
+        
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);

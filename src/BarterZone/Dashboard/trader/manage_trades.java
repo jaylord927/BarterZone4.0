@@ -15,14 +15,11 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -35,9 +32,8 @@ import javax.swing.JComboBox;
 import javax.swing.JCheckBox;
 import javax.swing.JRadioButton;
 import javax.swing.ButtonGroup;
-import javax.swing.JFileChooser;
+import javax.swing.JDialog;
 import javax.swing.border.LineBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Dimension;
 import javax.swing.BorderFactory;
 
@@ -59,21 +55,32 @@ public class manage_trades extends javax.swing.JFrame {
     private String proposedMethod = null;
     private int proposedBy = -1;
     private boolean methodConfirmed = false;
+    
+    private int myDetailId = -1;
+    private int myMeetupId = -1;
+    private int myDeliveryId = -1;
+    private int myPaymentId = -1;
+    private int otherDetailId = -1;
+    private int otherMeetupId = -1;
+    private int otherDeliveryId = -1;
+    private int otherPaymentId = -1;
+    
     private boolean myDetailsSubmitted = false;
     private boolean otherDetailsSubmitted = false;
-    private boolean myDetailsAgreed = false;
-    private boolean otherDetailsAgreed = false;
-    private boolean feePayer = false;
-    private double baseAmount = 200;
-    private double feeAmount = 15;
-    private double totalAmount = 0;
-    private boolean myPaymentSubmitted = false;
-    private boolean otherPaymentSubmitted = false;
+    private int myDetailsAgreed = 0;
+    private int otherDetailsAgreed = 0;
+    
     private boolean paymentVerified = false;
+    private boolean paymentSubmitted = false;
+    
     private boolean myItemReceived = false;
     private boolean otherItemReceived = false;
     private boolean refundProcessed = false;
     private boolean tradeCompleted = false;
+    
+    // Step 2 and Step 3 handlers
+    private step2_submit step2Handler;
+    private step3_submit step3Handler;
     
     private JPanel headerPanel;
     private JPanel contentPanel;
@@ -101,21 +108,6 @@ public class manage_trades extends javax.swing.JFrame {
     
     private JPanel myDetailsPanel;
     private JPanel otherDetailsPanel;
-    private JTextField deliveryAddressField;
-    private JTextField courierField;
-    private JTextField expectedDateField;
-    private JTextField trackingField;
-    private JTextArea deliveryInstructionsArea;
-    private JScrollPane deliveryInstructionsScroll;
-    
-    private JTextField meetupLocationField;
-    private JTextField meetupDateField;
-    private JTextField meetupTimeField;
-    private JTextField contactPersonField;
-    private JTextField contactNumberField;
-    private JTextField googleMapsLinkField;
-    private JTextArea meetupInstructionsArea;
-    private JScrollPane meetupInstructionsScroll;
     
     private JTextArea otherDetailsArea;
     private JScrollPane otherDetailsScroll;
@@ -123,23 +115,10 @@ public class manage_trades extends javax.swing.JFrame {
     private JLabel otherDetailsStatus;
     private JButton submitDetailsButton;
     private JButton agreeToOtherDetailsButton;
-    private JButton declineOtherDetailsButton;
     private JLabel myAgreementStatus;
     private JLabel otherAgreementStatus;
     
-    private JLabel baseAmountLabel;
-    private JLabel feeAmountLabel;
-    private JLabel totalAmountLabel;
-    private JLabel feePayerLabel;
     private JLabel paymentStatusLabel;
-    private JButton uploadScreenshotButton;
-    private JLabel screenshotFileNameLabel;
-    private String uploadedScreenshotPath = "";
-    
-    private JComboBox<String> paymentMethodCombo;
-    private JTextField accountNumberField;
-    private JTextField accountNameField;
-    
     private JCheckBox confirmReceivedCheck;
     
     private java.util.Stack<Integer> stepHistory = new java.util.Stack<>();
@@ -154,8 +133,6 @@ public class manage_trades extends javax.swing.JFrame {
     private Color warningColor = new Color(255, 153, 0);
     private Color errorColor = new Color(204, 0, 0);
     private Color infoColor = new Color(33, 150, 243);
-    
-    private static final String SCREENSHOT_PATH = "src/BarterZone/resources/images/payment/";
 
     public manage_trades(int tradeId, String myItem, String theirItem, String otherTraderName, int otherTraderId) {
         this.tradeId = tradeId;
@@ -170,7 +147,6 @@ public class manage_trades extends javax.swing.JFrame {
         this.iconManager = IconManager.getInstance();
         
         initComponents();
-        createImageDirectory();
         loadTradeState();
         updateUI();
         
@@ -179,13 +155,6 @@ public class manage_trades extends javax.swing.JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-    }
-
-    private void createImageDirectory() {
-        File directory = new File(SCREENSHOT_PATH);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
     }
 
     private void initComponents() {
@@ -393,26 +362,6 @@ public class manage_trades extends javax.swing.JFrame {
         otherDetailsPanel.setLayout(null);
         otherDetailsPanel.setBackground(new Color(250, 250, 250));
         otherDetailsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), otherTraderName + "'S DETAILS"));
-
-        deliveryAddressField = new JTextField();
-        courierField = new JTextField();
-        expectedDateField = new JTextField();
-        trackingField = new JTextField();
-        deliveryInstructionsArea = new JTextArea(3, 20);
-        deliveryInstructionsArea.setLineWrap(true);
-        deliveryInstructionsArea.setWrapStyleWord(true);
-        deliveryInstructionsScroll = new JScrollPane(deliveryInstructionsArea);
-        
-        meetupLocationField = new JTextField();
-        meetupDateField = new JTextField();
-        meetupTimeField = new JTextField();
-        contactPersonField = new JTextField();
-        contactNumberField = new JTextField();
-        googleMapsLinkField = new JTextField();
-        meetupInstructionsArea = new JTextArea(3, 20);
-        meetupInstructionsArea.setLineWrap(true);
-        meetupInstructionsArea.setWrapStyleWord(true);
-        meetupInstructionsScroll = new JScrollPane(meetupInstructionsArea);
         
         otherDetailsArea = new JTextArea(8, 30);
         otherDetailsArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -427,7 +376,7 @@ public class manage_trades extends javax.swing.JFrame {
         otherDetailsStatus = new JLabel();
         otherDetailsStatus.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         
-        submitDetailsButton = new JButton();
+        submitDetailsButton = new JButton("SUBMIT MY DETAILS");
         submitDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         submitDetailsButton.setBackground(accentColor);
         submitDetailsButton.setForeground(Color.WHITE);
@@ -443,41 +392,13 @@ public class manage_trades extends javax.swing.JFrame {
         agreeToOtherDetailsButton.setFocusPainted(false);
         agreeToOtherDetailsButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        declineOtherDetailsButton = new JButton("DECLINE");
-        declineOtherDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        declineOtherDetailsButton.setBackground(errorColor);
-        declineOtherDetailsButton.setForeground(Color.WHITE);
-        declineOtherDetailsButton.setBorder(null);
-        declineOtherDetailsButton.setFocusPainted(false);
-        declineOtherDetailsButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         myAgreementStatus = new JLabel();
         myAgreementStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
         otherAgreementStatus = new JLabel();
         otherAgreementStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
         
-        baseAmountLabel = new JLabel();
-        feeAmountLabel = new JLabel();
-        totalAmountLabel = new JLabel();
-        feePayerLabel = new JLabel();
         paymentStatusLabel = new JLabel();
-        
-        uploadScreenshotButton = new JButton("Upload Screenshot");
-        uploadScreenshotButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        uploadScreenshotButton.setBackground(themeColor);
-        uploadScreenshotButton.setForeground(Color.WHITE);
-        uploadScreenshotButton.setBorder(null);
-        uploadScreenshotButton.setFocusPainted(false);
-        uploadScreenshotButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        screenshotFileNameLabel = new JLabel();
-        
-        String[] paymentMethods = {"Select Method", "GCash", "PayMaya"};
-        paymentMethodCombo = new JComboBox<>(paymentMethods);
-        paymentMethodCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        
-        accountNumberField = new JTextField();
-        accountNameField = new JTextField();
+        paymentStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         
         confirmReceivedCheck = new JCheckBox("I have received the item");
         confirmReceivedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -496,98 +417,110 @@ public class manage_trades extends javax.swing.JFrame {
             proposedBy = t.get("proposed_by") != null ? Integer.parseInt(t.get("proposed_by").toString()) : -1;
             methodConfirmed = t.get("method_confirmed") != null && Integer.parseInt(t.get("method_confirmed").toString()) == 1;
             
-            myDetailsSubmitted = t.get("my_details_submitted") != null && 
-                Integer.parseInt(t.get("my_details_submitted").toString()) == 1;
-            otherDetailsSubmitted = t.get("other_details_submitted") != null && 
-                Integer.parseInt(t.get("other_details_submitted").toString()) == 1;
-            myDetailsAgreed = t.get("my_details_agreed") != null && 
-                Integer.parseInt(t.get("my_details_agreed").toString()) == 1;
-            otherDetailsAgreed = t.get("other_details_agreed") != null && 
-                Integer.parseInt(t.get("other_details_agreed").toString()) == 1;
-            
-            feePayer = t.get("fee_payer_id") != null && 
-                Integer.parseInt(t.get("fee_payer_id").toString()) == traderId;
-            
-            myPaymentSubmitted = t.get("my_payment_submitted") != null && 
-                Integer.parseInt(t.get("my_payment_submitted").toString()) == 1;
-            otherPaymentSubmitted = t.get("other_payment_submitted") != null && 
-                Integer.parseInt(t.get("other_payment_submitted").toString()) == 1;
-            paymentVerified = t.get("payment_verified") != null && 
-                Integer.parseInt(t.get("payment_verified").toString()) == 1;
-            
             myItemReceived = t.get("my_item_received") != null && 
                 Integer.parseInt(t.get("my_item_received").toString()) == 1;
             otherItemReceived = t.get("other_item_received") != null && 
                 Integer.parseInt(t.get("other_item_received").toString()) == 1;
-            
-            refundProcessed = t.get("refund_processed") != null && 
-                Integer.parseInt(t.get("refund_processed").toString()) == 1;
             tradeCompleted = "completed".equals(t.get("trade_status"));
             
-            totalAmount = baseAmount + (feePayer ? feeAmount : 0);
             determineCurrentStep();
         }
         
-        loadMyDetailsFromDB();
-        loadOtherDetailsFromDB();
+        loadMyTradeDetails();
+        loadOtherTradeDetails();
     }
     
-    private void loadMyDetailsFromDB() {
+    private void loadMyTradeDetails() {
         String sql = "SELECT * FROM tbl_trade_details WHERE trade_id = ? AND trader_id = ?";
         List<Map<String, Object>> details = db.fetchRecords(sql, tradeId, traderId);
         
         if (!details.isEmpty()) {
             Map<String, Object> d = details.get(0);
-            if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-                deliveryAddressField.setText(d.get("delivery_address") != null ? d.get("delivery_address").toString() : "");
-                courierField.setText(d.get("courier") != null ? d.get("courier").toString() : "");
-                expectedDateField.setText(d.get("expected_date") != null ? d.get("expected_date").toString() : "");
-                trackingField.setText(d.get("tracking_number") != null ? d.get("tracking_number").toString() : "");
-                deliveryInstructionsArea.setText(d.get("delivery_instructions") != null ? d.get("delivery_instructions").toString() : "");
-            } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
-                meetupLocationField.setText(d.get("meetup_location") != null ? d.get("meetup_location").toString() : "");
-                meetupDateField.setText(d.get("meetup_date") != null ? d.get("meetup_date").toString() : "");
-                meetupTimeField.setText(d.get("meetup_time") != null ? d.get("meetup_time").toString() : "");
-                contactPersonField.setText(d.get("contact_person") != null ? d.get("contact_person").toString() : "");
-                contactNumberField.setText(d.get("contact_number") != null ? d.get("contact_number").toString() : "");
-                meetupInstructionsArea.setText(d.get("meetup_instructions") != null ? d.get("meetup_instructions").toString() : "");
-                googleMapsLinkField.setText(d.get("google_maps_link") != null ? d.get("google_maps_link").toString() : "");
+            myDetailId = Integer.parseInt(d.get("detail_id").toString());
+            myDetailsSubmitted = d.get("my_details_submitted") != null && 
+                Integer.parseInt(d.get("my_details_submitted").toString()) == 1;
+            myDetailsAgreed = d.get("my_details_agreed") != null ? 
+                Integer.parseInt(d.get("my_details_agreed").toString()) : 0;
+            otherDetailsAgreed = d.get("other_details_agreed") != null ? 
+                Integer.parseInt(d.get("other_details_agreed").toString()) : 0;
+            
+            if (d.get("meetup_id") != null && Integer.parseInt(d.get("meetup_id").toString()) > 0) {
+                myMeetupId = Integer.parseInt(d.get("meetup_id").toString());
+            }
+            if (d.get("delivery_id") != null && Integer.parseInt(d.get("delivery_id").toString()) > 0) {
+                myDeliveryId = Integer.parseInt(d.get("delivery_id").toString());
+            }
+            if (d.get("payment_id") != null && Integer.parseInt(d.get("payment_id").toString()) > 0) {
+                myPaymentId = Integer.parseInt(d.get("payment_id").toString());
             }
         }
     }
     
-    private void loadOtherDetailsFromDB() {
+    private void loadOtherTradeDetails() {
         String sql = "SELECT * FROM tbl_trade_details WHERE trade_id = ? AND trader_id = ?";
         List<Map<String, Object>> details = db.fetchRecords(sql, tradeId, otherTraderId);
         
         StringBuilder detailsText = new StringBuilder();
+        
         if (!details.isEmpty()) {
             Map<String, Object> d = details.get(0);
-            String method = d.get("exchange_method") != null ? d.get("exchange_method").toString() : "";
+            otherDetailId = Integer.parseInt(d.get("detail_id").toString());
+            otherDetailsSubmitted = d.get("other_details_submitted") != null && 
+                Integer.parseInt(d.get("other_details_submitted").toString()) == 1;
             
-            if (method.equals("delivery")) {
-                detailsText.append("Exchange Method: Delivery\n\n");
-                detailsText.append("Delivery Address: ").append(d.get("delivery_address") != null ? d.get("delivery_address") : "Not provided").append("\n");
-                detailsText.append("Courier: ").append(d.get("courier") != null ? d.get("courier") : "Not provided").append("\n");
-                detailsText.append("Expected Date: ").append(d.get("expected_date") != null ? d.get("expected_date") : "Not provided").append("\n");
-                detailsText.append("Tracking: ").append(d.get("tracking_number") != null ? d.get("tracking_number") : "Not provided").append("\n");
-                detailsText.append("Instructions: ").append(d.get("delivery_instructions") != null ? d.get("delivery_instructions") : "None");
-            } else if (method.equals("meetup")) {
-                detailsText.append("Exchange Method: Meetup\n\n");
-                detailsText.append("Location: ").append(d.get("meetup_location") != null ? d.get("meetup_location") : "Not provided").append("\n");
-                String mapsLink = d.get("google_maps_link") != null ? d.get("google_maps_link").toString() : "";
-                if (!mapsLink.isEmpty()) detailsText.append("Google Maps: ").append(mapsLink).append("\n");
-                detailsText.append("Date: ").append(d.get("meetup_date") != null ? d.get("meetup_date") : "Not provided").append("\n");
-                detailsText.append("Time: ").append(d.get("meetup_time") != null ? d.get("meetup_time") : "Not provided").append("\n");
-                detailsText.append("Contact: ").append(d.get("contact_person") != null ? d.get("contact_person") : "Not provided").append(" - ").append(d.get("contact_number") != null ? d.get("contact_number") : "Not provided").append("\n");
-                detailsText.append("Instructions: ").append(d.get("meetup_instructions") != null ? d.get("meetup_instructions") : "None");
+            if (d.get("meetup_id") != null && Integer.parseInt(d.get("meetup_id").toString()) > 0) {
+                otherMeetupId = Integer.parseInt(d.get("meetup_id").toString());
+                loadMeetupDetails(otherMeetupId);
+            } else if (d.get("delivery_id") != null && Integer.parseInt(d.get("delivery_id").toString()) > 0) {
+                otherDeliveryId = Integer.parseInt(d.get("delivery_id").toString());
+                loadDeliveryDetails(otherDeliveryId);
+            } else {
+                detailsText.append("No details submitted yet.");
+                otherDetailsArea.setText(detailsText.toString());
             }
         } else {
             detailsText.append("No details submitted yet.");
+            otherDetailsArea.setText(detailsText.toString());
         }
+    }
+    
+    private void loadMeetupDetails(int meetupId) {
+        String sql = "SELECT * FROM tbl_meetup_details WHERE meetup_id = ?";
+        List<Map<String, Object>> details = db.fetchRecords(sql, meetupId);
         
-        otherDetailsArea.setText(detailsText.toString());
-        otherDetailsArea.setCaretPosition(0);
+        if (!details.isEmpty()) {
+            Map<String, Object> d = details.get(0);
+            StringBuilder detailsText = new StringBuilder();
+            detailsText.append("Exchange Method: Meetup\n\n");
+            detailsText.append("Location: ").append(d.get("location") != null ? d.get("location") : "Not provided").append("\n");
+            String mapsLink = d.get("google_maps_link") != null ? d.get("google_maps_link").toString() : "";
+            if (!mapsLink.isEmpty()) detailsText.append("Google Maps: ").append(mapsLink).append("\n");
+            detailsText.append("Date: ").append(d.get("date") != null ? d.get("date") : "Not provided").append("\n");
+            detailsText.append("Time: ").append(d.get("time") != null ? d.get("time") : "Not provided").append("\n");
+            detailsText.append("Contact: ").append(d.get("contact_person") != null ? d.get("contact_person") : "Not provided");
+            detailsText.append(" - ").append(d.get("contact_number") != null ? d.get("contact_number") : "Not provided").append("\n");
+            detailsText.append("Instructions: ").append(d.get("instructions") != null ? d.get("instructions") : "None");
+            otherDetailsArea.setText(detailsText.toString());
+            otherDetailsArea.setCaretPosition(0);
+        }
+    }
+    
+    private void loadDeliveryDetails(int deliveryId) {
+        String sql = "SELECT * FROM tbl_delivery_details WHERE delivery_id = ?";
+        List<Map<String, Object>> details = db.fetchRecords(sql, deliveryId);
+        
+        if (!details.isEmpty()) {
+            Map<String, Object> d = details.get(0);
+            StringBuilder detailsText = new StringBuilder();
+            detailsText.append("Exchange Method: Delivery\n\n");
+            detailsText.append("Address: ").append(d.get("address") != null ? d.get("address") : "Not provided").append("\n");
+            detailsText.append("Courier: ").append(d.get("courier") != null ? d.get("courier") : "Not provided").append("\n");
+            detailsText.append("Expected Date: ").append(d.get("expected_date") != null ? d.get("expected_date") : "Not provided").append("\n");
+            detailsText.append("Tracking: ").append(d.get("tracking_number") != null ? d.get("tracking_number") : "Not provided").append("\n");
+            detailsText.append("Instructions: ").append(d.get("instructions") != null ? d.get("instructions") : "None");
+            otherDetailsArea.setText(detailsText.toString());
+            otherDetailsArea.setCaretPosition(0);
+        }
     }
 
     private void determineCurrentStep() {
@@ -599,8 +532,25 @@ public class manage_trades extends javax.swing.JFrame {
             currentStep = 4;
         } else if (paymentVerified) {
             currentStep = 3;
-        } else if (myDetailsAgreed && otherDetailsAgreed && myDetailsSubmitted && otherDetailsSubmitted) {
-            currentStep = 2;
+        } else if (myDetailsSubmitted && otherDetailsSubmitted) {
+            // Check agreement based on exchange method
+            boolean canProceed = false;
+            
+            if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
+                // Delivery: Both must agree (my_details_agreed = 1 AND other_details_agreed = 1 for BOTH traders)
+                // For current user: my_details_agreed = 1 means other trader agreed to this user's details
+                // For other user: need to check their my_details_agreed (which is this user's other_details_agreed)
+                canProceed = (myDetailsAgreed == 1 && otherDetailsAgreed == 1);
+            } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
+                // Meetup: Only one agreement needed
+                canProceed = (myDetailsAgreed == 1 || otherDetailsAgreed == 1);
+            }
+            
+            if (canProceed) {
+                currentStep = 2;
+            } else {
+                currentStep = 1;
+            }
         } else if (exchangeMethod != null && methodConfirmed) {
             currentStep = 1;
         } else {
@@ -634,7 +584,7 @@ public class manage_trades extends javax.swing.JFrame {
         stepIndicatorLabel.setText(stepNames[currentStep]);
         
         stepPanel.removeAll();
-        stepPanel.setPreferredSize(new Dimension(940, 700));
+        stepPanel.setPreferredSize(new Dimension(940, 650));
         
         switch (currentStep) {
             case 1:
@@ -860,30 +810,53 @@ public class manage_trades extends javax.swing.JFrame {
         agreementStatus.setBounds(20, panelHeight + 30, 900, 30);
         
         if (myDetailsSubmitted && otherDetailsSubmitted) {
-            if (myDetailsAgreed && otherDetailsAgreed) {
-                agreementStatus.setText("Both traders have agreed to the details! Click PROCEED to continue to payment.");
-                agreementStatus.setForeground(successColor);
-                proceedButton.setEnabled(true);
-                proceedButton.setText("PROCEED TO PAYMENT");
-            } else if (myDetailsAgreed) {
-                agreementStatus.setText("You have agreed. Waiting for " + otherTraderName + " to agree.");
-                agreementStatus.setForeground(warningColor);
-                proceedButton.setEnabled(false);
-            } else if (otherDetailsAgreed) {
-                agreementStatus.setText(otherTraderName + " has agreed. Click AGREE on your side to confirm.");
-                agreementStatus.setForeground(warningColor);
-                proceedButton.setEnabled(false);
+            boolean canProceed = false;
+            String agreementMessage = "";
+            
+            if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
+                // Delivery: Both must agree
+                canProceed = (myDetailsAgreed == 1 && otherDetailsAgreed == 1);
+                if (myDetailsAgreed == 1 && otherDetailsAgreed == 1) {
+                    agreementMessage = "Both traders have agreed to the details! Click PROCEED to continue.";
+                    agreementStatus.setForeground(successColor);
+                } else if (myDetailsAgreed == 1) {
+                    agreementMessage = "You have agreed. Waiting for " + otherTraderName + " to agree.";
+                    agreementStatus.setForeground(warningColor);
+                } else if (otherDetailsAgreed == 1) {
+                    agreementMessage = otherTraderName + " has agreed. Click AGREE on your side to confirm.";
+                    agreementStatus.setForeground(warningColor);
+                } else {
+                    agreementMessage = "Both traders have submitted details. Click AGREE on your side to confirm.";
+                    agreementStatus.setForeground(warningColor);
+                }
             } else {
-                agreementStatus.setText("Both traders have submitted details. Click AGREE on your side to confirm.");
-                agreementStatus.setForeground(warningColor);
-                proceedButton.setEnabled(false);
+                // Meetup: Only one needs to agree
+                canProceed = (myDetailsAgreed == 1 || otherDetailsAgreed == 1);
+                if (myDetailsAgreed == 1) {
+                    agreementMessage = "You have agreed to " + otherTraderName + "'s details! Click PROCEED to continue.";
+                    agreementStatus.setForeground(successColor);
+                } else if (otherDetailsAgreed == 1) {
+                    agreementMessage = otherTraderName + " has agreed to your details! Click PROCEED to continue.";
+                    agreementStatus.setForeground(successColor);
+                } else {
+                    agreementMessage = "Both traders have submitted details. Click AGREE to confirm the other trader's details.";
+                    agreementStatus.setForeground(warningColor);
+                }
             }
+            
+            agreementStatus.setText(agreementMessage);
+            proceedButton.setEnabled(canProceed);
+            
+            if (canProceed) {
+                proceedButton.setText("PROCEED TO PAYMENT");
+            }
+            
         } else if (myDetailsSubmitted) {
-            agreementStatus.setText("You have submitted your details. Waiting for " + otherTraderName + " to submit their details.");
+            agreementStatus.setText("You have submitted your details. Waiting for " + otherTraderName + " to submit.");
             agreementStatus.setForeground(warningColor);
             proceedButton.setEnabled(false);
         } else if (otherDetailsSubmitted) {
-            agreementStatus.setText(otherTraderName + " has submitted their details. Please submit your details and then agree.");
+            agreementStatus.setText(otherTraderName + " has submitted details. Please submit your details and then agree.");
             agreementStatus.setForeground(warningColor);
             proceedButton.setEnabled(false);
         } else {
@@ -897,115 +870,16 @@ public class manage_trades extends javax.swing.JFrame {
 
     private void buildMyDetailsPanel() {
         int fieldY = 30;
-        int labelWidth = 120;
-        int fieldWidth = 280;
-        int fieldX = 130;
         
-        if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-            JLabel addrLabel = new JLabel("Delivery Address:*");
-            addrLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            addrLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(addrLabel);
-            deliveryAddressField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(deliveryAddressField);
-            fieldY += 40;
-            
-            JLabel courierLabel = new JLabel("Courier Service:*");
-            courierLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            courierLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(courierLabel);
-            courierField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(courierField);
-            fieldY += 40;
-            
-            JLabel dateLabel = new JLabel("Expected Date:*");
-            dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            dateLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(dateLabel);
-            expectedDateField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(expectedDateField);
-            fieldY += 40;
-            
-            JLabel trackLabel = new JLabel("Tracking Number:");
-            trackLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            trackLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(trackLabel);
-            trackingField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(trackingField);
-            fieldY += 40;
-            
-            JLabel instLabel = new JLabel("Special Instructions:");
-            instLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            instLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(instLabel);
-            deliveryInstructionsScroll.setBounds(fieldX, fieldY, fieldWidth, 70);
-            myDetailsPanel.add(deliveryInstructionsScroll);
-            fieldY += 80;
-        } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
-            JLabel locLabel = new JLabel("Meetup Location:*");
-            locLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            locLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(locLabel);
-            meetupLocationField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(meetupLocationField);
-            fieldY += 40;
-            
-            JLabel mapsLabel = new JLabel("Google Maps Link:");
-            mapsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            mapsLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(mapsLabel);
-            googleMapsLinkField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(googleMapsLinkField);
-            fieldY += 40;
-            
-            JLabel dateLabel = new JLabel("Date (YYYY-MM-DD):*");
-            dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            dateLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(dateLabel);
-            meetupDateField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(meetupDateField);
-            fieldY += 40;
-            
-            JLabel timeLabel = new JLabel("Time (HH:MM):*");
-            timeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            timeLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(timeLabel);
-            meetupTimeField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(meetupTimeField);
-            fieldY += 40;
-            
-            JLabel personLabel = new JLabel("Contact Person:*");
-            personLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            personLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(personLabel);
-            contactPersonField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(contactPersonField);
-            fieldY += 40;
-            
-            JLabel numberLabel = new JLabel("Contact Number:*");
-            numberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            numberLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(numberLabel);
-            contactNumberField.setBounds(fieldX, fieldY, fieldWidth, 30);
-            myDetailsPanel.add(contactNumberField);
-            fieldY += 40;
-            
-            JLabel instLabel = new JLabel("Special Instructions:");
-            instLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            instLabel.setBounds(10, fieldY, labelWidth, 25);
-            myDetailsPanel.add(instLabel);
-            meetupInstructionsScroll.setBounds(fieldX, fieldY, fieldWidth, 70);
-            myDetailsPanel.add(meetupInstructionsScroll);
-            fieldY += 80;
-        }
+        JLabel instructionLabel = new JLabel("Click 'Submit My Details' to enter your information:");
+        instructionLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        instructionLabel.setForeground(textColor);
+        instructionLabel.setBounds(10, fieldY, 400, 20);
+        myDetailsPanel.add(instructionLabel);
+        fieldY += 30;
         
-        if (myDetailsSubmitted) {
-            submitDetailsButton.setText("UPDATE MY DETAILS");
-        } else {
-            submitDetailsButton.setText("SUBMIT MY DETAILS");
-        }
         submitDetailsButton.setBounds(120, fieldY, 200, 35);
-        submitDetailsButton.addActionListener(e -> submitDetails());
+        submitDetailsButton.addActionListener(e -> showDetailsInputDialog());
         myDetailsPanel.add(submitDetailsButton);
         fieldY += 50;
         
@@ -1015,12 +889,55 @@ public class manage_trades extends javax.swing.JFrame {
             myDetailsStatus.setBounds(120, fieldY, 250, 30);
             myDetailsPanel.add(myDetailsStatus);
             fieldY += 45;
+            
+            // Display your own submitted details
+            if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
+                JLabel previewLabel = new JLabel("Your submitted details:");
+                previewLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                previewLabel.setForeground(accentColor);
+                previewLabel.setBounds(10, fieldY, 200, 20);
+                myDetailsPanel.add(previewLabel);
+                fieldY += 25;
+                
+                JTextArea previewArea = new JTextArea();
+                previewArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                previewArea.setEditable(false);
+                previewArea.setBackground(new Color(245, 245, 245));
+                previewArea.setText(buildMyMeetupPreview());
+                previewArea.setLineWrap(true);
+                previewArea.setWrapStyleWord(true);
+                JScrollPane previewScroll = new JScrollPane(previewArea);
+                previewScroll.setBounds(10, fieldY, 420, 120);
+                previewScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
+                myDetailsPanel.add(previewScroll);
+                fieldY += 130;
+            } else if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
+                JLabel previewLabel = new JLabel("Your submitted details:");
+                previewLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                previewLabel.setForeground(accentColor);
+                previewLabel.setBounds(10, fieldY, 200, 20);
+                myDetailsPanel.add(previewLabel);
+                fieldY += 25;
+                
+                JTextArea previewArea = new JTextArea();
+                previewArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                previewArea.setEditable(false);
+                previewArea.setBackground(new Color(245, 245, 245));
+                previewArea.setText(buildMyDeliveryPreview());
+                previewArea.setLineWrap(true);
+                previewArea.setWrapStyleWord(true);
+                JScrollPane previewScroll = new JScrollPane(previewArea);
+                previewScroll.setBounds(10, fieldY, 420, 120);
+                previewScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
+                myDetailsPanel.add(previewScroll);
+                fieldY += 130;
+            }
         }
         
-        if (myDetailsAgreed) {
-            myAgreementStatus.setText("You have agreed to the other trader's details");
+        if (myDetailsAgreed == 1) {
+            myAgreementStatus.setText("✓ You have agreed to the other trader's details");
             myAgreementStatus.setForeground(successColor);
-            myAgreementStatus.setBounds(80, fieldY, 300, 30);
+            myAgreementStatus.setBounds(80, fieldY + 45, 300, 30);
             myDetailsPanel.add(myAgreementStatus);
         }
         
@@ -1029,14 +946,68 @@ public class manage_trades extends javax.swing.JFrame {
         statusTitle.setBounds(10, fieldY + 10, 50, 20);
         myDetailsPanel.add(statusTitle);
     }
-
+    
+    private String buildMyMeetupPreview() {
+        StringBuilder preview = new StringBuilder();
+        if (myMeetupId != -1) {
+            String sql = "SELECT * FROM tbl_meetup_details WHERE meetup_id = ?";
+            List<Map<String, Object>> details = db.fetchRecords(sql, myMeetupId);
+            if (!details.isEmpty()) {
+                Map<String, Object> d = details.get(0);
+                preview.append("Location: ").append(d.get("location") != null ? d.get("location") : "Not provided").append("\n");
+                if (d.get("google_maps_link") != null && !d.get("google_maps_link").toString().isEmpty()) {
+                    preview.append("Google Maps: ").append(d.get("google_maps_link")).append("\n");
+                }
+                preview.append("Date: ").append(d.get("date") != null ? d.get("date") : "Not provided").append("\n");
+                preview.append("Time: ").append(d.get("time") != null ? d.get("time") : "Not provided").append("\n");
+                preview.append("Contact Person: ").append(d.get("contact_person") != null ? d.get("contact_person") : "Not provided").append("\n");
+                preview.append("Contact Number: ").append(d.get("contact_number") != null ? d.get("contact_number") : "Not provided").append("\n");
+                if (d.get("instructions") != null && !d.get("instructions").toString().isEmpty()) {
+                    preview.append("Instructions: ").append(d.get("instructions"));
+                }
+            }
+        } else {
+            preview.append("No details submitted yet.");
+        }
+        return preview.toString();
+    }
+    
+    private String buildMyDeliveryPreview() {
+        StringBuilder preview = new StringBuilder();
+        if (myDeliveryId != -1) {
+            String sql = "SELECT * FROM tbl_delivery_details WHERE delivery_id = ?";
+            List<Map<String, Object>> details = db.fetchRecords(sql, myDeliveryId);
+            if (!details.isEmpty()) {
+                Map<String, Object> d = details.get(0);
+                preview.append("Address: ").append(d.get("address") != null ? d.get("address") : "Not provided").append("\n");
+                preview.append("Courier: ").append(d.get("courier") != null ? d.get("courier") : "Not provided").append("\n");
+                preview.append("Expected Date: ").append(d.get("expected_date") != null ? d.get("expected_date") : "Not provided").append("\n");
+                if (d.get("tracking_number") != null && !d.get("tracking_number").toString().isEmpty()) {
+                    preview.append("Tracking Number: ").append(d.get("tracking_number")).append("\n");
+                }
+                if (d.get("instructions") != null && !d.get("instructions").toString().isEmpty()) {
+                    preview.append("Instructions: ").append(d.get("instructions"));
+                }
+            }
+        } else {
+            preview.append("No details submitted yet.");
+        }
+        return preview.toString();
+    }
+    
     private void buildOtherDetailsPanel() {
         int fieldY = 30;
         
-        otherDetailsScroll.setBounds(10, fieldY, 420, 280);
+        JLabel instructionLabel = new JLabel(otherTraderName + "'s details will appear here when submitted:");
+        instructionLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        instructionLabel.setForeground(textColor);
+        instructionLabel.setBounds(10, fieldY, 400, 20);
+        otherDetailsPanel.add(instructionLabel);
+        fieldY += 30;
+        
+        otherDetailsScroll.setBounds(10, fieldY, 420, 200);
         otherDetailsPanel.add(otherDetailsScroll);
-        loadOtherDetailsFromDB();
-        fieldY += 300;
+        fieldY += 220;
         
         JLabel statusTitle = new JLabel("Status:");
         statusTitle.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -1058,26 +1029,59 @@ public class manage_trades extends javax.swing.JFrame {
             fieldY += 30;
         }
         
-        if (otherDetailsSubmitted && !myDetailsAgreed) {
-            agreeToOtherDetailsButton.setBounds(100, fieldY, 140, 35);
-            declineOtherDetailsButton.setBounds(250, fieldY, 100, 35);
+        // Show Agree button based on exchange method
+        boolean showAgreeButton = false;
+        
+        if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
+            // Delivery: Show agree button if other has submitted AND current hasn't agreed yet (otherDetailsAgreed = 0)
+            showAgreeButton = (otherDetailsSubmitted && otherDetailsAgreed == 0);
+        } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
+            // Meetup: Show agree button if other has submitted AND no one has agreed yet (both myDetailsAgreed and otherDetailsAgreed are 0)
+            showAgreeButton = (otherDetailsSubmitted && myDetailsAgreed == 0 && otherDetailsAgreed == 0);
+        }
+        
+        if (showAgreeButton) {
+            String buttonText = exchangeMethod.equals("meetup") ? 
+                "AGREE TO USE THEIR MEETUP DETAILS" : 
+                "AGREE TO DETAILS";
+            agreeToOtherDetailsButton.setText(buttonText);
+            agreeToOtherDetailsButton.setBounds(80, fieldY, 250, 35);
             agreeToOtherDetailsButton.addActionListener(e -> agreeToOtherDetails());
-            declineOtherDetailsButton.addActionListener(e -> declineOtherDetails());
             otherDetailsPanel.add(agreeToOtherDetailsButton);
-            otherDetailsPanel.add(declineOtherDetailsButton);
             fieldY += 50;
-        } else if (myDetailsAgreed && otherDetailsSubmitted) {
-            otherAgreementStatus.setText("You have agreed to these details");
+        } else if ((exchangeMethod != null && exchangeMethod.equals("delivery") && otherDetailsAgreed == 1) ||
+                   (exchangeMethod != null && exchangeMethod.equals("meetup") && (myDetailsAgreed == 1 || otherDetailsAgreed == 1))) {
+            if (exchangeMethod.equals("delivery")) {
+                otherAgreementStatus.setText("✓ " + otherTraderName + " has agreed to your details");
+            } else {
+                otherAgreementStatus.setText("✓ Agreement has been reached on meetup details");
+            }
             otherAgreementStatus.setForeground(successColor);
-            otherAgreementStatus.setBounds(100, fieldY, 300, 25);
+            otherAgreementStatus.setBounds(80, fieldY, 300, 25);
             otherDetailsPanel.add(otherAgreementStatus);
         } else if (otherDetailsSubmitted) {
-            JLabel waitLabel = new JLabel("Waiting for you to agree...");
+            JLabel waitLabel = new JLabel(exchangeMethod.equals("meetup") ? 
+                "Waiting for either trader to agree..." : 
+                "Waiting for " + otherTraderName + " to agree...");
             waitLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
             waitLabel.setForeground(warningColor);
-            waitLabel.setBounds(100, fieldY, 300, 25);
+            waitLabel.setBounds(80, fieldY, 300, 25);
             otherDetailsPanel.add(waitLabel);
         }
+    }
+
+    private void showDetailsInputDialog() {
+        if (exchangeMethod == null) {
+            JOptionPane.showMessageDialog(this, "Exchange method not set. Please complete Step 1 first.", "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        step2Handler = new step2_submit(tradeId, traderId, otherTraderId, exchangeMethod, this);
+        step2Handler.showDialog();
+        
+        // Refresh all data after dialog closes
+        loadTradeState();
+        updateUI();
     }
 
     private void agreeToOtherDetails() {
@@ -1085,341 +1089,118 @@ public class manage_trades extends javax.swing.JFrame {
             "Confirm that you agree with " + otherTraderName + "'s exchange details?\n\n"
             + "This means you have reviewed and confirmed:\n"
             + "Their exchange details are acceptable\n\n"
-            + "Both traders must agree to proceed to payment.",
+            + (exchangeMethod.equals("delivery") ? 
+                "Both traders must agree to proceed to payment." : 
+                "Once you agree, the trade will proceed to payment using their meetup details."),
             "Confirm Agreement",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.QUESTION_MESSAGE);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            String sql = "UPDATE tbl_trade SET my_details_agreed = 1 WHERE trade_id = ?";
-            db.updateRecord(sql, tradeId);
-            myDetailsAgreed = true;
+            // Update other_details_agreed = 1 for the current user's row (agreeing to other trader's details)
+            String sql = "UPDATE tbl_trade_details SET other_details_agreed = 1 WHERE trade_id = ? AND trader_id = ?";
+            db.updateRecord(sql, tradeId, traderId);
             
-            String checkSql = "SELECT my_details_agreed, other_details_agreed FROM tbl_trade WHERE trade_id = ?";
-            List<Map<String, Object>> result = db.fetchRecords(checkSql, tradeId);
+            // Also update the other trader's row to set my_details_agreed = 1 (someone agreed to their details)
+            String sqlOther = "UPDATE tbl_trade_details SET my_details_agreed = 1 WHERE trade_id = ? AND trader_id = ?";
+            db.updateRecord(sqlOther, tradeId, otherTraderId);
             
-            if (!result.isEmpty()) {
-                int myAgreed = Integer.parseInt(result.get(0).get("my_details_agreed").toString());
-                int otherAgreed = Integer.parseInt(result.get(0).get("other_details_agreed").toString());
+            // Refresh data
+            loadTradeState();
+            
+            if (exchangeMethod.equals("delivery")) {
+                // Delivery: Need both agreements - check if both are now agreed
+                String checkSql = "SELECT my_details_agreed, other_details_agreed FROM tbl_trade_details WHERE trade_id = ? AND trader_id = ?";
+                List<Map<String, Object>> myResult = db.fetchRecords(checkSql, tradeId, traderId);
+                List<Map<String, Object>> otherResult = db.fetchRecords(checkSql, tradeId, otherTraderId);
                 
-                if (myAgreed == 1 && otherAgreed == 1) {
-                    showFeePayerDialog();
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                        "You have marked your agreement.\n\nWaiting for " + otherTraderName + " to agree.",
-                        "Agreement Recorded",
-                        JOptionPane.INFORMATION_MESSAGE);
+                if (!myResult.isEmpty() && !otherResult.isEmpty()) {
+                    int myMyAgreed = Integer.parseInt(myResult.get(0).get("my_details_agreed").toString());
+                    int myOtherAgreed = Integer.parseInt(myResult.get(0).get("other_details_agreed").toString());
+                    int otherMyAgreed = Integer.parseInt(otherResult.get(0).get("my_details_agreed").toString());
+                    int otherOtherAgreed = Integer.parseInt(otherResult.get(0).get("other_details_agreed").toString());
+                    
+                    // Both traders have agreed when: 
+                    // my_agreed = 1 AND other_agreed = 1 for BOTH traders
+                    if (myMyAgreed == 1 && myOtherAgreed == 1 && otherMyAgreed == 1 && otherOtherAgreed == 1) {
+                        String updateTradeSql = "UPDATE tbl_trade SET trade_status = 'arrangements_confirmed' WHERE trade_id = ?";
+                        db.updateRecord(updateTradeSql, tradeId);
+                        
+                        JOptionPane.showMessageDialog(this,
+                            "Both traders have agreed! You can now proceed to payment.",
+                            "Agreement Complete",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                            "You have agreed to " + otherTraderName + "'s details.\n\n"
+                            + "Waiting for " + otherTraderName + " to agree as well.",
+                            "Agreement Recorded",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    }
                 }
-            }
-            
-            loadTradeState();
-            updateUI();
-        }
-    }
-    
-    private void declineOtherDetails() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Decline " + otherTraderName + "'s exchange details?\n\n"
-            + "If you decline, you can request changes to their details.\n"
-            + "Both traders must agree to proceed.",
-            "Decline Details",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            String sql = "UPDATE tbl_trade SET my_details_agreed = 0 WHERE trade_id = ?";
-            db.updateRecord(sql, tradeId);
-            myDetailsAgreed = false;
-            
-            JOptionPane.showMessageDialog(this,
-                "You have declined the details.\n\n"
-                + "Please communicate with " + otherTraderName + " to make necessary changes.\n"
-                + "Both traders must agree again to proceed.",
-                "Declined",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            loadTradeState();
-            updateUI();
-        }
-    }
-
-    private void submitDetails() {
-        boolean isValid = true;
-        
-        if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-            if (deliveryAddressField.getText().trim().isEmpty() ||
-                courierField.getText().trim().isEmpty() ||
-                expectedDateField.getText().trim().isEmpty()) {
-                isValid = false;
+            } else {
+                // Meetup: Only one agreement needed - proceed immediately
+                String updateTradeSql = "UPDATE tbl_trade SET trade_status = 'arrangements_confirmed' WHERE trade_id = ?";
+                db.updateRecord(updateTradeSql, tradeId);
+                
                 JOptionPane.showMessageDialog(this,
-                    "Please fill in all required fields (Address, Courier, and Expected Date).",
-                    "Incomplete Information",
-                    JOptionPane.WARNING_MESSAGE);
+                    "You have agreed to " + otherTraderName + "'s meetup details!\n\n"
+                    + "The trade will now proceed to payment using their meetup information.",
+                    "Agreement Complete - Proceeding to Payment",
+                    JOptionPane.INFORMATION_MESSAGE);
             }
-        } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
-            if (meetupLocationField.getText().trim().isEmpty() ||
-                meetupDateField.getText().trim().isEmpty() ||
-                meetupTimeField.getText().trim().isEmpty() ||
-                contactPersonField.getText().trim().isEmpty() ||
-                contactNumberField.getText().trim().isEmpty()) {
-                isValid = false;
-                JOptionPane.showMessageDialog(this,
-                    "Please fill in all required fields.",
-                    "Incomplete Information",
-                    JOptionPane.WARNING_MESSAGE);
-            }
-        }
-        
-        if (isValid) {
-            saveDetailsToDB();
-            
-            String message = myDetailsSubmitted ? 
-                "Details updated successfully!" : 
-                "Details submitted successfully!";
-            message += "\n\nWaiting for " + otherTraderName + " to submit their details.";
-            
-            JOptionPane.showMessageDialog(this, message, "Success", JOptionPane.INFORMATION_MESSAGE);
             
             loadTradeState();
             updateUI();
         }
-    }
-
-    private void saveDetailsToDB() {
-        String googleMapsLink = googleMapsLinkField.getText().trim();
-        
-        if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-            String sql = "INSERT OR REPLACE INTO tbl_trade_details "
-                + "(trade_id, trader_id, exchange_method, delivery_address, courier, "
-                + "expected_date, tracking_number, delivery_instructions, submitted_date) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))";
-            
-            db.addRecord(sql, tradeId, traderId, exchangeMethod,
-                deliveryAddressField.getText().trim(),
-                courierField.getText().trim(),
-                expectedDateField.getText().trim(),
-                trackingField.getText().trim(),
-                deliveryInstructionsArea.getText().trim());
-        } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
-            String sql = "INSERT OR REPLACE INTO tbl_trade_details "
-                + "(trade_id, trader_id, exchange_method, meetup_location, meetup_date, "
-                + "meetup_time, contact_person, contact_number, meetup_instructions, "
-                + "google_maps_link, submitted_date) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))";
-            
-            db.addRecord(sql, tradeId, traderId, exchangeMethod,
-                meetupLocationField.getText().trim(),
-                meetupDateField.getText().trim(),
-                meetupTimeField.getText().trim(),
-                contactPersonField.getText().trim(),
-                contactNumberField.getText().trim(),
-                meetupInstructionsArea.getText().trim(),
-                googleMapsLink);
-        }
-        
-        if (!myDetailsSubmitted) {
-            String updateSql = "UPDATE tbl_trade SET my_details_submitted = 1 WHERE trade_id = ?";
-            db.updateRecord(updateSql, tradeId);
-            myDetailsSubmitted = true;
-        }
-        
-        myDetailsAgreed = false;
-        String resetAgreementSql = "UPDATE tbl_trade SET my_details_agreed = 0 WHERE trade_id = ?";
-        db.updateRecord(resetAgreementSql, tradeId);
-        
-        loadMyDetailsFromDB();
-        loadOtherDetailsFromDB();
-    }
-
-    private void showFeePayerDialog() {
-        Object[] options = {"I will pay the fee", "Let them pay the fee"};
-        int choice = JOptionPane.showOptionDialog(this,
-            "Who will pay the admin fee of 15.00?\n\n"
-            + "If you pay the fee: You will pay 215 total\n"
-            + "If they pay the fee: You will pay 200 total\n\n"
-            + "Select your preference:",
-            "Fee Payer Selection",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE,
-            null,
-            options,
-            options[0]);
-        
-        if (choice == 0) {
-            feePayer = true;
-        } else if (choice == 1) {
-            feePayer = false;
-        }
-        
-        String sql = "UPDATE tbl_trade SET fee_payer_id = ? WHERE trade_id = ?";
-        db.updateRecord(sql, feePayer ? traderId : otherTraderId, tradeId);
-        
-        JOptionPane.showMessageDialog(this,
-            "Fee payer selected!\n\n"
-            + "You will pay: " + (feePayer ? "215.00" : "200.00") + "\n"
-            + "Please proceed to Step 3 to submit your payment.",
-            "Fee Payer Set",
-            JOptionPane.INFORMATION_MESSAGE);
-        
-        loadTradeState();
-        updateUI();
     }
 
     private void showStep3Payment() {
-        statusLabel.setText("Step 3: Make payment to the admin escrow account.");
+        statusLabel.setText("Step 3: Select admin and make payment.");
         
-        int y = 15;
-        
-        JPanel paymentPanel = new JPanel();
-        paymentPanel.setLayout(null);
-        paymentPanel.setBackground(Color.WHITE);
-        paymentPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "Payment Information"));
-        paymentPanel.setBounds(20, y, 900, 600);
+        step3Handler = new step3_submit(tradeId, traderId, this);
+        JPanel paymentPanel = step3Handler.createPaymentPanel();
+        paymentPanel.setBounds(20, 15, 900, 350);
         stepPanel.add(paymentPanel);
         
-        int py = 25;
+        JTextArea instructionArea = new JTextArea();
+        instructionArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        instructionArea.setForeground(textColor);
+        instructionArea.setBackground(new Color(255, 255, 200));
+        instructionArea.setLineWrap(true);
+        instructionArea.setWrapStyleWord(true);
+        instructionArea.setEditable(false);
+        instructionArea.setText("Instructions:\n1. Select an admin as middleman\n2. Send the total amount to the admin's account\n3. Upload payment proof (screenshot/QR)\n4. Wait for admin verification");
+        instructionArea.setBounds(20, 380, 900, 80);
+        instructionArea.setBorder(new LineBorder(warningColor, 1));
+        stepPanel.add(instructionArea);
         
-        JLabel paymentTitle = new JLabel("PAYMENT SUMMARY");
-        paymentTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        paymentTitle.setForeground(accentColor);
-        paymentTitle.setBounds(20, py, 300, 25);
-        paymentPanel.add(paymentTitle);
-        py += 35;
+        paymentStatusLabel.setBounds(20, 475, 500, 25);
         
-        baseAmountLabel.setText("Item Value: " + String.format("%.2f", baseAmount));
-        baseAmountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        baseAmountLabel.setBounds(20, py, 200, 25);
-        paymentPanel.add(baseAmountLabel);
-        py += 30;
+        paymentSubmitted = step3Handler.isPaymentSubmitted();
+        paymentVerified = step3Handler.isPaymentVerified();
         
-        feeAmountLabel.setText("Admin Fee: " + String.format("%.2f", feeAmount));
-        feeAmountLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        feeAmountLabel.setBounds(20, py, 200, 25);
-        paymentPanel.add(feeAmountLabel);
-        py += 30;
-        
-        feePayerLabel.setText("Fee Payer: " + (feePayer ? "YOU" : otherTraderName));
-        feePayerLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        feePayerLabel.setForeground(feePayer ? errorColor : warningColor);
-        feePayerLabel.setBounds(20, py, 300, 25);
-        paymentPanel.add(feePayerLabel);
-        py += 35;
-        
-        totalAmountLabel.setText("TOTAL AMOUNT TO PAY: " + String.format("%.2f", totalAmount));
-        totalAmountLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        totalAmountLabel.setForeground(successColor);
-        totalAmountLabel.setBounds(20, py, 400, 30);
-        paymentPanel.add(totalAmountLabel);
-        py += 45;
-        
-        JLabel detailsTitle = new JLabel("YOUR PAYMENT DETAILS (For Refund)");
-        detailsTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        detailsTitle.setForeground(accentColor);
-        detailsTitle.setBounds(20, py, 300, 25);
-        paymentPanel.add(detailsTitle);
-        py += 35;
-        
-        JLabel methodLabel = new JLabel("Payment Method:*");
-        methodLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        methodLabel.setBounds(20, py, 120, 25);
-        paymentPanel.add(methodLabel);
-        paymentMethodCombo.setBounds(150, py, 200, 30);
-        paymentPanel.add(paymentMethodCombo);
-        py += 40;
-        
-        JLabel numberLabel = new JLabel("Account Number:*");
-        numberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        numberLabel.setBounds(20, py, 120, 25);
-        paymentPanel.add(numberLabel);
-        accountNumberField.setBounds(150, py, 250, 30);
-        paymentPanel.add(accountNumberField);
-        py += 40;
-        
-        JLabel nameLabel = new JLabel("Registered Name:*");
-        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        nameLabel.setBounds(20, py, 120, 25);
-        paymentPanel.add(nameLabel);
-        accountNameField.setBounds(150, py, 250, 30);
-        paymentPanel.add(accountNameField);
-        py += 45;
-        
-        uploadScreenshotButton.setBounds(20, py, 150, 35);
-        paymentPanel.add(uploadScreenshotButton);
-        screenshotFileNameLabel.setBounds(180, py, 400, 35);
-        paymentPanel.add(screenshotFileNameLabel);
-        py += 50;
-        
-        JTextArea warningArea = new JTextArea();
-        warningArea.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        warningArea.setForeground(errorColor);
-        warningArea.setBackground(new Color(255, 240, 240));
-        warningArea.setLineWrap(true);
-        warningArea.setWrapStyleWord(true);
-        warningArea.setEditable(false);
-        warningArea.setText("IMPORTANT: Money is NON-REFUNDABLE if sent to wrong number!\n"
-                          + "Double-check your payment details before submitting\n"
-                          + "Verify the number is correct and active\n"
-                          + "Make sure the name matches your account");
-        warningArea.setBounds(20, py, 860, 60);
-        warningArea.setBorder(new LineBorder(errorColor, 1));
-        paymentPanel.add(warningArea);
-        py += 70;
-        
-        paymentStatusLabel.setBounds(20, py, 500, 25);
-        
-        if (myPaymentSubmitted && otherPaymentSubmitted) {
-            if (paymentVerified) {
-                paymentStatusLabel.setText("Payment verified by admin! You can proceed.");
-                paymentStatusLabel.setForeground(successColor);
-                proceedButton.setEnabled(true);
-                proceedButton.setText("PROCEED TO NEXT STEP");
-            } else {
-                paymentStatusLabel.setText("Both payments submitted. Waiting for admin verification...");
-                paymentStatusLabel.setForeground(warningColor);
-                proceedButton.setEnabled(false);
-            }
-        } else if (myPaymentSubmitted) {
-            paymentStatusLabel.setText("Your payment submitted. Waiting for " + otherTraderName + ".");
+        if (paymentVerified) {
+            paymentStatusLabel.setText("✓ Payment verified by admin! You can proceed.");
+            paymentStatusLabel.setForeground(successColor);
+            proceedButton.setEnabled(true);
+            proceedButton.setText("PROCEED TO NEXT STEP");
+        } else if (paymentSubmitted) {
+            paymentStatusLabel.setText("Payment submitted. Waiting for admin verification...");
             paymentStatusLabel.setForeground(warningColor);
             proceedButton.setEnabled(false);
-        } else {
-            paymentStatusLabel.setText("Please provide your payment details and upload screenshot.");
+        } else if (step3Handler.hasSelectedAdmin()) {
+            paymentStatusLabel.setText("Please provide payment details and upload proof.");
             paymentStatusLabel.setForeground(textColor);
             proceedButton.setEnabled(true);
             proceedButton.setText("SUBMIT PAYMENT");
+        } else {
+            paymentStatusLabel.setText("Please select an admin first.");
+            paymentStatusLabel.setForeground(textColor);
+            proceedButton.setEnabled(false);
         }
         
-        paymentPanel.add(paymentStatusLabel);
-        
-        loadPaymentDetails();
-    }
-
-    private void loadPaymentDetails() {
-        String sql = "SELECT my_payment_screenshot, my_payment_details FROM tbl_trade WHERE trade_id = ?";
-        List<Map<String, Object>> result = db.fetchRecords(sql, tradeId);
-        
-        if (!result.isEmpty() && result.get(0).get("my_payment_details") != null) {
-            String details = result.get(0).get("my_payment_details").toString();
-            if (details.contains("GCash") || details.contains("PayMaya")) {
-                String[] parts = details.split(": ");
-                if (parts.length >= 2) {
-                    String[] numberName = parts[1].split(" \\(");
-                    if (numberName.length >= 1) {
-                        accountNumberField.setText(numberName[0]);
-                        if (numberName.length >= 2) {
-                            accountNameField.setText(numberName[1].replace(")", ""));
-                        }
-                    }
-                }
-                if (details.contains("GCash")) paymentMethodCombo.setSelectedItem("GCash");
-                else if (details.contains("PayMaya")) paymentMethodCombo.setSelectedItem("PayMaya");
-            }
-            
-            if (result.get(0).get("my_payment_screenshot") != null) {
-                screenshotFileNameLabel.setText("Screenshot uploaded");
-                myPaymentSubmitted = true;
-            }
-        }
+        stepPanel.add(paymentStatusLabel);
     }
 
     private void showStep4ConfirmReceipt() {
@@ -1502,7 +1283,7 @@ public class manage_trades extends javax.swing.JFrame {
         refundPanel.setLayout(null);
         refundPanel.setBackground(Color.WHITE);
         refundPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "Refund Processing"));
-        refundPanel.setBounds(20, y, 900, 200);
+        refundPanel.setBounds(20, y, 900, 250);
         stepPanel.add(refundPanel);
         
         JLabel refundLabel = new JLabel("REFUND PROCESSING");
@@ -1513,23 +1294,24 @@ public class manage_trades extends javax.swing.JFrame {
         
         JLabel refundInfo = new JLabel(
             "<html>Both traders have confirmed receipt.<br>"
-            + "The base amount of " + String.format("%.2f", baseAmount) + " will be refunded to both parties.<br>"
-            + "The fee of " + String.format("%.2f", feeAmount) + " is retained by BarterZone.</html>");
+            + "The base amount of ₱200.00 will be refunded to both parties.<br>"
+            + "The admin fee of ₱15.00 is retained by BarterZone.<br><br>"
+            + "Admin will send proof of transaction to both traders.</html>");
         refundInfo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        refundInfo.setBounds(20, 55, 600, 60);
+        refundInfo.setBounds(20, 55, 600, 80);
         refundPanel.add(refundInfo);
         
         JLabel refundStatus = new JLabel();
         refundStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        refundStatus.setBounds(20, 125, 400, 25);
+        refundStatus.setBounds(20, 150, 400, 25);
         
         if (refundProcessed) {
-            refundStatus.setText("Refund has been processed by admin!");
+            refundStatus.setText("✓ Refund has been processed by admin!");
             refundStatus.setForeground(successColor);
             proceedButton.setEnabled(true);
             proceedButton.setText("COMPLETE TRADE");
         } else {
-            refundStatus.setText("Waiting for admin to process refund...");
+            refundStatus.setText("⏳ Waiting for admin to process refund...");
             refundStatus.setForeground(warningColor);
             proceedButton.setEnabled(false);
         }
@@ -1573,128 +1355,6 @@ public class manage_trades extends javax.swing.JFrame {
         cancelTradeButton.setEnabled(false);
     }
 
-    private void uploadScreenshot() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png", "gif"));
-
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            uploadedScreenshotPath = saveScreenshot(selectedFile.getAbsolutePath());
-            screenshotFileNameLabel.setText(selectedFile.getName());
-            JOptionPane.showMessageDialog(this,
-                "Screenshot uploaded successfully!\n\nAdmin will verify your payment.",
-                "Upload Complete",
-                JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    private String saveScreenshot(String sourcePath) {
-        try {
-            File directory = new File(SCREENSHOT_PATH);
-            if (!directory.exists()) directory.mkdirs();
-            
-            File sourceFile = new File(sourcePath);
-            String fileName = "payment_" + traderId + "_" + tradeId + "_" + System.currentTimeMillis() 
-                + sourceFile.getName().substring(sourceFile.getName().lastIndexOf("."));
-            String destPath = SCREENSHOT_PATH + fileName;
-            
-            Files.copy(Paths.get(sourcePath), Paths.get(destPath), StandardCopyOption.REPLACE_EXISTING);
-            return "BarterZone.resources.images.payment." + fileName;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-
-    private void handleProceed() {
-        switch (currentStep) {
-            case 1:
-                if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
-                    proceedToNext();
-                }
-                break;
-            case 2:
-                if (proceedButton.getText().equals("PROCEED TO PAYMENT")) {
-                    proceedToNext();
-                }
-                break;
-            case 3:
-                if (proceedButton.getText().equals("SUBMIT PAYMENT")) {
-                    submitPayment();
-                } else if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
-                    proceedToNext();
-                }
-                break;
-            case 4:
-                if (proceedButton.getText().equals("PROCEED TO REFUND")) {
-                    proceedToNext();
-                }
-                break;
-            case 5:
-                if (proceedButton.getText().equals("COMPLETE TRADE")) {
-                    completeTrade();
-                }
-                break;
-        }
-    }
-
-    private void submitPayment() {
-        if (paymentMethodCombo.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(this, "Please select a payment method.", "Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        String number = accountNumberField.getText().trim();
-        if (number.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter account number.", "Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        String accName = accountNameField.getText().trim();
-        if (accName.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please enter registered name.", "Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        if (uploadedScreenshotPath.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please upload payment screenshot.", "Error", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Submit payment?\n\n"
-            + "Method: " + paymentMethodCombo.getSelectedItem() + "\n"
-            + "Number: " + number + "\n"
-            + "Name: " + accName + "\n"
-            + "Amount: " + String.format("%.2f", totalAmount) + "\n\n"
-            + "This information will be used for refunds.\n"
-            + "Double-check that all details are correct!\n"
-            + "Money is non-refundable if sent to wrong number.",
-            "Confirm Payment",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            String paymentDetails = paymentMethodCombo.getSelectedItem() + ": " + number + " (" + accName + ")";
-            
-            String sql = "UPDATE tbl_trade SET my_payment_submitted = 1, "
-                + "my_payment_details = ?, my_payment_screenshot = ? WHERE trade_id = ?";
-            db.updateRecord(sql, paymentDetails, uploadedScreenshotPath, tradeId);
-            
-            myPaymentSubmitted = true;
-            
-            JOptionPane.showMessageDialog(this,
-                "Payment submitted successfully!\n\n"
-                + "Admin will verify your payment.\n"
-                + "You will be notified once verified.",
-                "Success",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            loadTradeState();
-            updateUI();
-        }
-    }
-
     private void confirmReceipt() {
         if (!confirmReceivedCheck.isSelected()) {
             JOptionPane.showMessageDialog(this,
@@ -1726,6 +1386,48 @@ public class manage_trades extends javax.swing.JFrame {
         }
     }
 
+    private void handleProceed() {
+        switch (currentStep) {
+            case 1:
+                if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
+                    proceedToNext();
+                }
+                break;
+            case 2:
+                if (proceedButton.getText().equals("PROCEED TO PAYMENT")) {
+                    proceedToNext();
+                }
+                break;
+            case 3:
+                if (proceedButton.getText().equals("SUBMIT PAYMENT")) {
+                    if (step3Handler != null && step3Handler.submitPayment()) {
+                        loadTradeState();
+                        updateUI();
+                    }
+                } else if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
+                    proceedToNext();
+                }
+                break;
+            case 4:
+                if (proceedButton.getText().equals("PROCEED TO REFUND")) {
+                    proceedToNext();
+                }
+                break;
+            case 5:
+                if (proceedButton.getText().equals("COMPLETE TRADE")) {
+                    completeTrade();
+                }
+                break;
+        }
+    }
+    
+    private void proceedToNext() {
+        if (currentStep < 6) {
+            currentStep++;
+            updateUI();
+        }
+    }
+    
     private void completeTrade() {
         int confirm = JOptionPane.showConfirmDialog(this,
             "Complete this trade?\n\n"
@@ -1767,13 +1469,6 @@ public class manage_trades extends javax.swing.JFrame {
                 
                 goBackToTrades();
             }
-        }
-    }
-
-    private void proceedToNext() {
-        if (currentStep < 6) {
-            currentStep++;
-            updateUI();
         }
     }
     

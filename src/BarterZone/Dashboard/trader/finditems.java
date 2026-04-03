@@ -1,15 +1,15 @@
 package BarterZone.Dashboard.trader;
 
-import BarterZone.Dashboard.session.user_session;
 import BarterZone.resources.IconManager;
+import BarterZone.Dashboard.session.user_session;
 import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Image;
-import java.awt.Cursor;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -39,6 +40,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.BorderFactory;
 
 public class finditems extends javax.swing.JFrame {
 
@@ -103,7 +105,6 @@ public class finditems extends javax.swing.JFrame {
     private JButton messageButton;
     private JButton tradeRequestButton;
     private JLabel selectedStatusLabel;
-    private JComboBox<String> traderItemsCombo;
 
     private JScrollPane tableScrollPane;
     private JScrollPane detailsScrollPane;
@@ -125,6 +126,9 @@ public class finditems extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
+    private Color successColor = new Color(46, 125, 50);
+    private Color warningColor = new Color(255, 153, 0);
+    private Color errorColor = new Color(204, 0, 0);
     
     private JPanel activePanel = null;
 
@@ -143,8 +147,9 @@ public class finditems extends javax.swing.JFrame {
         setupContentPanel();
         loadAllItems();
         loadTraderOwnItems();
-        setupLiveSearch(); 
+        setupLiveSearch();
         loadProfileAvatar();
+
         setTitle("BarterZone - " + traderName);
         setIconImage(new ImageIcon(getClass().getResource(
                 "/BarterZone/resources/icon/logo.png")).getImage());
@@ -226,42 +231,41 @@ public class finditems extends javax.swing.JFrame {
         return "src/" + pathWithoutExtension + "." + extension;
     }
 
-    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
-        try {
-            File file = new File(imagePath);
-            if (!file.exists()) {
-                return null;
-            }
-
-            ImageIcon icon = new ImageIcon(imagePath);
-            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(img);
-        } catch (Exception e) {
-            System.out.println("Error creating scaled image: " + e.getMessage());
-            return null;
-        }
+    private BufferedImage createCircularImage(BufferedImage sourceImage, int size) {
+        BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = circularImage.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        Image scaledImage = sourceImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        BufferedImage scaledBuffered = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledBuffered.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, size, size, null);
+        g2d.dispose();
+        
+        g2.setClip(new Ellipse2D.Float(0, 0, size, size));
+        g2.drawImage(scaledBuffered, 0, 0, size, size, null);
+        g2.dispose();
+        
+        return circularImage;
     }
 
-    private ImageIcon createCircularImageIcon(String imagePath, int width, int height) {
+    private ImageIcon loadAndCircleImage(String imagePath, int size) {
         try {
             File file = new File(imagePath);
             if (!file.exists()) {
                 return null;
             }
-
-            ImageIcon originalIcon = new ImageIcon(imagePath);
-            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-
-            BufferedImage circularImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = circularImage.createGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setClip(new Ellipse2D.Float(0, 0, width, height));
-            g2.drawImage(scaledImage, 0, 0, width, height, null);
-            g2.dispose();
-
+            
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage == null) {
+                return null;
+            }
+            
+            BufferedImage circularImage = createCircularImage(originalImage, size);
             return new ImageIcon(circularImage);
+            
         } catch (Exception e) {
-            System.out.println("Error creating circular image: " + e.getMessage());
+            System.out.println("Error loading circular image: " + e.getMessage());
             return null;
         }
     }
@@ -278,13 +282,11 @@ public class finditems extends javax.swing.JFrame {
                     String fullPath = convertResourcePathToFilePath(profilePicPath);
 
                     if (fullPath != null) {
-                        ImageIcon circularIcon = createCircularImageIcon(fullPath, 90, 90);
-
-                        if (circularIcon != null) {
+                        ImageIcon circularIcon = loadAndCircleImage(fullPath, 90);
+                        
+                        if (circularIcon != null && circularIcon.getIconWidth() > 0) {
                             avatarLabel.setIcon(circularIcon);
                             avatarLabel.setText("");
-                            avatarLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-                            avatarLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
                             avatarInitialLabel.setVisible(false);
                             return;
                         }
@@ -302,7 +304,6 @@ public class finditems extends javax.swing.JFrame {
             avatarInitialLabel.setText("U");
         }
         avatarInitialLabel.setVisible(true);
-        avatarLabel.setText("");
     }
 
     private void setupSidePanel() {
@@ -686,7 +687,7 @@ public class finditems extends javax.swing.JFrame {
         messageButton.setFocusPainted(false);
         messageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         messageButton.setEnabled(false);
-        messageButton.addActionListener(e -> sendMessage());
+        messageButton.addActionListener(e -> showMessageDialog());
         buttonPanel.add(messageButton);
 
         tradeRequestButton = new JButton("TRADE");
@@ -698,7 +699,7 @@ public class finditems extends javax.swing.JFrame {
         tradeRequestButton.setFocusPainted(false);
         tradeRequestButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         tradeRequestButton.setEnabled(false);
-        tradeRequestButton.addActionListener(e -> sendTradeRequest());
+        tradeRequestButton.addActionListener(e -> showTradeDialog());
         buttonPanel.add(tradeRequestButton);
 
         detailsContentPanel.add(buttonPanel);
@@ -738,7 +739,7 @@ public class finditems extends javax.swing.JFrame {
         myitemstable.getTableHeader().setForeground(Color.WHITE);
         myitemstable.getTableHeader().setBorder(null);
         myitemstable.setSelectionBackground(new Color(184, 239, 255));
-        myitemstable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        myitemstable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
         myitemstable.getColumnModel().getColumn(0).setMinWidth(0);
         myitemstable.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -913,13 +914,14 @@ public class finditems extends javax.swing.JFrame {
     }
 
     private void loadTraderOwnItems() {
-        String sql = "SELECT i.items_id, i.item_Name, i.item_Brand, i.item_Condition "
+        String sql = "SELECT i.items_id, i.item_Name, i.item_Brand, i.item_Condition, "
+                + "i.trader_id "
                 + "FROM tbl_items i "
                 + "WHERE i.trader_id = ? AND i.is_active = 1 "
                 + "AND i.items_id NOT IN ("
-                + "    SELECT DISTINCT offer_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed') "
+                + "    SELECT DISTINCT offer_item_id FROM tbl_trade WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed', 'step2_agreed', 'step3_payment', 'step4_shipping', 'step5_completing') "
                 + "    UNION "
-                + "    SELECT DISTINCT target_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed')"
+                + "    SELECT DISTINCT target_item_id FROM tbl_trade WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed', 'step2_agreed', 'step3_payment', 'step4_shipping', 'step5_completing')"
                 + ") "
                 + "ORDER BY i.item_Name ASC";
 
@@ -992,6 +994,324 @@ public class finditems extends javax.swing.JFrame {
         }
     }
 
+    private void showMessageDialog() {
+        if (selectedItemId == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an item first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JDialog messageDialog = new JDialog(this, "Send Message", true);
+        messageDialog.setSize(450, 380);
+        messageDialog.setLayout(null);
+        messageDialog.setLocationRelativeTo(this);
+        messageDialog.getContentPane().setBackground(Color.WHITE);
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(themeColor);
+        titlePanel.setBounds(0, 0, 450, 45);
+        titlePanel.setLayout(null);
+
+        JLabel titleLabel = new JLabel("SEND MESSAGE");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(20, 8, 200, 30);
+        titlePanel.add(titleLabel);
+        messageDialog.add(titlePanel);
+
+        JLabel toLabel = new JLabel("To: " + selectedItemOwnerName);
+        toLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        toLabel.setBounds(20, 65, 400, 25);
+        messageDialog.add(toLabel);
+
+        JLabel itemLabel = new JLabel("Item: " + itemNameLabel.getText());
+        itemLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        itemLabel.setForeground(textColor);
+        itemLabel.setBounds(20, 95, 400, 20);
+        messageDialog.add(itemLabel);
+
+        JLabel messageLabel = new JLabel("Message:");
+        messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        messageLabel.setBounds(20, 135, 100, 25);
+        messageDialog.add(messageLabel);
+
+        JTextArea messageArea = new JTextArea();
+        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        messageArea.setLineWrap(true);
+        messageArea.setWrapStyleWord(true);
+        JScrollPane scrollPane = new JScrollPane(messageArea);
+        scrollPane.setBounds(20, 165, 410, 100);
+        scrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
+        messageDialog.add(scrollPane);
+
+        JButton sendButton = new JButton("SEND MESSAGE");
+        sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        sendButton.setBackground(successColor);
+        sendButton.setForeground(Color.WHITE);
+        sendButton.setBounds(100, 290, 150, 35);
+        sendButton.setBorder(null);
+        sendButton.setFocusPainted(false);
+        sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        sendButton.addActionListener(e -> {
+            String messageText = messageArea.getText().trim();
+            if (messageText.isEmpty()) {
+                JOptionPane.showMessageDialog(messageDialog, "Please enter a message.", "Empty Message", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String insertSql = "INSERT INTO tbl_trade_messages (sender_id, receiver_id, message_text, message_date) "
+                    + "VALUES (?, ?, ?, datetime('now'))";
+
+            try {
+                db.addRecord(insertSql, traderId, selectedItemOwnerId, messageText);
+                JOptionPane.showMessageDialog(messageDialog, "Message sent successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                messageDialog.dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(messageDialog, "Failed to send message: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        messageDialog.add(sendButton);
+
+        JButton cancelButton = new JButton("CANCEL");
+        cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelButton.setBackground(errorColor);
+        cancelButton.setForeground(Color.WHITE);
+        cancelButton.setBounds(270, 290, 100, 35);
+        cancelButton.setBorder(null);
+        cancelButton.setFocusPainted(false);
+        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cancelButton.addActionListener(e -> messageDialog.dispose());
+        messageDialog.add(cancelButton);
+
+        messageDialog.setVisible(true);
+    }
+
+    private void showTradeDialog() {
+        if (selectedItemId == -1) {
+            JOptionPane.showMessageDialog(this, "Please select an item first.", "No Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (selectedItemOwnerId == traderId) {
+            JOptionPane.showMessageDialog(this, "You cannot trade with your own item.", "Invalid Trade", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        loadTraderOwnItems();
+
+        if (traderOwnItems.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "You don't have any items available for trade.\n\n"
+                    + "All your items may be already in active/completed trades.\n"
+                    + "Please add new items in 'My Items' section to start trading.",
+                    "No Items Available",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JDialog tradeDialog = new JDialog(this, "Send Trade Request", true);
+        tradeDialog.setSize(500, 480);
+        tradeDialog.setLayout(null);
+        tradeDialog.setLocationRelativeTo(this);
+        tradeDialog.getContentPane().setBackground(Color.WHITE);
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(themeColor);
+        titlePanel.setBounds(0, 0, 500, 45);
+        titlePanel.setLayout(null);
+
+        JLabel titleLabel = new JLabel("TRADE REQUEST");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(20, 8, 200, 30);
+        titlePanel.add(titleLabel);
+        tradeDialog.add(titlePanel);
+
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(null);
+        infoPanel.setBackground(new Color(250, 250, 250));
+        infoPanel.setBorder(new LineBorder(accentColor, 1));
+        infoPanel.setBounds(20, 65, 460, 85);
+
+        JLabel requestedItemLabel = new JLabel("You want to trade for:");
+        requestedItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        requestedItemLabel.setBounds(10, 10, 150, 20);
+        infoPanel.add(requestedItemLabel);
+
+        String itemInfoText = "<html><b>Item:</b> " + itemNameLabel.getText() + 
+                              "<br><b>Brand:</b> " + itemBrandLabel.getText() + 
+                              "<br><b>Owner:</b> " + selectedItemOwnerName + "</html>";
+        JLabel itemInfoLabel = new JLabel(itemInfoText);
+        itemInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        itemInfoLabel.setBounds(10, 35, 440, 45);
+        infoPanel.add(itemInfoLabel);
+
+        tradeDialog.add(infoPanel);
+
+        JLabel yourItemLabel = new JLabel("Select your item to offer:");
+        yourItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        yourItemLabel.setBounds(20, 170, 200, 25);
+        tradeDialog.add(yourItemLabel);
+
+        String[] availableItems = new String[traderOwnItems.size()];
+        Integer[] availableItemIds = new Integer[traderOwnItems.size()];
+        
+        for (int i = 0; i < traderOwnItems.size(); i++) {
+            Map<String, Object> item = traderOwnItems.get(i);
+            availableItems[i] = item.get("item_Name") + " (" + item.get("item_Brand") + ")";
+            availableItemIds[i] = Integer.parseInt(item.get("items_id").toString());
+        }
+
+        JComboBox<String> itemCombo = new JComboBox<>(availableItems);
+        itemCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        itemCombo.setBounds(20, 200, 460, 35);
+        itemCombo.setBackground(Color.WHITE);
+        itemCombo.setBorder(new LineBorder(new Color(12, 192, 223), 1));
+        tradeDialog.add(itemCombo);
+
+        JLabel messageLabel = new JLabel("Optional Message:");
+        messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        messageLabel.setBounds(20, 255, 150, 25);
+        tradeDialog.add(messageLabel);
+
+        JTextArea messageArea = new JTextArea();
+        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        messageArea.setLineWrap(true);
+        messageArea.setWrapStyleWord(true);
+        JScrollPane messageScroll = new JScrollPane(messageArea);
+        messageScroll.setBounds(20, 285, 460, 70);
+        messageScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
+        tradeDialog.add(messageScroll);
+
+        JLabel noteLabel = new JLabel("Note: Only available items are shown in the list.");
+        noteLabel.setFont(new Font("Segoe UI", Font.ITALIC, 10));
+        noteLabel.setForeground(new Color(100, 100, 100));
+        noteLabel.setBounds(20, 370, 300, 20);
+        tradeDialog.add(noteLabel);
+
+        JButton sendButton = new JButton("SEND REQUEST");
+        sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        sendButton.setBackground(successColor);
+        sendButton.setForeground(Color.WHITE);
+        sendButton.setBounds(130, 410, 150, 35);
+        sendButton.setBorder(null);
+        sendButton.setFocusPainted(false);
+        sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        sendButton.addActionListener(e -> {
+            int selectedIndex = itemCombo.getSelectedIndex();
+            if (selectedIndex >= 0) {
+                int selectedOfferItemId = availableItemIds[selectedIndex];
+                String selectedOfferItemName = availableItems[selectedIndex];
+                
+                if (!isItemAvailableForTrade(selectedOfferItemId)) {
+                    JOptionPane.showMessageDialog(tradeDialog,
+                            "Sorry, the selected item is no longer available for trade.",
+                            "Item Unavailable",
+                            JOptionPane.WARNING_MESSAGE);
+                    loadTraderOwnItems();
+                    return;
+                }
+
+                if (!isItemAvailableForTrade(selectedItemId)) {
+                    JOptionPane.showMessageDialog(tradeDialog,
+                            "Sorry, the item you requested is no longer available.",
+                            "Item Unavailable",
+                            JOptionPane.WARNING_MESSAGE);
+                    tradeDialog.dispose();
+                    loadAllItems();
+                    clearSelection();
+                    return;
+                }
+
+                createTradeRequest(selectedOfferItemId, selectedOfferItemName, messageArea.getText().trim());
+                tradeDialog.dispose();
+            }
+        });
+        tradeDialog.add(sendButton);
+
+        JButton cancelButton = new JButton("CANCEL");
+        cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelButton.setBackground(errorColor);
+        cancelButton.setForeground(Color.WHITE);
+        cancelButton.setBounds(310, 410, 100, 35);
+        cancelButton.setBorder(null);
+        cancelButton.setFocusPainted(false);
+        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cancelButton.addActionListener(e -> tradeDialog.dispose());
+        tradeDialog.add(cancelButton);
+
+        tradeDialog.setVisible(true);
+    }
+
+    private boolean isItemAvailableForTrade(int itemId) {
+        String sql = "SELECT COUNT(*) as count FROM tbl_items WHERE items_id = ? AND is_active = 1 "
+                + "AND items_id NOT IN ("
+                + "    SELECT DISTINCT offer_item_id FROM tbl_trade WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed', 'step2_agreed', 'step3_payment', 'step4_shipping', 'step5_completing') "
+                + "    UNION "
+                + "    SELECT DISTINCT target_item_id FROM tbl_trade WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed', 'step2_agreed', 'step3_payment', 'step4_shipping', 'step5_completing')"
+                + ")";
+
+        double count = db.getSingleValue(sql, itemId);
+        return count > 0;
+    }
+
+    private void createTradeRequest(int offeredItemId, String offeredItemName, String message) {
+        if (!isItemAvailableForTrade(offeredItemId)) {
+            JOptionPane.showMessageDialog(this,
+                    "Your item is no longer available for trade.",
+                    "Trade Failed",
+                    JOptionPane.WARNING_MESSAGE);
+            loadTraderOwnItems();
+            return;
+        }
+
+        if (!isItemAvailableForTrade(selectedItemId)) {
+            JOptionPane.showMessageDialog(this,
+                    "The item you requested is no longer available.",
+                    "Trade Failed",
+                    JOptionPane.WARNING_MESSAGE);
+            loadAllItems();
+            clearSelection();
+            return;
+        }
+
+        String sql = "INSERT INTO tbl_trade ("
+                + "offer_trader_id, offer_item_id, "
+                + "target_trader_id, target_item_id, "
+                + "trade_status, trade_DateRequest"
+                + ") VALUES (?, ?, ?, ?, ?, datetime('now'))";
+
+        try {
+            db.addRecord(sql,
+                    traderId, offeredItemId,
+                    selectedItemOwnerId, selectedItemId,
+                    "pending");
+
+            if (message != null && !message.trim().isEmpty()) {
+                String msgSql = "INSERT INTO tbl_trade_messages (sender_id, receiver_id, message_text, message_date) "
+                        + "VALUES (?, ?, ?, datetime('now'))";
+                db.addRecord(msgSql, traderId, selectedItemOwnerId, message);
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Trade request sent successfully!\n\n"
+                    + "Your item: " + offeredItemName + "\n"
+                    + "Requesting: " + itemNameLabel.getText() + " from " + selectedItemOwnerName + "\n\n"
+                    + "The owner will review your request.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            loadTraderOwnItems();
+            loadAllItems();
+            clearSelection();
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Failed to send trade request. Please try again.\nError: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     class ImageRenderer extends javax.swing.table.DefaultTableCellRenderer {
         @Override
         public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
@@ -1032,250 +1352,6 @@ public class finditems extends javax.swing.JFrame {
 
             return label;
         }
-    }
-
-    private boolean isItemAvailableForTrade(int itemId) {
-        String sql = "SELECT COUNT(*) as count FROM tbl_items WHERE items_id = ? AND is_active = 1 "
-                + "AND items_id NOT IN ("
-                + "    SELECT DISTINCT offer_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed') "
-                + "    UNION "
-                + "    SELECT DISTINCT target_item_id FROM tbl_trade WHERE trade_status IN ('accepted', 'completed', 'negotiating', 'arrangements_confirmed')"
-                + ")";
-
-        double count = db.getSingleValue(sql, itemId);
-        return count > 0;
-    }
-
-    private void showTradeRequestDialog() {
-        JDialog tradeDialog = new JDialog(this, "Send Trade Request", true);
-        tradeDialog.setSize(450, 350);
-        tradeDialog.setLayout(null);
-        tradeDialog.setLocationRelativeTo(this);
-        tradeDialog.getContentPane().setBackground(Color.WHITE);
-
-        JPanel titlePanel = new JPanel();
-        titlePanel.setBackground(new Color(12, 192, 223));
-        titlePanel.setBounds(0, 0, 450, 40);
-        titlePanel.setLayout(null);
-
-        JLabel titleLabel = new JLabel("TRADE REQUEST");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBounds(20, 5, 200, 30);
-        titlePanel.add(titleLabel);
-
-        tradeDialog.add(titlePanel);
-
-        JLabel requestedItemLabel = new JLabel("You want to trade for:");
-        requestedItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        requestedItemLabel.setBounds(20, 60, 200, 20);
-        tradeDialog.add(requestedItemLabel);
-
-        JLabel itemInfoLabel = new JLabel(
-                "<html><b>Item:</b> " + itemNameLabel.getText()
-                + "<br><b>Brand:</b> " + itemBrandLabel.getText()
-                + "<br><b>Owner:</b> " + selectedItemOwnerName + "</html>");
-        itemInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        itemInfoLabel.setBounds(20, 80, 300, 60);
-        itemInfoLabel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        tradeDialog.add(itemInfoLabel);
-
-        JLabel yourItemLabel = new JLabel("Select your item to offer:");
-        yourItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        yourItemLabel.setBounds(20, 150, 200, 20);
-        tradeDialog.add(yourItemLabel);
-
-        loadTraderOwnItems();
-
-        traderItemsCombo = new JComboBox<>();
-        traderItemsCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        traderItemsCombo.setBounds(20, 175, 300, 30);
-        traderItemsCombo.setBackground(Color.WHITE);
-        traderItemsCombo.setBorder(new LineBorder(new Color(12, 192, 223)));
-
-        traderItemsCombo.addItem("-- Select your item to trade --");
-        for (Map<String, Object> item : traderOwnItems) {
-            String itemDisplay = item.get("item_Name") + " (" + item.get("item_Brand") + ")";
-            traderItemsCombo.addItem(itemDisplay);
-        }
-
-        tradeDialog.add(traderItemsCombo);
-
-        JLabel messageLabel = new JLabel("Optional message:");
-        messageLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        messageLabel.setBounds(20, 220, 200, 20);
-        tradeDialog.add(messageLabel);
-
-        JTextArea messageArea = new JTextArea();
-        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        messageArea.setLineWrap(true);
-        messageArea.setWrapStyleWord(true);
-
-        JScrollPane messageScroll = new JScrollPane(messageArea);
-        messageScroll.setBounds(20, 240, 300, 50);
-        messageScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
-        tradeDialog.add(messageScroll);
-
-        JButton sendButton = new JButton("SEND REQUEST");
-        sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        sendButton.setBackground(new Color(0, 102, 102));
-        sendButton.setForeground(Color.WHITE);
-        sendButton.setBounds(100, 300, 150, 35);
-        sendButton.setBorder(null);
-        sendButton.setFocusPainted(false);
-        sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        sendButton.addActionListener(e -> {
-            if (traderItemsCombo.getSelectedIndex() == 0) {
-                JOptionPane.showMessageDialog(tradeDialog,
-                        "Please select an item to trade.",
-                        "No Selection",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            int selectedIndex = traderItemsCombo.getSelectedIndex() - 1;
-            if (selectedIndex >= 0 && selectedIndex < traderOwnItems.size()) {
-                Map<String, Object> selectedItem = traderOwnItems.get(selectedIndex);
-                int offeredItemId = Integer.parseInt(selectedItem.get("items_id").toString());
-                String offeredItemName = selectedItem.get("item_Name").toString();
-
-                if (!isItemAvailableForTrade(offeredItemId)) {
-                    JOptionPane.showMessageDialog(tradeDialog,
-                            "Sorry, the item '" + offeredItemName + "' is no longer available for trade.\n"
-                            + "It may have been traded already.",
-                            "Item Unavailable",
-                            JOptionPane.WARNING_MESSAGE);
-
-                    loadTraderOwnItems();
-                    if (traderOwnItems.isEmpty()) {
-                        tradeDialog.dispose();
-                    }
-                    return;
-                }
-
-                if (!isItemAvailableForTrade(selectedItemId)) {
-                    JOptionPane.showMessageDialog(tradeDialog,
-                            "Sorry, the item you requested is no longer available.\n"
-                            + "It may have been traded to someone else.",
-                            "Item Unavailable",
-                            JOptionPane.WARNING_MESSAGE);
-                    tradeDialog.dispose();
-                    loadAllItems();
-                    clearSelection();
-                    return;
-                }
-
-                createTradeRequest(offeredItemId, offeredItemName, messageArea.getText().trim());
-            }
-
-            tradeDialog.dispose();
-        });
-        tradeDialog.add(sendButton);
-
-        JButton cancelButton = new JButton("CANCEL");
-        cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        cancelButton.setBackground(new Color(204, 0, 0));
-        cancelButton.setForeground(Color.WHITE);
-        cancelButton.setBounds(260, 300, 100, 35);
-        cancelButton.setBorder(null);
-        cancelButton.setFocusPainted(false);
-        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        cancelButton.addActionListener(e -> tradeDialog.dispose());
-        tradeDialog.add(cancelButton);
-
-        tradeDialog.setVisible(true);
-    }
-
-    private void createTradeRequest(int offeredItemId, String offeredItemName, String message) {
-        if (!isItemAvailableForTrade(offeredItemId)) {
-            JOptionPane.showMessageDialog(this,
-                    "Your item '" + offeredItemName + "' is no longer available for trade.\n"
-                    + "It may have been traded already.",
-                    "Trade Failed",
-                    JOptionPane.WARNING_MESSAGE);
-            loadTraderOwnItems();
-            return;
-        }
-
-        if (!isItemAvailableForTrade(selectedItemId)) {
-            JOptionPane.showMessageDialog(this,
-                    "The item you requested is no longer available.\n"
-                    + "It may have been traded to someone else.",
-                    "Trade Failed",
-                    JOptionPane.WARNING_MESSAGE);
-            loadAllItems();
-            clearSelection();
-            return;
-        }
-
-        String sql = "INSERT INTO tbl_trade ("
-                + "offer_trader_id, offer_item_id, "
-                + "target_trader_id, target_item_id, "
-                + "trade_status, trade_DateRequest"
-                + ") VALUES (?, ?, ?, ?, ?, datetime('now'))";
-
-        try {
-            db.addRecord(sql,
-                    traderId, offeredItemId,
-                    selectedItemOwnerId, selectedItemId,
-                    "pending");
-
-            JOptionPane.showMessageDialog(this,
-                    "✅ Trade request sent successfully!\n\n"
-                    + "Your item: " + offeredItemName + "\n"
-                    + "Requesting: " + itemNameLabel.getText() + " from " + selectedItemOwnerName + "\n\n"
-                    + "The owner will review your request.",
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
-
-            loadTraderOwnItems();
-            loadAllItems();
-            clearSelection();
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Failed to send trade request. Please try again.\nError: " + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void sendMessage() {
-        if (selectedItemId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an item first.", "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        messages messagesFrame = new messages(traderId, traderName);
-        messagesFrame.setVisible(true);
-        messagesFrame.setLocationRelativeTo(null);
-        this.dispose();
-    }
-
-    private void sendTradeRequest() {
-        if (selectedItemId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select an item first.", "No Selection", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        if (selectedItemOwnerId == traderId) {
-            JOptionPane.showMessageDialog(this, "You cannot trade with your own item.", "Invalid Trade", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        loadTraderOwnItems();
-
-        if (traderOwnItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "You don't have any items available for trade.\n\n"
-                    + "All your items may have been already traded or are inactive.\n"
-                    + "Please add new items in 'My Items' section to start trading.",
-                    "No Items Available",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        showTradeRequestDialog();
     }
 
     private void setActivePanel(JPanel panel) {

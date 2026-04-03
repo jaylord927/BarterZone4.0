@@ -14,11 +14,13 @@ import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -193,6 +195,99 @@ public class trader_dashboard extends javax.swing.JFrame {
         }
     }
 
+    private String convertResourcePathToFilePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.trim().isEmpty()) {
+            return null;
+        }
+
+        resourcePath = resourcePath.trim();
+
+        int lastDot = resourcePath.lastIndexOf(".");
+        if (lastDot == -1) {
+            return null;
+        }
+
+        String extension = resourcePath.substring(lastDot + 1);
+        String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
+
+        return "src/" + pathWithoutExtension + "." + extension;
+    }
+
+    private BufferedImage createCircularImage(BufferedImage sourceImage, int size) {
+        BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = circularImage.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        Image scaledImage = sourceImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        BufferedImage scaledBuffered = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledBuffered.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, size, size, null);
+        g2d.dispose();
+        
+        g2.setClip(new Ellipse2D.Float(0, 0, size, size));
+        g2.drawImage(scaledBuffered, 0, 0, size, size, null);
+        g2.dispose();
+        
+        return circularImage;
+    }
+
+    private ImageIcon loadAndCircleImage(String imagePath, int size) {
+        try {
+            File file = new File(imagePath);
+            if (!file.exists()) {
+                return null;
+            }
+            
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage == null) {
+                return null;
+            }
+            
+            BufferedImage circularImage = createCircularImage(originalImage, size);
+            return new ImageIcon(circularImage);
+            
+        } catch (Exception e) {
+            System.out.println("Error loading circular image: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void loadProfileAvatar() {
+        try {
+            String sql = "SELECT user_profile_picture FROM tbl_users WHERE user_id = ?";
+            List<Map<String, Object>> result = db.fetchRecords(sql, traderId);
+
+            if (!result.isEmpty() && result.get(0).get("user_profile_picture") != null) {
+                String profilePicPath = result.get(0).get("user_profile_picture").toString().trim();
+
+                if (!profilePicPath.isEmpty()) {
+                    String fullPath = convertResourcePathToFilePath(profilePicPath);
+
+                    if (fullPath != null) {
+                        ImageIcon circularIcon = loadAndCircleImage(fullPath, 90);
+                        
+                        if (circularIcon != null && circularIcon.getIconWidth() > 0) {
+                            avatarLabel.setIcon(circularIcon);
+                            avatarLabel.setText("");
+                            avatarInitialLabel.setVisible(false);
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error loading profile image: " + e.getMessage());
+        }
+
+        avatarLabel.setIcon(null);
+        if (traderName != null && !traderName.trim().isEmpty()) {
+            avatarInitialLabel.setText(String.valueOf(traderName.trim().charAt(0)).toUpperCase());
+        } else {
+            avatarInitialLabel.setText("U");
+        }
+        avatarInitialLabel.setVisible(true);
+    }
+
     private void setupSidePanel() {
         avatarContainer = new JPanel() {
             @Override
@@ -363,70 +458,6 @@ public class trader_dashboard extends javax.swing.JFrame {
         
         panel.add(label);
         return label;
-    }
-
-    private void loadProfileAvatar() {
-        try {
-            String sql = "SELECT user_profile_picture FROM tbl_users WHERE user_id = ?";
-            List<Map<String, Object>> result = db.fetchRecords(sql, traderId);
-
-            if (!result.isEmpty() && result.get(0).get("user_profile_picture") != null) {
-                String profilePicPath = result.get(0).get("user_profile_picture").toString();
-
-                if (!profilePicPath.isEmpty()) {
-                    String[] possiblePaths = {
-                        "src/" + profilePicPath.replace(".", "/"),
-                        profilePicPath.replace(".", "/")
-                    };
-                    
-                    int lastDotIndex = profilePicPath.lastIndexOf(".");
-                    if (lastDotIndex > 0) {
-                        String fileName = profilePicPath.substring(profilePicPath.lastIndexOf(".") + 1);
-                        possiblePaths = new String[]{
-                            "src/" + profilePicPath.replace(".", "/"),
-                            profilePicPath.replace(".", "/"),
-                            "src/BarterZone/resources/images/" + fileName,
-                            "BarterZone/resources/images/" + fileName
-                        };
-                    }
-                    
-                    File imgFile = null;
-                    String foundPath = null;
-                    
-                    for (String path : possiblePaths) {
-                        File testFile = new File(path);
-                        if (testFile.exists()) {
-                            imgFile = testFile;
-                            foundPath = path;
-                            break;
-                        }
-                    }
-
-                    if (imgFile != null && imgFile.exists()) {
-                        ImageIcon icon = new ImageIcon(foundPath);
-                        Image img = icon.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
-
-                        java.awt.image.BufferedImage circularImg = new java.awt.image.BufferedImage(90, 90, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-                        Graphics2D g2 = circularImg.createGraphics();
-                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setClip(new Ellipse2D.Float(0, 0, 90, 90));
-                        g2.drawImage(img, 0, 0, 90, 90, null);
-                        g2.dispose();
-
-                        avatarLabel.setIcon(new ImageIcon(circularImg));
-                        avatarLabel.setText("");
-                        avatarInitialLabel.setVisible(false);
-                        return;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Error loading profile image: " + e.getMessage());
-        }
-
-        avatarLabel.setIcon(null);
-        avatarLabel.setText("");
-        avatarInitialLabel.setVisible(true);
     }
 
     private void setupHeader() {

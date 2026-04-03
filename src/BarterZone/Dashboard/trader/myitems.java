@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -50,47 +51,47 @@ public class myitems extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-
+    
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-
+    
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-
+    
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-
+    
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-
+    
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-
+    
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-
+    
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-
+    
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-
+    
     private JPanel contentPanel;
-
+    
     private JTextField searchField;
     private JButton addButton;
     private JButton editButton;
     private JButton deleteButton;
     private JButton removeButton;
-
+    
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable myitemstable;
 
@@ -101,7 +102,7 @@ public class myitems extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-
+    
     private JPanel activePanel = null;
 
     public myitems(int traderId, String traderName) {
@@ -110,7 +111,7 @@ public class myitems extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-
+        
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -153,7 +154,7 @@ public class myitems extends javax.swing.JFrame {
         contentPanel.setBackground(new Color(250, 250, 250));
         contentPanel.setBounds(180, 70, 620, 430);
         getContentPane().add(contentPanel);
-
+        
         jScrollPane1 = new javax.swing.JScrollPane();
         myitemstable = new javax.swing.JTable();
     }
@@ -203,42 +204,41 @@ public class myitems extends javax.swing.JFrame {
         return "src/" + pathWithoutExtension + "." + extension;
     }
 
-    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
-        try {
-            File file = new File(imagePath);
-            if (!file.exists()) {
-                return null;
-            }
-
-            ImageIcon icon = new ImageIcon(imagePath);
-            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-            return new ImageIcon(img);
-        } catch (Exception e) {
-            System.out.println("Error creating scaled image: " + e.getMessage());
-            return null;
-        }
+    private BufferedImage createCircularImage(BufferedImage sourceImage, int size) {
+        BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = circularImage.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        Image scaledImage = sourceImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
+        BufferedImage scaledBuffered = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledBuffered.createGraphics();
+        g2d.drawImage(scaledImage, 0, 0, size, size, null);
+        g2d.dispose();
+        
+        g2.setClip(new Ellipse2D.Float(0, 0, size, size));
+        g2.drawImage(scaledBuffered, 0, 0, size, size, null);
+        g2.dispose();
+        
+        return circularImage;
     }
 
-    private ImageIcon createCircularImageIcon(String imagePath, int width, int height) {
+    private ImageIcon loadAndCircleImage(String imagePath, int size) {
         try {
             File file = new File(imagePath);
             if (!file.exists()) {
                 return null;
             }
-
-            ImageIcon originalIcon = new ImageIcon(imagePath);
-            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-
-            BufferedImage circularImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = circularImage.createGraphics();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setClip(new Ellipse2D.Float(0, 0, width, height));
-            g2.drawImage(scaledImage, 0, 0, width, height, null);
-            g2.dispose();
-
+            
+            BufferedImage originalImage = ImageIO.read(file);
+            if (originalImage == null) {
+                return null;
+            }
+            
+            BufferedImage circularImage = createCircularImage(originalImage, size);
             return new ImageIcon(circularImage);
+            
         } catch (Exception e) {
-            System.out.println("Error creating circular image: " + e.getMessage());
+            System.out.println("Error loading circular image: " + e.getMessage());
             return null;
         }
     }
@@ -255,13 +255,11 @@ public class myitems extends javax.swing.JFrame {
                     String fullPath = convertResourcePathToFilePath(profilePicPath);
 
                     if (fullPath != null) {
-                        ImageIcon circularIcon = createCircularImageIcon(fullPath, 90, 90);
-
-                        if (circularIcon != null) {
+                        ImageIcon circularIcon = loadAndCircleImage(fullPath, 90);
+                        
+                        if (circularIcon != null && circularIcon.getIconWidth() > 0) {
                             avatarLabel.setIcon(circularIcon);
                             avatarLabel.setText("");
-                            avatarLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-                            avatarLabel.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
                             avatarInitialLabel.setVisible(false);
                             return;
                         }
@@ -279,7 +277,6 @@ public class myitems extends javax.swing.JFrame {
             avatarInitialLabel.setText("U");
         }
         avatarInitialLabel.setVisible(true);
-        avatarLabel.setText("");
     }
 
     private void setupSidePanel() {
@@ -316,7 +313,7 @@ public class myitems extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-
+        
         loadProfileAvatar();
 
         int menuY = 155;
@@ -387,7 +384,7 @@ public class myitems extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         };
-
+        
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -396,7 +393,7 @@ public class myitems extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -417,7 +414,7 @@ public class myitems extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-
+        
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -428,7 +425,7 @@ public class myitems extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
+        
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -449,7 +446,7 @@ public class myitems extends javax.swing.JFrame {
                 handleMenuClick(panel);
             }
         });
-
+        
         panel.add(label);
         return label;
     }
@@ -761,7 +758,7 @@ public class myitems extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-
+        
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);
@@ -796,7 +793,6 @@ public class myitems extends javax.swing.JFrame {
     }
 
     class ImageRenderer extends javax.swing.table.DefaultTableCellRenderer {
-
         @Override
         public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
@@ -844,6 +840,22 @@ public class myitems extends javax.swing.JFrame {
 
             panel.add(label, java.awt.BorderLayout.CENTER);
             return panel;
+        }
+    }
+
+    private ImageIcon createScaledImageIcon(String imagePath, int width, int height) {
+        try {
+            File file = new File(imagePath);
+            if (!file.exists()) {
+                return null;
+            }
+
+            ImageIcon icon = new ImageIcon(imagePath);
+            Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            return new ImageIcon(img);
+        } catch (Exception e) {
+            System.out.println("Error creating scaled image: " + e.getMessage());
+            return null;
         }
     }
 }
