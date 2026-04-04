@@ -15,6 +15,10 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -36,6 +40,8 @@ import javax.swing.JDialog;
 import javax.swing.border.LineBorder;
 import java.awt.Dimension;
 import javax.swing.BorderFactory;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class manage_trades extends javax.swing.JFrame {
 
@@ -70,17 +76,62 @@ public class manage_trades extends javax.swing.JFrame {
     private int myDetailsAgreed = 0;
     private int otherDetailsAgreed = 0;
     
-    private boolean paymentVerified = false;
-    private boolean paymentSubmitted = false;
+    private boolean myPaymentSubmitted = false;
+    private boolean otherPaymentSubmitted = false;
+    private boolean myPaymentVerified = false;
+    private boolean otherPaymentVerified = false;
     
     private boolean myItemReceived = false;
     private boolean otherItemReceived = false;
     private boolean refundProcessed = false;
     private boolean tradeCompleted = false;
     
-    // Step 2 and Step 3 handlers
+    // Refund details
+    private boolean myRefundSubmitted = false;
+    private boolean otherRefundSubmitted = false;
+    private boolean myRefundConfirmed = false;
+    private boolean otherRefundConfirmed = false;
+    private int myRefundId = -1;
+    private int otherRefundId = -1;
+    
+    // Step 2 handler
     private step2_submit step2Handler;
-    private step3_submit step3Handler;
+    
+    // Step 3 Payment Components
+    private step3_submit step3SubmitHandler;
+    private JComboBox<String> paymentMethodCombo;
+    private JLabel serviceFeeLabel;
+    private JLabel totalAmountLabel;
+    private JLabel paymentMethodDetailLabel;
+    private JLabel accountNumberLabel;
+    private JLabel accountNameLabel;
+    private JLabel myPaymentStatusLabel;
+    private JLabel otherPaymentStatusLabel;
+    private JLabel paymentStatusLabel;
+    private JLabel paymentNumberValueLabel;
+    private JLabel accountNameValueLabel;
+    private JLabel otherPaymentNumberValueLabel;
+    private JLabel otherAccountNameValueLabel;
+    private JLabel qrCodeLabel;
+    private ImageIcon qrCodeIcon;
+    private String uploadedProofPath = "";
+    private String otherUploadedProofPath = "";
+    private int selectedMethodId = -1;
+    private double currentServiceFee = 0;
+    private double currentTotalAmount = 0;
+    
+    // Step 5 Refund Components
+    private JPanel refundDetailsPanel;
+    private JButton addRefundDetailsButton;
+    private JLabel myRefundStatusLabel;
+    private JLabel otherRefundStatusLabel;
+    private JLabel myRefundNumberLabel;
+    private JLabel myRefundNameLabel;
+    private JLabel otherRefundNumberLabel;
+    private JLabel otherRefundNameLabel;
+    private JButton viewRefundProofButton;
+    private JButton confirmRefundButton;
+    private JLabel refundOverallStatusLabel;
     
     private JPanel headerPanel;
     private JPanel contentPanel;
@@ -118,8 +169,11 @@ public class manage_trades extends javax.swing.JFrame {
     private JLabel myAgreementStatus;
     private JLabel otherAgreementStatus;
     
-    private JLabel paymentStatusLabel;
+    // Step 4 Components
     private JCheckBox confirmReceivedCheck;
+    private JLabel myReceiptStatusLabel;
+    private JLabel otherReceiptStatusLabel;
+    private JLabel receiptInfoLabel;
     
     private java.util.Stack<Integer> stepHistory = new java.util.Stack<>();
     
@@ -133,6 +187,9 @@ public class manage_trades extends javax.swing.JFrame {
     private Color warningColor = new Color(255, 153, 0);
     private Color errorColor = new Color(204, 0, 0);
     private Color infoColor = new Color(33, 150, 243);
+    
+    private static final String PROOF_IMAGE_PATH = "src/BarterZone/resources/images/payment_proofs/";
+    private static final String REFUND_QR_PATH = "src/BarterZone/resources/images/refund_qrcodes/";
 
     public manage_trades(int tradeId, String myItem, String theirItem, String otherTraderName, int otherTraderId) {
         this.tradeId = tradeId;
@@ -146,6 +203,7 @@ public class manage_trades extends javax.swing.JFrame {
         this.db = new config();
         this.iconManager = IconManager.getInstance();
         
+        createDirectories();
         initComponents();
         loadTradeState();
         updateUI();
@@ -155,6 +213,11 @@ public class manage_trades extends javax.swing.JFrame {
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+    }
+    
+    private void createDirectories() {
+        new File(PROOF_IMAGE_PATH).mkdirs();
+        new File(REFUND_QR_PATH).mkdirs();
     }
 
     private void initComponents() {
@@ -397,12 +460,116 @@ public class manage_trades extends javax.swing.JFrame {
         otherAgreementStatus = new JLabel();
         otherAgreementStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
         
+        // Step 3 Payment Components
+        paymentMethodCombo = new JComboBox<>();
+        paymentMethodCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        paymentMethodCombo.addActionListener(e -> loadPaymentMethodDetails());
+        
+        serviceFeeLabel = new JLabel();
+        serviceFeeLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        
+        totalAmountLabel = new JLabel();
+        totalAmountLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        
+        paymentMethodDetailLabel = new JLabel();
+        paymentMethodDetailLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        accountNumberLabel = new JLabel();
+        accountNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        accountNameLabel = new JLabel();
+        accountNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        qrCodeLabel = new JLabel();
+        qrCodeLabel.setHorizontalAlignment(JLabel.CENTER);
+        qrCodeLabel.setVerticalAlignment(JLabel.CENTER);
+        
+        myPaymentStatusLabel = new JLabel();
+        myPaymentStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherPaymentStatusLabel = new JLabel();
+        otherPaymentStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
         paymentStatusLabel = new JLabel();
         paymentStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         
+        paymentNumberValueLabel = new JLabel();
+        paymentNumberValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        accountNameValueLabel = new JLabel();
+        accountNameValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherPaymentNumberValueLabel = new JLabel();
+        otherPaymentNumberValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherAccountNameValueLabel = new JLabel();
+        otherAccountNameValueLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        // Step 4 Components
         confirmReceivedCheck = new JCheckBox("I have received the item");
         confirmReceivedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         confirmReceivedCheck.setBackground(Color.WHITE);
+        
+        myReceiptStatusLabel = new JLabel();
+        myReceiptStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherReceiptStatusLabel = new JLabel();
+        otherReceiptStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        receiptInfoLabel = new JLabel();
+        receiptInfoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        
+        // Step 5 Refund Components
+        refundDetailsPanel = new JPanel();
+        refundDetailsPanel.setLayout(null);
+        refundDetailsPanel.setBackground(Color.WHITE);
+        
+        addRefundDetailsButton = new JButton("ADD REFUND DETAILS");
+        addRefundDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        addRefundDetailsButton.setBackground(themeColor);
+        addRefundDetailsButton.setForeground(Color.WHITE);
+        addRefundDetailsButton.setBorder(null);
+        addRefundDetailsButton.setFocusPainted(false);
+        addRefundDetailsButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        myRefundStatusLabel = new JLabel();
+        myRefundStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherRefundStatusLabel = new JLabel();
+        otherRefundStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        myRefundNumberLabel = new JLabel();
+        myRefundNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        myRefundNameLabel = new JLabel();
+        myRefundNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherRefundNumberLabel = new JLabel();
+        otherRefundNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        otherRefundNameLabel = new JLabel();
+        otherRefundNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        
+        viewRefundProofButton = new JButton("View Refund Proof");
+        viewRefundProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        viewRefundProofButton.setBackground(accentColor);
+        viewRefundProofButton.setForeground(Color.WHITE);
+        viewRefundProofButton.setBorder(null);
+        viewRefundProofButton.setFocusPainted(false);
+        viewRefundProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        viewRefundProofButton.setEnabled(false);
+        
+        confirmRefundButton = new JButton("Mark as Refunded");
+        confirmRefundButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        confirmRefundButton.setBackground(successColor);
+        confirmRefundButton.setForeground(Color.WHITE);
+        confirmRefundButton.setBorder(null);
+        confirmRefundButton.setFocusPainted(false);
+        confirmRefundButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        confirmRefundButton.setEnabled(false);
+        
+        refundOverallStatusLabel = new JLabel();
+        refundOverallStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
     }
 
     private void loadTradeState() {
@@ -428,6 +595,8 @@ public class manage_trades extends javax.swing.JFrame {
         
         loadMyTradeDetails();
         loadOtherTradeDetails();
+        loadPaymentStatus();
+        loadRefundStatus();
     }
     
     private void loadMyTradeDetails() {
@@ -484,6 +653,89 @@ public class manage_trades extends javax.swing.JFrame {
         }
     }
     
+    private void loadPaymentStatus() {
+        // Load my payment status from tbl_payment_details
+        String mySql = "SELECT payment_submitted, payment_verified, my_number, acc_name, payment_proof FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ?";
+        List<Map<String, Object>> myPayment = db.fetchRecords(mySql, tradeId, traderId);
+        if (!myPayment.isEmpty()) {
+            myPaymentSubmitted = Integer.parseInt(myPayment.get(0).get("payment_submitted").toString()) == 1;
+            myPaymentVerified = Integer.parseInt(myPayment.get(0).get("payment_verified").toString()) == 1;
+            String myNumber = myPayment.get(0).get("my_number") != null ? myPayment.get(0).get("my_number").toString() : "";
+            String accName = myPayment.get(0).get("acc_name") != null ? myPayment.get(0).get("acc_name").toString() : "";
+            uploadedProofPath = myPayment.get(0).get("payment_proof") != null ? myPayment.get(0).get("payment_proof").toString() : "";
+            
+            if (paymentNumberValueLabel != null) {
+                paymentNumberValueLabel.setText(myNumber.isEmpty() ? "-" : myNumber);
+            }
+            if (accountNameValueLabel != null) {
+                accountNameValueLabel.setText(accName.isEmpty() ? "-" : accName);
+            }
+        } else {
+            myPaymentSubmitted = false;
+            myPaymentVerified = false;
+            uploadedProofPath = "";
+            if (paymentNumberValueLabel != null) paymentNumberValueLabel.setText("-");
+            if (accountNameValueLabel != null) accountNameValueLabel.setText("-");
+        }
+        
+        // Load other trader's payment status
+        List<Map<String, Object>> otherPayment = db.fetchRecords(mySql, tradeId, otherTraderId);
+        if (!otherPayment.isEmpty()) {
+            otherPaymentSubmitted = Integer.parseInt(otherPayment.get(0).get("payment_submitted").toString()) == 1;
+            otherPaymentVerified = Integer.parseInt(otherPayment.get(0).get("payment_verified").toString()) == 1;
+            String otherNumber = otherPayment.get(0).get("my_number") != null ? otherPayment.get(0).get("my_number").toString() : "";
+            String otherAccName = otherPayment.get(0).get("acc_name") != null ? otherPayment.get(0).get("acc_name").toString() : "";
+            otherUploadedProofPath = otherPayment.get(0).get("payment_proof") != null ? otherPayment.get(0).get("payment_proof").toString() : "";
+            
+            if (otherPaymentNumberValueLabel != null) {
+                otherPaymentNumberValueLabel.setText(otherNumber.isEmpty() ? "-" : otherNumber);
+            }
+            if (otherAccountNameValueLabel != null) {
+                otherAccountNameValueLabel.setText(otherAccName.isEmpty() ? "-" : otherAccName);
+            }
+        } else {
+            otherPaymentSubmitted = false;
+            otherPaymentVerified = false;
+            otherUploadedProofPath = "";
+            if (otherPaymentNumberValueLabel != null) otherPaymentNumberValueLabel.setText("-");
+            if (otherAccountNameValueLabel != null) otherAccountNameValueLabel.setText("-");
+        }
+    }
+    
+    private void loadRefundStatus() {
+        String sql = "SELECT refund_id, account_number, account_name, qr_code_path, refund_proof, is_refunded FROM tbl_refund WHERE trade_id = ? AND user_id = ?";
+        
+        // Load my refund details
+        List<Map<String, Object>> myRefund = db.fetchRecords(sql, tradeId, traderId);
+        if (!myRefund.isEmpty()) {
+            myRefundSubmitted = true;
+            myRefundId = Integer.parseInt(myRefund.get(0).get("refund_id").toString());
+            myRefundNumberLabel.setText(myRefund.get(0).get("account_number") != null ? myRefund.get(0).get("account_number").toString() : "-");
+            myRefundNameLabel.setText(myRefund.get(0).get("account_name") != null ? myRefund.get(0).get("account_name").toString() : "-");
+            myRefundConfirmed = Integer.parseInt(myRefund.get(0).get("is_refunded").toString()) == 1;
+        } else {
+            myRefundSubmitted = false;
+            myRefundNumberLabel.setText("-");
+            myRefundNameLabel.setText("-");
+            myRefundConfirmed = false;
+        }
+        
+        // Load other trader's refund details
+        List<Map<String, Object>> otherRefund = db.fetchRecords(sql, tradeId, otherTraderId);
+        if (!otherRefund.isEmpty()) {
+            otherRefundSubmitted = true;
+            otherRefundId = Integer.parseInt(otherRefund.get(0).get("refund_id").toString());
+            otherRefundNumberLabel.setText(otherRefund.get(0).get("account_number") != null ? otherRefund.get(0).get("account_number").toString() : "-");
+            otherRefundNameLabel.setText(otherRefund.get(0).get("account_name") != null ? otherRefund.get(0).get("account_name").toString() : "-");
+            otherRefundConfirmed = Integer.parseInt(otherRefund.get(0).get("is_refunded").toString()) == 1;
+        } else {
+            otherRefundSubmitted = false;
+            otherRefundNumberLabel.setText("-");
+            otherRefundNameLabel.setText("-");
+            otherRefundConfirmed = false;
+        }
+    }
+    
     private void loadMeetupDetails(int meetupId) {
         String sql = "SELECT * FROM tbl_meetup_details WHERE meetup_id = ?";
         List<Map<String, Object>> details = db.fetchRecords(sql, meetupId);
@@ -526,23 +778,18 @@ public class manage_trades extends javax.swing.JFrame {
     private void determineCurrentStep() {
         if (tradeCompleted) {
             currentStep = 6;
-        } else if (refundProcessed) {
+        } else if (myRefundConfirmed && otherRefundConfirmed) {
             currentStep = 5;
         } else if (myItemReceived && otherItemReceived) {
             currentStep = 4;
-        } else if (paymentVerified) {
+        } else if (myPaymentVerified && otherPaymentVerified) {
             currentStep = 3;
         } else if (myDetailsSubmitted && otherDetailsSubmitted) {
-            // Check agreement based on exchange method
             boolean canProceed = false;
             
             if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-                // Delivery: Both must agree (my_details_agreed = 1 AND other_details_agreed = 1 for BOTH traders)
-                // For current user: my_details_agreed = 1 means other trader agreed to this user's details
-                // For other user: need to check their my_details_agreed (which is this user's other_details_agreed)
                 canProceed = (myDetailsAgreed == 1 && otherDetailsAgreed == 1);
             } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
-                // Meetup: Only one agreement needed
                 canProceed = (myDetailsAgreed == 1 || otherDetailsAgreed == 1);
             }
             
@@ -580,7 +827,7 @@ public class manage_trades extends javax.swing.JFrame {
 
     private void updateUI() {
         String[] stepNames = {"", "Step 1: Propose Exchange Method", "Step 2: Enter Exchange Details", 
-                               "Step 3: Make Payment", "Step 4: Confirm Receipt", "Step 5: Refund Processing", "Step 6: Trade Completed"};
+                               "Step 3: Make Payment", "Step 4: Confirm Receipt", "Step 5: Refund", "Step 6: Trade Completed"};
         stepIndicatorLabel.setText(stepNames[currentStep]);
         
         stepPanel.removeAll();
@@ -613,6 +860,7 @@ public class manage_trades extends javax.swing.JFrame {
         backStepButton.setEnabled(currentStep > 1 && currentStep < 6);
     }
 
+    // ========== STEP 1: PROPOSE METHOD (NO CHANGES) ==========
     private void showStep1ProposeMethod() {
         statusLabel.setText("Choose an exchange method. Both traders must agree before proceeding.");
         
@@ -737,7 +985,7 @@ public class manage_trades extends javax.swing.JFrame {
             JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            String sql = "UPDATE tbl_trade SET exchange_method = ?, proposed_method = NULL, proposed_by = NULL, method_confirmed = 1 WHERE trade_id = ?";
+            String sql = "UPDATE tbl_trade SET exchange_method = ?, method_confirmed = 1 WHERE trade_id = ?";
             db.updateRecord(sql, proposedMethod, tradeId);
             
             exchangeMethod = proposedMethod;
@@ -781,6 +1029,7 @@ public class manage_trades extends javax.swing.JFrame {
         }
     }
 
+    // ========== STEP 2: EXCHANGE DETAILS (FIXED SUBMISSION LOGIC) ==========
     private void showStep2SetDetails() {
         statusLabel.setText("Enter your exchange details. Both traders must submit and agree to proceed.");
         
@@ -814,7 +1063,6 @@ public class manage_trades extends javax.swing.JFrame {
             String agreementMessage = "";
             
             if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-                // Delivery: Both must agree
                 canProceed = (myDetailsAgreed == 1 && otherDetailsAgreed == 1);
                 if (myDetailsAgreed == 1 && otherDetailsAgreed == 1) {
                     agreementMessage = "Both traders have agreed to the details! Click PROCEED to continue.";
@@ -830,7 +1078,6 @@ public class manage_trades extends javax.swing.JFrame {
                     agreementStatus.setForeground(warningColor);
                 }
             } else {
-                // Meetup: Only one needs to agree
                 canProceed = (myDetailsAgreed == 1 || otherDetailsAgreed == 1);
                 if (myDetailsAgreed == 1) {
                     agreementMessage = "You have agreed to " + otherTraderName + "'s details! Click PROCEED to continue.";
@@ -890,7 +1137,6 @@ public class manage_trades extends javax.swing.JFrame {
             myDetailsPanel.add(myDetailsStatus);
             fieldY += 45;
             
-            // Display your own submitted details
             if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
                 JLabel previewLabel = new JLabel("Your submitted details:");
                 previewLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -1029,14 +1275,11 @@ public class manage_trades extends javax.swing.JFrame {
             fieldY += 30;
         }
         
-        // Show Agree button based on exchange method
         boolean showAgreeButton = false;
         
         if (exchangeMethod != null && exchangeMethod.equals("delivery")) {
-            // Delivery: Show agree button if other has submitted AND current hasn't agreed yet (otherDetailsAgreed = 0)
             showAgreeButton = (otherDetailsSubmitted && otherDetailsAgreed == 0);
         } else if (exchangeMethod != null && exchangeMethod.equals("meetup")) {
-            // Meetup: Show agree button if other has submitted AND no one has agreed yet (both myDetailsAgreed and otherDetailsAgreed are 0)
             showAgreeButton = (otherDetailsSubmitted && myDetailsAgreed == 0 && otherDetailsAgreed == 0);
         }
         
@@ -1070,6 +1313,7 @@ public class manage_trades extends javax.swing.JFrame {
         }
     }
 
+    // FIXED: When trader submits details, it updates both my_details_submitted AND other_details_submitted for the other trader
     private void showDetailsInputDialog() {
         if (exchangeMethod == null) {
             JOptionPane.showMessageDialog(this, "Exchange method not set. Please complete Step 1 first.", "Error", JOptionPane.WARNING_MESSAGE);
@@ -1079,7 +1323,10 @@ public class manage_trades extends javax.swing.JFrame {
         step2Handler = new step2_submit(tradeId, traderId, otherTraderId, exchangeMethod, this);
         step2Handler.showDialog();
         
-        // Refresh all data after dialog closes
+        // After submitting details, update the other trader's other_details_submitted flag
+        String updateOtherSql = "UPDATE tbl_trade_details SET other_details_submitted = 1 WHERE trade_id = ? AND trader_id = ?";
+        db.updateRecord(updateOtherSql, tradeId, otherTraderId);
+        
         loadTradeState();
         updateUI();
     }
@@ -1097,49 +1344,44 @@ public class manage_trades extends javax.swing.JFrame {
             JOptionPane.QUESTION_MESSAGE);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            // Update other_details_agreed = 1 for the current user's row (agreeing to other trader's details)
             String sql = "UPDATE tbl_trade_details SET other_details_agreed = 1 WHERE trade_id = ? AND trader_id = ?";
             db.updateRecord(sql, tradeId, traderId);
             
-            // Also update the other trader's row to set my_details_agreed = 1 (someone agreed to their details)
             String sqlOther = "UPDATE tbl_trade_details SET my_details_agreed = 1 WHERE trade_id = ? AND trader_id = ?";
             db.updateRecord(sqlOther, tradeId, otherTraderId);
             
-            // Refresh data
             loadTradeState();
             
             if (exchangeMethod.equals("delivery")) {
-                // Delivery: Need both agreements - check if both are now agreed
-                String checkSql = "SELECT my_details_agreed, other_details_agreed FROM tbl_trade_details WHERE trade_id = ? AND trader_id = ?";
-                List<Map<String, Object>> myResult = db.fetchRecords(checkSql, tradeId, traderId);
-                List<Map<String, Object>> otherResult = db.fetchRecords(checkSql, tradeId, otherTraderId);
+                String checkSql = "SELECT my_details_agreed, other_details_agreed FROM tbl_trade_details WHERE trade_id = ?";
+                List<Map<String, Object>> results = db.fetchRecords(checkSql, tradeId);
                 
-                if (!myResult.isEmpty() && !otherResult.isEmpty()) {
-                    int myMyAgreed = Integer.parseInt(myResult.get(0).get("my_details_agreed").toString());
-                    int myOtherAgreed = Integer.parseInt(myResult.get(0).get("other_details_agreed").toString());
-                    int otherMyAgreed = Integer.parseInt(otherResult.get(0).get("my_details_agreed").toString());
-                    int otherOtherAgreed = Integer.parseInt(otherResult.get(0).get("other_details_agreed").toString());
-                    
-                    // Both traders have agreed when: 
-                    // my_agreed = 1 AND other_agreed = 1 for BOTH traders
-                    if (myMyAgreed == 1 && myOtherAgreed == 1 && otherMyAgreed == 1 && otherOtherAgreed == 1) {
-                        String updateTradeSql = "UPDATE tbl_trade SET trade_status = 'arrangements_confirmed' WHERE trade_id = ?";
-                        db.updateRecord(updateTradeSql, tradeId);
-                        
-                        JOptionPane.showMessageDialog(this,
-                            "Both traders have agreed! You can now proceed to payment.",
-                            "Agreement Complete",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    } else {
-                        JOptionPane.showMessageDialog(this,
-                            "You have agreed to " + otherTraderName + "'s details.\n\n"
-                            + "Waiting for " + otherTraderName + " to agree as well.",
-                            "Agreement Recorded",
-                            JOptionPane.INFORMATION_MESSAGE);
+                boolean allAgreed = true;
+                for (Map<String, Object> result : results) {
+                    int myAgreed = Integer.parseInt(result.get("my_details_agreed").toString());
+                    int otherAgreed = Integer.parseInt(result.get("other_details_agreed").toString());
+                    if (myAgreed != 1 || otherAgreed != 1) {
+                        allAgreed = false;
+                        break;
                     }
                 }
+                
+                if (allAgreed) {
+                    String updateTradeSql = "UPDATE tbl_trade SET trade_status = 'arrangements_confirmed' WHERE trade_id = ?";
+                    db.updateRecord(updateTradeSql, tradeId);
+                    
+                    JOptionPane.showMessageDialog(this,
+                        "Both traders have agreed! You can now proceed to payment.",
+                        "Agreement Complete",
+                        JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                        "You have agreed to " + otherTraderName + "'s details.\n\n"
+                        + "Waiting for " + otherTraderName + " to agree as well.",
+                        "Agreement Recorded",
+                        JOptionPane.INFORMATION_MESSAGE);
+                }
             } else {
-                // Meetup: Only one agreement needed - proceed immediately
                 String updateTradeSql = "UPDATE tbl_trade SET trade_status = 'arrangements_confirmed' WHERE trade_id = ?";
                 db.updateRecord(updateTradeSql, tradeId);
                 
@@ -1155,54 +1397,389 @@ public class manage_trades extends javax.swing.JFrame {
         }
     }
 
+    // ========== STEP 3: PAYMENT (WITH QR CODE DISPLAY) ==========
     private void showStep3Payment() {
-        statusLabel.setText("Step 3: Select admin and make payment.");
+        statusLabel.setText("Step 3: Submit your payment proof. Admin will verify both payments.");
         
-        step3Handler = new step3_submit(tradeId, traderId, this);
-        JPanel paymentPanel = step3Handler.createPaymentPanel();
-        paymentPanel.setBounds(20, 15, 900, 350);
-        stepPanel.add(paymentPanel);
+        // Load existing payment details
+        loadPaymentStatus();
+        loadTradePaymentSettings();
         
-        JTextArea instructionArea = new JTextArea();
-        instructionArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        instructionArea.setForeground(textColor);
-        instructionArea.setBackground(new Color(255, 255, 200));
-        instructionArea.setLineWrap(true);
-        instructionArea.setWrapStyleWord(true);
-        instructionArea.setEditable(false);
-        instructionArea.setText("Instructions:\n1. Select an admin as middleman\n2. Send the total amount to the admin's account\n3. Upload payment proof (screenshot/QR)\n4. Wait for admin verification");
-        instructionArea.setBounds(20, 380, 900, 80);
-        instructionArea.setBorder(new LineBorder(warningColor, 1));
-        stepPanel.add(instructionArea);
+        int y = 15;
         
-        paymentStatusLabel.setBounds(20, 475, 500, 25);
+        // Payment Information Panel
+        JPanel paymentInfoPanel = new JPanel();
+        paymentInfoPanel.setLayout(null);
+        paymentInfoPanel.setBackground(new Color(255, 255, 200));
+        paymentInfoPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "PAYMENT INFORMATION"));
+        paymentInfoPanel.setBounds(20, y, 900, 220);
+        stepPanel.add(paymentInfoPanel);
         
-        paymentSubmitted = step3Handler.isPaymentSubmitted();
-        paymentVerified = step3Handler.isPaymentVerified();
+        int py = 25;
         
-        if (paymentVerified) {
-            paymentStatusLabel.setText("✓ Payment verified by admin! You can proceed.");
+        // Payment Method Selection
+        JLabel methodSelectLabel = new JLabel("Select Payment Method:");
+        methodSelectLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        methodSelectLabel.setBounds(20, py, 180, 25);
+        paymentInfoPanel.add(methodSelectLabel);
+        
+        paymentMethodCombo.setBounds(200, py, 250, 30);
+        paymentInfoPanel.add(paymentMethodCombo);
+        py += 45;
+        
+        // Payment Method Details
+        paymentMethodDetailLabel.setBounds(20, py, 400, 25);
+        paymentInfoPanel.add(paymentMethodDetailLabel);
+        py += 30;
+        
+        accountNumberLabel.setBounds(20, py, 400, 25);
+        paymentInfoPanel.add(accountNumberLabel);
+        py += 30;
+        
+        accountNameLabel.setBounds(20, py, 400, 25);
+        paymentInfoPanel.add(accountNameLabel);
+        py += 30;
+        
+        // QR Code Display
+        JLabel qrTitleLabel = new JLabel("QR Code:");
+        qrTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        qrTitleLabel.setBounds(20, py, 100, 25);
+        paymentInfoPanel.add(qrTitleLabel);
+        
+        qrCodeLabel.setBounds(130, py, 100, 100);
+        qrCodeLabel.setBorder(new LineBorder(new Color(200, 200, 200)));
+        paymentInfoPanel.add(qrCodeLabel);
+        py += 110;
+        
+        // Fee and Amount
+        serviceFeeLabel.setBounds(20, py, 300, 25);
+        paymentInfoPanel.add(serviceFeeLabel);
+        
+        totalAmountLabel.setBounds(350, py, 300, 25);
+        paymentInfoPanel.add(totalAmountLabel);
+        py += 50;
+        
+        // Add Payment Proof Button Section
+        JPanel proofPanel = new JPanel();
+        proofPanel.setLayout(null);
+        proofPanel.setBackground(Color.WHITE);
+        proofPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "YOUR PAYMENT PROOF"));
+        proofPanel.setBounds(20, y + 235, 440, 200);
+        stepPanel.add(proofPanel);
+        
+        int ppy = 25;
+        
+        JButton addProofButton = new JButton("ADD PAYMENT PROOF");
+        addProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        addProofButton.setBackground(themeColor);
+        addProofButton.setForeground(Color.WHITE);
+        addProofButton.setBounds(20, ppy, 180, 35);
+        addProofButton.setBorder(null);
+        addProofButton.setFocusPainted(false);
+        addProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        addProofButton.addActionListener(e -> openStep3SubmitDialog());
+        proofPanel.add(addProofButton);
+        ppy += 50;
+        
+        // Display saved payment details
+        JLabel paymentNumberDisplayLabel = new JLabel("Payment Number:");
+        paymentNumberDisplayLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        paymentNumberDisplayLabel.setBounds(20, ppy, 120, 25);
+        proofPanel.add(paymentNumberDisplayLabel);
+        
+        paymentNumberValueLabel.setBounds(150, ppy, 250, 25);
+        proofPanel.add(paymentNumberValueLabel);
+        ppy += 30;
+        
+        JLabel accountNameDisplayLabel = new JLabel("Account Name:");
+        accountNameDisplayLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        accountNameDisplayLabel.setBounds(20, ppy, 120, 25);
+        proofPanel.add(accountNameDisplayLabel);
+        
+        accountNameValueLabel.setBounds(150, ppy, 250, 25);
+        proofPanel.add(accountNameValueLabel);
+        ppy += 30;
+        
+        JLabel proofStatusLabel = new JLabel("Payment Status:");
+        proofStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        proofStatusLabel.setBounds(20, ppy, 120, 25);
+        proofPanel.add(proofStatusLabel);
+        
+        myPaymentStatusLabel.setBounds(150, ppy, 250, 25);
+        if (myPaymentVerified) {
+            myPaymentStatusLabel.setText("✓ VERIFIED BY ADMIN");
+            myPaymentStatusLabel.setForeground(successColor);
+        } else if (myPaymentSubmitted) {
+            myPaymentStatusLabel.setText("⏳ Submitted - Waiting for admin verification");
+            myPaymentStatusLabel.setForeground(warningColor);
+        } else {
+            myPaymentStatusLabel.setText("❌ Not submitted yet");
+            myPaymentStatusLabel.setForeground(errorColor);
+        }
+        proofPanel.add(myPaymentStatusLabel);
+        ppy += 35;
+        
+        // View uploaded proof button
+        if (myPaymentSubmitted && !uploadedProofPath.isEmpty()) {
+            JButton viewProofButton = new JButton("View Uploaded Proof");
+            viewProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            viewProofButton.setBackground(accentColor);
+            viewProofButton.setForeground(Color.WHITE);
+            viewProofButton.setBounds(20, ppy, 180, 30);
+            viewProofButton.setBorder(null);
+            viewProofButton.setFocusPainted(false);
+            viewProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            final String proofPath = uploadedProofPath;
+            viewProofButton.addActionListener(e -> viewUploadedProof(proofPath));
+            proofPanel.add(viewProofButton);
+        }
+        
+        // Other Trader Payment Status
+        JPanel otherPaymentPanel = new JPanel();
+        otherPaymentPanel.setLayout(null);
+        otherPaymentPanel.setBackground(Color.WHITE);
+        otherPaymentPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), otherTraderName + "'S PAYMENT STATUS"));
+        otherPaymentPanel.setBounds(480, y + 235, 440, 200);
+        stepPanel.add(otherPaymentPanel);
+        
+        int opy = 25;
+        
+        JLabel otherPaymentNumberLabel = new JLabel("Payment Number:");
+        otherPaymentNumberLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        otherPaymentNumberLabel.setBounds(20, opy, 120, 25);
+        otherPaymentPanel.add(otherPaymentNumberLabel);
+        
+        otherPaymentNumberValueLabel.setBounds(150, opy, 250, 25);
+        otherPaymentPanel.add(otherPaymentNumberValueLabel);
+        opy += 30;
+        
+        JLabel otherAccountNameLabel = new JLabel("Account Name:");
+        otherAccountNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        otherAccountNameLabel.setBounds(20, opy, 120, 25);
+        otherPaymentPanel.add(otherAccountNameLabel);
+        
+        otherAccountNameValueLabel.setBounds(150, opy, 250, 25);
+        otherPaymentPanel.add(otherAccountNameValueLabel);
+        opy += 30;
+        
+        JLabel otherProofStatusLabel = new JLabel("Payment Status:");
+        otherProofStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        otherProofStatusLabel.setBounds(20, opy, 120, 25);
+        otherPaymentPanel.add(otherProofStatusLabel);
+        
+        otherPaymentStatusLabel.setBounds(150, opy, 250, 25);
+        if (otherPaymentVerified) {
+            otherPaymentStatusLabel.setText("✓ VERIFIED BY ADMIN");
+            otherPaymentStatusLabel.setForeground(successColor);
+        } else if (otherPaymentSubmitted) {
+            otherPaymentStatusLabel.setText("⏳ Submitted - Waiting for admin verification");
+            otherPaymentStatusLabel.setForeground(warningColor);
+        } else {
+            otherPaymentStatusLabel.setText("❌ Not submitted yet");
+            otherPaymentStatusLabel.setForeground(errorColor);
+        }
+        otherPaymentPanel.add(otherPaymentStatusLabel);
+        opy += 35;
+        
+        // View other trader's proof button
+        if (otherPaymentSubmitted && !otherUploadedProofPath.isEmpty()) {
+            JButton viewOtherProofButton = new JButton("View Their Proof");
+            viewOtherProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            viewOtherProofButton.setBackground(accentColor);
+            viewOtherProofButton.setForeground(Color.WHITE);
+            viewOtherProofButton.setBounds(20, opy, 180, 30);
+            viewOtherProofButton.setBorder(null);
+            viewOtherProofButton.setFocusPainted(false);
+            viewOtherProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            final String otherProofPath = otherUploadedProofPath;
+            viewOtherProofButton.addActionListener(e -> viewUploadedProof(otherProofPath));
+            otherPaymentPanel.add(viewOtherProofButton);
+        }
+        
+        // Note
+        JLabel noteLabel = new JLabel("Note: Both traders must submit payment proof. Admin will verify each payment.");
+        noteLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        noteLabel.setForeground(infoColor);
+        noteLabel.setBounds(20, 170, 400, 25);
+        otherPaymentPanel.add(noteLabel);
+        
+        // Overall Payment Status
+        JPanel statusPanel = new JPanel();
+        statusPanel.setLayout(null);
+        statusPanel.setBackground(Color.WHITE);
+        statusPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "PAYMENT STATUS"));
+        statusPanel.setBounds(20, y + 450, 900, 80);
+        stepPanel.add(statusPanel);
+        
+        paymentStatusLabel.setBounds(20, 30, 860, 30);
+        
+        if (myPaymentVerified && otherPaymentVerified) {
+            paymentStatusLabel.setText("✓ BOTH PAYMENTS VERIFIED! You can now proceed to Step 4.");
             paymentStatusLabel.setForeground(successColor);
             proceedButton.setEnabled(true);
             proceedButton.setText("PROCEED TO NEXT STEP");
-        } else if (paymentSubmitted) {
-            paymentStatusLabel.setText("Payment submitted. Waiting for admin verification...");
+        } else if (myPaymentVerified) {
+            paymentStatusLabel.setText("Your payment verified. Waiting for " + otherTraderName + "'s payment verification.");
             paymentStatusLabel.setForeground(warningColor);
             proceedButton.setEnabled(false);
-        } else if (step3Handler.hasSelectedAdmin()) {
-            paymentStatusLabel.setText("Please provide payment details and upload proof.");
-            paymentStatusLabel.setForeground(textColor);
-            proceedButton.setEnabled(true);
-            proceedButton.setText("SUBMIT PAYMENT");
+        } else if (otherPaymentVerified) {
+            paymentStatusLabel.setText(otherTraderName + "'s payment verified. Waiting for your payment verification.");
+            paymentStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (myPaymentSubmitted && otherPaymentSubmitted) {
+            paymentStatusLabel.setText("Both payments submitted. Waiting for admin verification...");
+            paymentStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (myPaymentSubmitted) {
+            paymentStatusLabel.setText("Your payment submitted. Waiting for " + otherTraderName + " to submit and admin verification.");
+            paymentStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (otherPaymentSubmitted) {
+            paymentStatusLabel.setText(otherTraderName + " has submitted payment. Waiting for your payment and admin verification.");
+            paymentStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
         } else {
-            paymentStatusLabel.setText("Please select an admin first.");
+            paymentStatusLabel.setText("Both traders must submit payment proof. Admin will verify after submission.");
             paymentStatusLabel.setForeground(textColor);
             proceedButton.setEnabled(false);
         }
         
-        stepPanel.add(paymentStatusLabel);
+        statusPanel.add(paymentStatusLabel);
+        
+        // Load payment methods for dropdown
+        loadActivePaymentMethods();
+    }
+    
+    private void loadTradePaymentSettings() {
+        String feeSql = "SELECT service_fee, total_amount, method_id FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ? LIMIT 1";
+        List<Map<String, Object>> feeResult = db.fetchRecords(feeSql, tradeId, traderId);
+        
+        if (!feeResult.isEmpty()) {
+            Map<String, Object> feeData = feeResult.get(0);
+            currentServiceFee = feeData.get("service_fee") != null ? Double.parseDouble(feeData.get("service_fee").toString()) : 15.00;
+            currentTotalAmount = feeData.get("total_amount") != null ? Double.parseDouble(feeData.get("total_amount").toString()) : 215.00;
+            
+            serviceFeeLabel.setText("Service Fee: ₱" + String.format("%.2f", currentServiceFee));
+            totalAmountLabel.setText("Total Amount: ₱" + String.format("%.2f", currentTotalAmount));
+            
+            if (feeData.get("method_id") != null) {
+                selectedMethodId = Integer.parseInt(feeData.get("method_id").toString());
+            }
+        } else {
+            serviceFeeLabel.setText("Service Fee: ₱15.00");
+            totalAmountLabel.setText("Total Amount: ₱215.00");
+        }
+    }
+    
+    private void loadActivePaymentMethods() {
+        paymentMethodCombo.removeAllItems();
+        
+        String sql = "SELECT method_id, method_name, qr_code_path FROM tbl_payment_methods WHERE is_active = 1 ORDER BY method_name";
+        List<Map<String, Object>> methods = db.fetchRecords(sql);
+        
+        paymentMethodCombo.addItem("-- Select Payment Method --");
+        for (Map<String, Object> method : methods) {
+            paymentMethodCombo.addItem(method.get("method_id") + " - " + method.get("method_name"));
+        }
+        
+        if (selectedMethodId > 0) {
+            for (int i = 0; i < paymentMethodCombo.getItemCount(); i++) {
+                String item = paymentMethodCombo.getItemAt(i);
+                if (item.startsWith(String.valueOf(selectedMethodId))) {
+                    paymentMethodCombo.setSelectedIndex(i);
+                    loadPaymentMethodDetails();
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void loadPaymentMethodDetails() {
+        int selectedIndex = paymentMethodCombo.getSelectedIndex();
+        if (selectedIndex <= 0) {
+            paymentMethodDetailLabel.setText("");
+            accountNumberLabel.setText("");
+            accountNameLabel.setText("");
+            qrCodeLabel.setIcon(null);
+            qrCodeLabel.setText("No QR Code");
+            return;
+        }
+        
+        String selected = paymentMethodCombo.getSelectedItem().toString();
+        int methodId = Integer.parseInt(selected.substring(0, selected.indexOf(" -")));
+        selectedMethodId = methodId;
+        
+        String sql = "SELECT method_name, account_number, account_name, qr_code_path FROM tbl_payment_methods WHERE method_id = ? AND is_active = 1";
+        List<Map<String, Object>> result = db.fetchRecords(sql, methodId);
+        
+        if (!result.isEmpty()) {
+            Map<String, Object> method = result.get(0);
+            paymentMethodDetailLabel.setText("Method: " + method.get("method_name"));
+            accountNumberLabel.setText("Account Number: " + method.get("account_number"));
+            if (method.get("account_name") != null && !method.get("account_name").toString().isEmpty()) {
+                accountNameLabel.setText("Account Name: " + method.get("account_name"));
+            } else {
+                accountNameLabel.setText("");
+            }
+            
+            // Display QR Code if available
+            if (method.get("qr_code_path") != null && !method.get("qr_code_path").toString().isEmpty()) {
+                String qrPath = method.get("qr_code_path").toString();
+                String fullPath = "src/" + qrPath;
+                File qrFile = new File(fullPath);
+                if (qrFile.exists()) {
+                    try {
+                        ImageIcon qrIcon = new ImageIcon(fullPath);
+                        Image scaledImage = qrIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        qrCodeLabel.setIcon(new ImageIcon(scaledImage));
+                        qrCodeLabel.setText("");
+                    } catch (Exception e) {
+                        qrCodeLabel.setIcon(null);
+                        qrCodeLabel.setText("QR Code Error");
+                    }
+                } else {
+                    qrCodeLabel.setIcon(null);
+                    qrCodeLabel.setText("QR Code Not Found");
+                }
+            } else {
+                qrCodeLabel.setIcon(null);
+                qrCodeLabel.setText("No QR Code");
+            }
+        }
+    }
+    
+    private void openStep3SubmitDialog() {
+        step3SubmitHandler = new step3_submit(tradeId, traderId, traderName, otherTraderId, this);
+        step3SubmitHandler.showDialog();
+        
+        loadPaymentStatus();
+        loadTradeState();
+        updateUI();
+    }
+    
+    private void viewUploadedProof(String proofPath) {
+        if (proofPath == null || proofPath.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No proof image available.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        try {
+            String fullPath = "src/" + proofPath;
+            File imgFile = new File(fullPath);
+            
+            if (imgFile.exists()) {
+                ImageIcon icon = new ImageIcon(fullPath);
+                Image img = icon.getImage().getScaledInstance(500, 500, Image.SCALE_SMOOTH);
+                JOptionPane.showMessageDialog(this, new JLabel(new ImageIcon(img)), "Payment Proof", JOptionPane.PLAIN_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Proof image not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
+    // ========== STEP 4: CONFIRM RECEIPT (UPDATED WITH PROPOSED_BY LOGIC) ==========
     private void showStep4ConfirmReceipt() {
         statusLabel.setText("Step 4: Confirm when you receive the item.");
         
@@ -1212,113 +1789,528 @@ public class manage_trades extends javax.swing.JFrame {
         receiptPanel.setLayout(null);
         receiptPanel.setBackground(Color.WHITE);
         receiptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "Item Receipt Confirmation"));
-        receiptPanel.setBounds(20, y, 900, 200);
+        receiptPanel.setBounds(20, y, 900, 250);
         stepPanel.add(receiptPanel);
         
-        JLabel receiptLabel = new JLabel("Have you received the item?");
-        receiptLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        receiptLabel.setForeground(accentColor);
-        receiptLabel.setBounds(20, 30, 300, 25);
-        receiptPanel.add(receiptLabel);
+        boolean iAmProposer = (proposedBy == traderId);
+        String proposerName = iAmProposer ? traderName : otherTraderName;
+        String otherName = iAmProposer ? otherTraderName : traderName;
         
-        confirmReceivedCheck.setBounds(20, 65, 300, 30);
-        receiptPanel.add(confirmReceivedCheck);
+        JLabel receiptInfoLabel = new JLabel("<html><b>Trade Information:</b><br>" +
+            "Trade initiated by: " + proposerName + "<br>" +
+            "Item receipt confirmation required from both traders.</html>");
+        receiptInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        receiptInfoLabel.setBounds(20, 20, 500, 60);
+        receiptPanel.add(receiptInfoLabel);
+        
+        JPanel myReceiptPanel = new JPanel();
+        myReceiptPanel.setLayout(null);
+        myReceiptPanel.setBackground(new Color(250, 250, 250));
+        myReceiptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "YOUR RECEIPT STATUS"));
+        myReceiptPanel.setBounds(20, 90, 420, 130);
+        receiptPanel.add(myReceiptPanel);
+        
+        int mrp = 20;
+        
+        JLabel myStatusTitle = new JLabel("Your confirmation:");
+        myStatusTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        myStatusTitle.setBounds(15, mrp, 200, 25);
+        myReceiptPanel.add(myStatusTitle);
+        mrp += 35;
+        
+        myReceiptStatusLabel.setBounds(15, mrp, 380, 25);
+        if (myItemReceived) {
+            myReceiptStatusLabel.setText("✓ You have confirmed receipt of the item.");
+            myReceiptStatusLabel.setForeground(successColor);
+        } else {
+            myReceiptStatusLabel.setText("❌ You have NOT confirmed receipt yet.");
+            myReceiptStatusLabel.setForeground(errorColor);
+        }
+        myReceiptPanel.add(myReceiptStatusLabel);
+        mrp += 40;
+        
+        confirmReceivedCheck.setBounds(15, mrp, 250, 30);
+        myReceiptPanel.add(confirmReceivedCheck);
+        
+        JPanel otherReceiptPanel = new JPanel();
+        otherReceiptPanel.setLayout(null);
+        otherReceiptPanel.setBackground(new Color(250, 250, 250));
+        otherReceiptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), otherTraderName + "'S RECEIPT STATUS"));
+        otherReceiptPanel.setBounds(460, 90, 420, 130);
+        receiptPanel.add(otherReceiptPanel);
+        
+        int orp = 20;
+        
+        JLabel otherStatusTitle = new JLabel(otherTraderName + "'s confirmation:");
+        otherStatusTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        otherStatusTitle.setBounds(15, orp, 300, 25);
+        otherReceiptPanel.add(otherStatusTitle);
+        orp += 35;
+        
+        otherReceiptStatusLabel.setBounds(15, orp, 380, 25);
+        if (otherItemReceived) {
+            otherReceiptStatusLabel.setText("✓ " + otherTraderName + " has confirmed receipt of the item.");
+            otherReceiptStatusLabel.setForeground(successColor);
+        } else {
+            otherReceiptStatusLabel.setText("❌ " + otherTraderName + " has NOT confirmed receipt yet.");
+            otherReceiptStatusLabel.setForeground(errorColor);
+        }
+        otherReceiptPanel.add(otherReceiptStatusLabel);
         
         JButton confirmButton = new JButton("CONFIRM RECEIPT");
         confirmButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         confirmButton.setBackground(successColor);
         confirmButton.setForeground(Color.WHITE);
-        confirmButton.setBounds(20, 105, 150, 35);
+        confirmButton.setBounds(20, 235, 150, 35);
         confirmButton.setBorder(null);
         confirmButton.setFocusPainted(false);
         confirmButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         confirmButton.addActionListener(e -> confirmReceipt());
         receiptPanel.add(confirmButton);
         
-        JLabel receiptStatus = new JLabel();
-        receiptStatus.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        receiptStatus.setBounds(200, 115, 400, 20);
-        
-        if (myItemReceived) {
-            receiptStatus.setText("You have confirmed receipt. Waiting for " + otherTraderName + ".");
-            receiptStatus.setForeground(successColor);
-            proceedButton.setEnabled(false);
-        } else {
-            receiptStatus.setText("Please confirm once you have received the item.");
-            receiptStatus.setForeground(textColor);
-            proceedButton.setEnabled(false);
-        }
-        
-        receiptPanel.add(receiptStatus);
-        
         JLabel bothStatus = new JLabel();
         bothStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        bothStatus.setBounds(20, 150, 500, 25);
+        bothStatus.setBounds(200, 240, 500, 25);
         
         if (myItemReceived && otherItemReceived) {
-            bothStatus.setText("Both traders have received items! Click PROCEED to continue.");
+            bothStatus.setText("✓ Both traders have received items! Click PROCEED to continue.");
             bothStatus.setForeground(successColor);
             proceedButton.setEnabled(true);
             proceedButton.setText("PROCEED TO REFUND");
         } else if (myItemReceived) {
             bothStatus.setText("You have received the item. Waiting for " + otherTraderName + " to confirm.");
             bothStatus.setForeground(warningColor);
+            proceedButton.setEnabled(false);
         } else if (otherItemReceived) {
             bothStatus.setText(otherTraderName + " has received the item. Waiting for you to confirm.");
             bothStatus.setForeground(warningColor);
+            proceedButton.setEnabled(false);
         } else {
             bothStatus.setText("Waiting for both traders to confirm receipt.");
             bothStatus.setForeground(textColor);
+            proceedButton.setEnabled(false);
         }
         
         receiptPanel.add(bothStatus);
     }
 
+    private void confirmReceipt() {
+        if (!confirmReceivedCheck.isSelected()) {
+            JOptionPane.showMessageDialog(this,
+                "Please check the box to confirm you have received the item.",
+                "Confirmation Required",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        boolean iAmProposer = (proposedBy == traderId);
+        String columnToUpdate = iAmProposer ? "my_item_received" : "other_item_received";
+        
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Confirm that you have received the item?\n\n"
+            + "This action cannot be undone.\n\n"
+            + "Note: This will update the trade status for your side.",
+            "Confirm Receipt",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            String sql = "UPDATE tbl_trade SET " + columnToUpdate + " = 1 WHERE trade_id = ?";
+            db.updateRecord(sql, tradeId);
+            
+            if (iAmProposer) {
+                myItemReceived = true;
+            } else {
+                otherItemReceived = true;
+            }
+            
+            String checkSql = "SELECT my_item_received, other_item_received FROM tbl_trade WHERE trade_id = ?";
+            List<Map<String, Object>> result = db.fetchRecords(checkSql, tradeId);
+            if (!result.isEmpty()) {
+                int myReceived = Integer.parseInt(result.get(0).get("my_item_received").toString());
+                int otherReceived = Integer.parseInt(result.get(0).get("other_item_received").toString());
+                
+                if (myReceived == 1 && otherReceived == 1) {
+                    String updateSql = "UPDATE tbl_trade SET trade_status = 'items_received' WHERE trade_id = ?";
+                    db.updateRecord(updateSql, tradeId);
+                }
+            }
+            
+            JOptionPane.showMessageDialog(this,
+                "Receipt confirmed! Waiting for " + otherTraderName + ".",
+                "Confirmation Recorded",
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            loadTradeState();
+            updateUI();
+        }
+    }
+
+    // ========== STEP 5: REFUND (NEW FEATURE) ==========
     private void showStep5Refund() {
-        statusLabel.setText("Step 5: Admin will process refund.");
+        statusLabel.setText("Step 5: Provide refund details to receive your refund.");
         
-        int y = 50;
+        int y = 15;
         
-        JPanel refundPanel = new JPanel();
-        refundPanel.setLayout(null);
-        refundPanel.setBackground(Color.WHITE);
-        refundPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "Refund Processing"));
-        refundPanel.setBounds(20, y, 900, 250);
-        stepPanel.add(refundPanel);
+        // Refund Information Panel
+        JPanel refundInfoPanel = new JPanel();
+        refundInfoPanel.setLayout(null);
+        refundInfoPanel.setBackground(new Color(255, 245, 220));
+        refundInfoPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(warningColor), "REFUND INFORMATION"));
+        refundInfoPanel.setBounds(20, y, 900, 100);
+        stepPanel.add(refundInfoPanel);
         
-        JLabel refundLabel = new JLabel("REFUND PROCESSING");
-        refundLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        refundLabel.setForeground(accentColor);
-        refundLabel.setBounds(20, 20, 300, 25);
-        refundPanel.add(refundLabel);
+        JLabel refundInfoLabel = new JLabel(
+            "<html>Admin will process refunds after both traders have confirmed receipt.<br>"
+            + "Please provide your refund details below. Once submitted, you cannot edit them.<br>"
+            + "After admin sends the refund, you will see the proof and can mark as refunded.</html>");
+        refundInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        refundInfoLabel.setBounds(20, 20, 860, 60);
+        refundInfoPanel.add(refundInfoLabel);
         
-        JLabel refundInfo = new JLabel(
-            "<html>Both traders have confirmed receipt.<br>"
-            + "The base amount of ₱200.00 will be refunded to both parties.<br>"
-            + "The admin fee of ₱15.00 is retained by BarterZone.<br><br>"
-            + "Admin will send proof of transaction to both traders.</html>");
-        refundInfo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        refundInfo.setBounds(20, 55, 600, 80);
-        refundPanel.add(refundInfo);
+        y += 115;
         
-        JLabel refundStatus = new JLabel();
-        refundStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        refundStatus.setBounds(20, 150, 400, 25);
+        // My Refund Details Panel
+        JPanel myRefundPanel = new JPanel();
+        myRefundPanel.setLayout(null);
+        myRefundPanel.setBackground(Color.WHITE);
+        myRefundPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "YOUR REFUND DETAILS"));
+        myRefundPanel.setBounds(20, y, 440, 250);
+        stepPanel.add(myRefundPanel);
         
-        if (refundProcessed) {
-            refundStatus.setText("✓ Refund has been processed by admin!");
-            refundStatus.setForeground(successColor);
-            proceedButton.setEnabled(true);
-            proceedButton.setText("COMPLETE TRADE");
+        int mry = 25;
+        
+        addRefundDetailsButton.setBounds(120, mry, 200, 35);
+        addRefundDetailsButton.addActionListener(e -> showAddRefundDetailsDialog());
+        myRefundPanel.add(addRefundDetailsButton);
+        mry += 50;
+        
+        JLabel refundNumberTitle = new JLabel("Account Number:");
+        refundNumberTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        refundNumberTitle.setBounds(20, mry, 120, 25);
+        myRefundPanel.add(refundNumberTitle);
+        
+        myRefundNumberLabel.setBounds(150, mry, 250, 25);
+        myRefundPanel.add(myRefundNumberLabel);
+        mry += 35;
+        
+        JLabel refundNameTitle = new JLabel("Account Name:");
+        refundNameTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        refundNameTitle.setBounds(20, mry, 120, 25);
+        myRefundPanel.add(refundNameTitle);
+        
+        myRefundNameLabel.setBounds(150, mry, 250, 25);
+        myRefundPanel.add(myRefundNameLabel);
+        mry += 40;
+        
+        myRefundStatusLabel.setBounds(20, mry, 400, 25);
+        if (myRefundConfirmed) {
+            myRefundStatusLabel.setText("✓ Refund has been processed and confirmed!");
+            myRefundStatusLabel.setForeground(successColor);
+        } else if (myRefundSubmitted) {
+            myRefundStatusLabel.setText("⏳ Refund details submitted. Waiting for admin to process...");
+            myRefundStatusLabel.setForeground(warningColor);
         } else {
-            refundStatus.setText("⏳ Waiting for admin to process refund...");
-            refundStatus.setForeground(warningColor);
+            myRefundStatusLabel.setText("❌ Refund details not yet submitted");
+            myRefundStatusLabel.setForeground(errorColor);
+        }
+        myRefundPanel.add(myRefundStatusLabel);
+        
+        // Other Trader Refund Details Panel
+        JPanel otherRefundPanel = new JPanel();
+        otherRefundPanel.setLayout(null);
+        otherRefundPanel.setBackground(Color.WHITE);
+        otherRefundPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), otherTraderName + "'S REFUND DETAILS"));
+        otherRefundPanel.setBounds(480, y, 440, 250);
+        stepPanel.add(otherRefundPanel);
+        
+        int ory = 25;
+        
+        JLabel otherRefundNumberTitle = new JLabel("Account Number:");
+        otherRefundNumberTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        otherRefundNumberTitle.setBounds(20, ory, 120, 25);
+        otherRefundPanel.add(otherRefundNumberTitle);
+        
+        otherRefundNumberLabel.setBounds(150, ory, 250, 25);
+        otherRefundPanel.add(otherRefundNumberLabel);
+        ory += 35;
+        
+        JLabel otherRefundNameTitle = new JLabel("Account Name:");
+        otherRefundNameTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        otherRefundNameTitle.setBounds(20, ory, 120, 25);
+        otherRefundPanel.add(otherRefundNameTitle);
+        
+        otherRefundNameLabel.setBounds(150, ory, 250, 25);
+        otherRefundPanel.add(otherRefundNameLabel);
+        ory += 40;
+        
+        otherRefundStatusLabel.setBounds(20, ory, 400, 25);
+        if (otherRefundConfirmed) {
+            otherRefundStatusLabel.setText("✓ Refund has been processed and confirmed!");
+            otherRefundStatusLabel.setForeground(successColor);
+        } else if (otherRefundSubmitted) {
+            otherRefundStatusLabel.setText("⏳ Refund details submitted. Waiting for admin to process...");
+            otherRefundStatusLabel.setForeground(warningColor);
+        } else {
+            otherRefundStatusLabel.setText("❌ Refund details not yet submitted");
+            otherRefundStatusLabel.setForeground(errorColor);
+        }
+        otherRefundPanel.add(otherRefundStatusLabel);
+        ory += 40;
+        
+        // View Refund Proof Button (only if admin has uploaded proof)
+        if (myRefundSubmitted && myRefundConfirmed) {
+            viewRefundProofButton.setBounds(20, ory, 180, 30);
+            viewRefundProofButton.addActionListener(e -> viewRefundProof());
+            otherRefundPanel.add(viewRefundProofButton);
+            
+            confirmRefundButton.setBounds(210, ory, 150, 30);
+            confirmRefundButton.addActionListener(e -> confirmRefund());
+            otherRefundPanel.add(confirmRefundButton);
+        }
+        
+        y += 265;
+        
+        // Overall Refund Status
+        JPanel statusPanel = new JPanel();
+        statusPanel.setLayout(null);
+        statusPanel.setBackground(Color.WHITE);
+        statusPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "REFUND STATUS"));
+        statusPanel.setBounds(20, y, 900, 80);
+        stepPanel.add(statusPanel);
+        
+        refundOverallStatusLabel.setBounds(20, 30, 860, 30);
+        
+        if (myRefundConfirmed && otherRefundConfirmed) {
+            refundOverallStatusLabel.setText("✓ BOTH REFUNDS CONFIRMED! Click PROCEED to complete the trade.");
+            refundOverallStatusLabel.setForeground(successColor);
+            proceedButton.setEnabled(true);
+            proceedButton.setText("PROCEED TO NEXT STEP");
+        } else if (myRefundConfirmed) {
+            refundOverallStatusLabel.setText("Your refund confirmed. Waiting for " + otherTraderName + " to confirm refund.");
+            refundOverallStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (otherRefundConfirmed) {
+            refundOverallStatusLabel.setText(otherTraderName + "'s refund confirmed. Waiting for your confirmation.");
+            refundOverallStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (myRefundSubmitted && otherRefundSubmitted) {
+            refundOverallStatusLabel.setText("Both refund details submitted. Waiting for admin to process refunds...");
+            refundOverallStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (myRefundSubmitted) {
+            refundOverallStatusLabel.setText("Your refund details submitted. Waiting for " + otherTraderName + " to submit and admin to process.");
+            refundOverallStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else if (otherRefundSubmitted) {
+            refundOverallStatusLabel.setText(otherTraderName + " submitted refund details. Waiting for your submission and admin to process.");
+            refundOverallStatusLabel.setForeground(warningColor);
+            proceedButton.setEnabled(false);
+        } else {
+            refundOverallStatusLabel.setText("Both traders must submit refund details. Admin will process after submission.");
+            refundOverallStatusLabel.setForeground(textColor);
             proceedButton.setEnabled(false);
         }
         
-        refundPanel.add(refundStatus);
+        statusPanel.add(refundOverallStatusLabel);
+    }
+    
+    private void showAddRefundDetailsDialog() {
+        if (myRefundSubmitted) {
+            JOptionPane.showMessageDialog(this, "You have already submitted refund details and cannot edit them.", "Already Submitted", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        JDialog refundDialog = new JDialog(this, "Add Refund Details", true);
+        refundDialog.setSize(500, 400);
+        refundDialog.setLayout(null);
+        refundDialog.setLocationRelativeTo(this);
+        refundDialog.getContentPane().setBackground(Color.WHITE);
+        
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(themeColor);
+        titlePanel.setBounds(0, 0, 500, 45);
+        titlePanel.setLayout(null);
+        
+        JLabel titleLabel = new JLabel("ADD REFUND DETAILS");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(20, 8, 300, 30);
+        titlePanel.add(titleLabel);
+        refundDialog.add(titlePanel);
+        
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setBounds(10, 55, 480, 290);
+        refundDialog.add(contentPanel);
+        
+        int y = 20;
+        int labelWidth = 120;
+        int fieldWidth = 300;
+        int fieldX = 150;
+        
+        JLabel numberLabel = new JLabel("Account Number:*");
+        numberLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        numberLabel.setBounds(20, y, labelWidth, 30);
+        contentPanel.add(numberLabel);
+        
+        JTextField accountNumberField = new JTextField();
+        accountNumberField.setBounds(fieldX, y, fieldWidth, 35);
+        contentPanel.add(accountNumberField);
+        y += 55;
+        
+        JLabel nameLabel = new JLabel("Account Name:*");
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        nameLabel.setBounds(20, y, labelWidth, 30);
+        contentPanel.add(nameLabel);
+        
+        JTextField accountNameField = new JTextField();
+        accountNameField.setBounds(fieldX, y, fieldWidth, 35);
+        contentPanel.add(accountNameField);
+        y += 55;
+        
+        JLabel qrLabel = new JLabel("QR Code (Optional):");
+        qrLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        qrLabel.setBounds(20, y, labelWidth, 30);
+        contentPanel.add(qrLabel);
+        
+        JButton uploadQrButton = new JButton("Upload QR Code");
+        uploadQrButton.setBounds(fieldX, y, 150, 35);
+        uploadQrButton.setBackground(themeColor);
+        uploadQrButton.setForeground(Color.WHITE);
+        uploadQrButton.setBorder(null);
+        uploadQrButton.setFocusPainted(false);
+        uploadQrButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        contentPanel.add(uploadQrButton);
+        
+        JLabel qrFileNameLabel = new JLabel();
+        qrFileNameLabel.setBounds(fieldX + 160, y, 200, 35);
+        contentPanel.add(qrFileNameLabel);
+        
+        final String[] uploadedQrPath = {""};
+        
+        uploadQrButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png", "gif"));
+            if (fileChooser.showOpenDialog(refundDialog) == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                String savedPath = saveRefundQrImage(selectedFile.getAbsolutePath(), selectedFile.getName());
+                uploadedQrPath[0] = savedPath;
+                qrFileNameLabel.setText(selectedFile.getName());
+            }
+        });
+        
+        y += 55;
+        
+        JButton submitButton = new JButton("SUBMIT REFUND DETAILS");
+        submitButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        submitButton.setBackground(successColor);
+        submitButton.setForeground(Color.WHITE);
+        submitButton.setBounds(150, y, 200, 40);
+        submitButton.setBorder(null);
+        submitButton.setFocusPainted(false);
+        submitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        submitButton.addActionListener(e -> {
+            String accountNumber = accountNumberField.getText().trim();
+            String accountName = accountNameField.getText().trim();
+            
+            if (accountNumber.isEmpty() || accountName.isEmpty()) {
+                JOptionPane.showMessageDialog(refundDialog, "Account Number and Account Name are required!", "Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            String sql = "INSERT INTO tbl_refund (trade_id, user_id, account_number, account_name, qr_code_path, created_date) "
+                    + "VALUES (?, ?, ?, ?, ?, datetime('now'))";
+            db.addRecord(sql, tradeId, traderId, accountNumber, accountName, uploadedQrPath[0]);
+            
+            JOptionPane.showMessageDialog(refundDialog, "Refund details submitted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            refundDialog.dispose();
+            loadRefundStatus();
+            loadTradeState();
+            updateUI();
+        });
+        contentPanel.add(submitButton);
+        
+        refundDialog.setVisible(true);
+    }
+    
+    private String saveRefundQrImage(String sourcePath, String originalFileName) {
+        try {
+            File directory = new File(REFUND_QR_PATH);
+            if (!directory.exists()) directory.mkdirs();
+            
+            String extension = "";
+            String nameWithoutExt = originalFileName;
+            int dotIndex = originalFileName.lastIndexOf(".");
+            if (dotIndex > 0) {
+                nameWithoutExt = originalFileName.substring(0, dotIndex);
+                extension = originalFileName.substring(dotIndex);
+            }
+            
+            String destinationPath = REFUND_QR_PATH + originalFileName;
+            File destFile = new File(destinationPath);
+            int counter = 1;
+            
+            while (destFile.exists()) {
+                String newFileName = nameWithoutExt + "_" + counter + extension;
+                destinationPath = REFUND_QR_PATH + newFileName;
+                destFile = new File(destinationPath);
+                counter++;
+            }
+            
+            Files.copy(Paths.get(sourcePath), Paths.get(destinationPath), StandardCopyOption.REPLACE_EXISTING);
+            return "BarterZone.resources.images.refund_qrcodes." + destFile.getName();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+    
+    private void viewRefundProof() {
+        String sql = "SELECT refund_proof FROM tbl_refund WHERE trade_id = ? AND user_id = ?";
+        List<Map<String, Object>> result = db.fetchRecords(sql, tradeId, traderId);
+        
+        if (!result.isEmpty() && result.get(0).get("refund_proof") != null) {
+            String proofPath = result.get(0).get("refund_proof").toString();
+            String fullPath = "src/" + proofPath;
+            File imgFile = new File(fullPath);
+            
+            if (imgFile.exists()) {
+                try {
+                    ImageIcon icon = new ImageIcon(fullPath);
+                    Image img = icon.getImage().getScaledInstance(500, 500, Image.SCALE_SMOOTH);
+                    JOptionPane.showMessageDialog(this, new JLabel(new ImageIcon(img)), "Refund Proof", JOptionPane.PLAIN_MESSAGE);
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(this, "Error loading image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Refund proof not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "No refund proof available yet.", "Info", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+    
+    private void confirmRefund() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Confirm that you have received your refund?\n\n"
+            + "This action cannot be undone.",
+            "Confirm Refund",
+            JOptionPane.YES_NO_OPTION);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            String sql = "UPDATE tbl_refund SET is_refunded = 1, refund_confirmed_date = datetime('now') WHERE trade_id = ? AND user_id = ?";
+            db.updateRecord(sql, tradeId, traderId);
+            
+            JOptionPane.showMessageDialog(this, "Refund confirmed! Thank you.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            
+            loadRefundStatus();
+            loadTradeState();
+            updateUI();
+        }
     }
 
+    // ========== STEP 6: COMPLETED ==========
     private void showCompleted() {
         statusLabel.setText("Trade Completed Successfully!");
         
@@ -1355,37 +2347,6 @@ public class manage_trades extends javax.swing.JFrame {
         cancelTradeButton.setEnabled(false);
     }
 
-    private void confirmReceipt() {
-        if (!confirmReceivedCheck.isSelected()) {
-            JOptionPane.showMessageDialog(this,
-                "Please check the box to confirm you have received the item.",
-                "Confirmation Required",
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Confirm that you have received the item?\n\n"
-            + "This cannot be undone.",
-            "Confirm Receipt",
-            JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            String sql = "UPDATE tbl_trade SET my_item_received = 1 WHERE trade_id = ?";
-            db.updateRecord(sql, tradeId);
-            
-            myItemReceived = true;
-            
-            JOptionPane.showMessageDialog(this,
-                "Receipt confirmed! Waiting for " + otherTraderName + ".",
-                "Confirmation Recorded",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            loadTradeState();
-            updateUI();
-        }
-    }
-
     private void handleProceed() {
         switch (currentStep) {
             case 1:
@@ -1399,12 +2360,7 @@ public class manage_trades extends javax.swing.JFrame {
                 }
                 break;
             case 3:
-                if (proceedButton.getText().equals("SUBMIT PAYMENT")) {
-                    if (step3Handler != null && step3Handler.submitPayment()) {
-                        loadTradeState();
-                        updateUI();
-                    }
-                } else if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
+                if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
                     proceedToNext();
                 }
                 break;
@@ -1414,8 +2370,8 @@ public class manage_trades extends javax.swing.JFrame {
                 }
                 break;
             case 5:
-                if (proceedButton.getText().equals("COMPLETE TRADE")) {
-                    completeTrade();
+                if (proceedButton.getText().equals("PROCEED TO NEXT STEP")) {
+                    proceedToNext();
                 }
                 break;
         }
@@ -1425,50 +2381,6 @@ public class manage_trades extends javax.swing.JFrame {
         if (currentStep < 6) {
             currentStep++;
             updateUI();
-        }
-    }
-    
-    private void completeTrade() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Complete this trade?\n\n"
-            + "Both traders have received items\n"
-            + "Refund has been processed\n"
-            + "This action cannot be undone",
-            "Complete Trade",
-            JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            String getSql = "SELECT * FROM tbl_trade WHERE trade_id = ?";
-            List<Map<String, Object>> trade = db.fetchRecords(getSql, tradeId);
-            
-            if (!trade.isEmpty()) {
-                Map<String, Object> t = trade.get(0);
-                
-                String historySql = "INSERT INTO tbl_trade_history "
-                    + "(trade_id, offer_trader_id, target_trader_id, offer_item_id, "
-                    + "target_item_id, trade_status, trade_DateRequest, trade_DateCompleted) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))";
-                
-                db.addRecord(historySql,
-                    tradeId,
-                    t.get("offer_trader_id"),
-                    t.get("target_trader_id"),
-                    t.get("offer_item_id"),
-                    t.get("target_item_id"),
-                    "completed",
-                    t.get("trade_DateRequest"));
-                
-                String deleteSql = "DELETE FROM tbl_trade WHERE trade_id = ?";
-                db.deleteRecord(deleteSql, tradeId);
-                
-                JOptionPane.showMessageDialog(this,
-                    "TRADE COMPLETED SUCCESSFULLY!\n\n"
-                    + "Thank you for using BarterZone.",
-                    "Trade Complete",
-                    JOptionPane.INFORMATION_MESSAGE);
-                
-                goBackToTrades();
-            }
         }
     }
     

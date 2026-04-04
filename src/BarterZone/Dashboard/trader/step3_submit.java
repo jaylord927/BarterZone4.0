@@ -4,6 +4,8 @@ import database.config.config;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Cursor;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,324 +21,302 @@ public class step3_submit {
     
     private int tradeId;
     private int traderId;
+    private String traderName;
+    private int otherTraderId;
     private config db;
     private JFrame parentFrame;
     
-    // Payment details
-    private int selectedAdminId = -1;
-    private String selectedAdminName = "";
-    private String paymentMethod = "";
-    private String paymentAccountNumber = "";
-    private String paymentAccountName = "";
-    private String paymentQrCode = "";
-    private boolean paymentSubmitted = false;
-    private boolean paymentVerified = false;
-    private double adminFee = 15;
-    private double totalAmount = 215;
-    private int myPaymentId = -1;
-    
     // UI Components
-    private JComboBox<String> adminComboBox;
-    private JComboBox<String> paymentMethodCombo;
-    private JTextField accountNumberField;
+    private JDialog paymentDialog;
+    private JTextField paymentNumberField;
     private JTextField accountNameField;
-    private JButton uploadQrButton;
-    private JLabel qrFileNameLabel;
-    private String uploadedQrPath = "";
+    private JButton uploadProofButton;
+    private JLabel proofFileNameLabel;
+    private JButton submitButton;
+    private JButton cancelButton;
     
-    private static final String QR_CODE_PATH = "src/BarterZone/resources/images/qrcodes/";
-    private Color successColor = new Color(46, 125, 50);
+    private String selectedImagePath = "";
+    private String selectedImageFileName = "";
+    
+    private static final String PROOF_IMAGE_PATH = "src/BarterZone/resources/images/payment_proofs/";
+    
     private Color themeColor = new Color(12, 192, 223);
+    private Color successColor = new Color(46, 125, 50);
+    private Color errorColor = new Color(204, 0, 0);
+    private Color accentColor = new Color(0, 102, 102);
     
-    public step3_submit(int tradeId, int traderId, JFrame parentFrame) {
+    public step3_submit(int tradeId, int traderId, String traderName, int otherTraderId, JFrame parentFrame) {
         this.tradeId = tradeId;
         this.traderId = traderId;
+        this.traderName = traderName;
+        this.otherTraderId = otherTraderId;
         this.db = new config();
         this.parentFrame = parentFrame;
         
         createDirectories();
-        loadPaymentDetails();
     }
     
     private void createDirectories() {
-        File directory = new File(QR_CODE_PATH);
+        File directory = new File(PROOF_IMAGE_PATH);
         if (!directory.exists()) {
             directory.mkdirs();
         }
     }
     
-    private void loadPaymentDetails() {
-        String sql = "SELECT * FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ?";
-        List<Map<String, Object>> details = db.fetchRecords(sql, tradeId, traderId);
-        
-        if (!details.isEmpty()) {
-            Map<String, Object> d = details.get(0);
-            myPaymentId = Integer.parseInt(d.get("payment_id").toString());
-            selectedAdminId = d.get("admin_id") != null ? Integer.parseInt(d.get("admin_id").toString()) : -1;
-            paymentMethod = d.get("payment_method") != null ? d.get("payment_method").toString() : "";
-            paymentAccountNumber = d.get("account_number") != null ? d.get("account_number").toString() : "";
-            paymentAccountName = d.get("account_name") != null ? d.get("account_name").toString() : "";
-            paymentQrCode = d.get("qr_code_path") != null ? d.get("qr_code_path").toString() : "";
-            paymentSubmitted = d.get("payment_submitted") != null && Integer.parseInt(d.get("payment_submitted").toString()) == 1;
-            paymentVerified = d.get("payment_verified") != null && Integer.parseInt(d.get("payment_verified").toString()) == 1;
-            
-            if (selectedAdminId != -1) {
-                loadAdminName();
+    public void showDialog() {
+        paymentDialog = new JDialog(parentFrame, "Add Payment Proof", true);
+        paymentDialog.setSize(500, 450);
+        paymentDialog.setLayout(null);
+        paymentDialog.setLocationRelativeTo(parentFrame);
+        paymentDialog.getContentPane().setBackground(Color.WHITE);
+        paymentDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        paymentDialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                paymentDialog.dispose();
             }
-        }
-    }
-    
-    private void loadAdminName() {
-        String sql = "SELECT user_fullname FROM tbl_users WHERE user_id = ?";
-        List<Map<String, Object>> result = db.fetchRecords(sql, selectedAdminId);
-        if (!result.isEmpty()) {
-            selectedAdminName = result.get(0).get("user_fullname").toString();
-        }
-    }
-    
-    private void loadAdmins() {
-        String sql = "SELECT user_id, user_fullname FROM tbl_users WHERE user_type = 'admin' AND user_status = 'active'";
-        List<Map<String, Object>> admins = db.fetchRecords(sql);
+        });
         
-        adminComboBox.removeAllItems();
-        adminComboBox.addItem("-- Select Admin --");
-        for (Map<String, Object> admin : admins) {
-            adminComboBox.addItem(admin.get("user_fullname").toString());
-        }
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(themeColor);
+        titlePanel.setBounds(0, 0, 500, 45);
+        titlePanel.setLayout(null);
         
-        if (selectedAdminId != -1 && !selectedAdminName.isEmpty()) {
-            adminComboBox.setSelectedItem(selectedAdminName);
-        }
-    }
-    
-    public JPanel createPaymentPanel() {
-        JPanel paymentPanel = new JPanel();
-        paymentPanel.setLayout(null);
-        paymentPanel.setBackground(Color.WHITE);
-        paymentPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(0, 102, 102)), "Payment Information"));
+        JLabel titleLabel = new JLabel("ADD PAYMENT PROOF");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(20, 8, 300, 30);
+        titlePanel.add(titleLabel);
+        paymentDialog.add(titlePanel);
         
-        loadAdmins();
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(null);
+        contentPanel.setBackground(Color.WHITE);
+        contentPanel.setBounds(10, 55, 480, 340);
+        paymentDialog.add(contentPanel);
         
-        int py = 25;
+        int y = 20;
+        int labelWidth = 120;
+        int fieldWidth = 300;
+        int fieldX = 150;
         
-        JLabel adminLabel = new JLabel("Select Admin (Middleman):");
-        adminLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        adminLabel.setBounds(20, py, 200, 25);
-        paymentPanel.add(adminLabel);
+        // Payment Number Field
+        JLabel numberLabel = new JLabel("Payment Number:*");
+        numberLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        numberLabel.setBounds(20, y, labelWidth, 30);
+        contentPanel.add(numberLabel);
         
-        adminComboBox = new JComboBox<>();
-        adminComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        adminComboBox.setBounds(230, py, 250, 30);
-        paymentPanel.add(adminComboBox);
-        py += 45;
+        paymentNumberField = new JTextField();
+        paymentNumberField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        paymentNumberField.setBounds(fieldX, y, fieldWidth, 35);
+        paymentNumberField.setBorder(new LineBorder(new Color(200, 200, 200)));
+        contentPanel.add(paymentNumberField);
+        y += 55;
         
-        JLabel feeLabel = new JLabel("Admin Fee: ₱" + String.format("%.2f", adminFee));
-        feeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        feeLabel.setBounds(20, py, 200, 25);
-        paymentPanel.add(feeLabel);
-        
-        JLabel totalLabel = new JLabel("Total Amount: ₱" + String.format("%.2f", totalAmount));
-        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        totalLabel.setForeground(successColor);
-        totalLabel.setBounds(230, py, 200, 25);
-        paymentPanel.add(totalLabel);
-        py += 45;
-        
-        JLabel detailsTitle = new JLabel("PAYMENT DETAILS");
-        detailsTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        detailsTitle.setForeground(new Color(0, 102, 102));
-        detailsTitle.setBounds(20, py, 200, 25);
-        paymentPanel.add(detailsTitle);
-        py += 35;
-        
-        String[] paymentMethods = {"Select Method", "GCash", "PayMaya", "Bank Transfer"};
-        paymentMethodCombo = new JComboBox<>(paymentMethods);
-        paymentMethodCombo.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        
-        JLabel methodLabel = new JLabel("Payment Method:*");
-        methodLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        methodLabel.setBounds(20, py, 120, 25);
-        paymentPanel.add(methodLabel);
-        paymentMethodCombo.setBounds(150, py, 200, 30);
-        paymentPanel.add(paymentMethodCombo);
-        py += 40;
-        
-        accountNumberField = new JTextField();
-        accountNumberField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        JLabel numberLabel = new JLabel("Account Number:*");
-        numberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        numberLabel.setBounds(20, py, 120, 25);
-        paymentPanel.add(numberLabel);
-        accountNumberField.setBounds(150, py, 250, 30);
-        paymentPanel.add(accountNumberField);
-        py += 40;
+        // Account Name Field
+        JLabel nameLabel = new JLabel("Account Name:*");
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        nameLabel.setBounds(20, y, labelWidth, 30);
+        contentPanel.add(nameLabel);
         
         accountNameField = new JTextField();
-        accountNameField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        JLabel nameLabel = new JLabel("Account Name:*");
-        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        nameLabel.setBounds(20, py, 120, 25);
-        paymentPanel.add(nameLabel);
-        accountNameField.setBounds(150, py, 250, 30);
-        paymentPanel.add(accountNameField);
-        py += 45;
+        accountNameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        accountNameField.setBounds(fieldX, y, fieldWidth, 35);
+        accountNameField.setBorder(new LineBorder(new Color(200, 200, 200)));
+        contentPanel.add(accountNameField);
+        y += 55;
         
-        uploadQrButton = new JButton("Upload QR Code");
-        uploadQrButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        uploadQrButton.setBackground(themeColor);
-        uploadQrButton.setForeground(Color.WHITE);
-        uploadQrButton.setBounds(20, py, 150, 35);
-        uploadQrButton.setBorder(null);
-        uploadQrButton.setFocusPainted(false);
-        uploadQrButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        uploadQrButton.addActionListener(e -> uploadQRCode());
-        paymentPanel.add(uploadQrButton);
+        // Upload Screenshot
+        JLabel proofLabel = new JLabel("Payment Screenshot:*");
+        proofLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        proofLabel.setBounds(20, y, labelWidth, 30);
+        contentPanel.add(proofLabel);
         
-        qrFileNameLabel = new JLabel();
-        qrFileNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        qrFileNameLabel.setBounds(180, py, 300, 35);
-        paymentPanel.add(qrFileNameLabel);
-        py += 50;
+        uploadProofButton = new JButton("Choose File");
+        uploadProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        uploadProofButton.setBackground(themeColor);
+        uploadProofButton.setForeground(Color.WHITE);
+        uploadProofButton.setBounds(fieldX, y, 120, 35);
+        uploadProofButton.setBorder(null);
+        uploadProofButton.setFocusPainted(false);
+        uploadProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        uploadProofButton.addActionListener(e -> uploadProofImage());
+        contentPanel.add(uploadProofButton);
         
-        if (!paymentAccountNumber.isEmpty()) {
-            accountNumberField.setText(paymentAccountNumber);
-            accountNameField.setText(paymentAccountName);
-            if (!paymentMethod.isEmpty()) {
-                paymentMethodCombo.setSelectedItem(paymentMethod);
-            }
-            if (!paymentQrCode.isEmpty()) {
-                qrFileNameLabel.setText("QR Code uploaded");
-            }
-        }
+        proofFileNameLabel = new JLabel("No file chosen");
+        proofFileNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        proofFileNameLabel.setForeground(new Color(102, 102, 102));
+        proofFileNameLabel.setBounds(fieldX + 130, y, 200, 35);
+        contentPanel.add(proofFileNameLabel);
+        y += 60;
         
-        return paymentPanel;
+        // Info Panel
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(null);
+        infoPanel.setBackground(new Color(255, 245, 220));
+        infoPanel.setBorder(new LineBorder(new Color(255, 153, 0), 1));
+        infoPanel.setBounds(20, y, 440, 80);
+        
+        JLabel infoLabel = new JLabel(
+            "<html><b>Note:</b> Please upload a clear screenshot of your payment.<br>"
+            + "Supported formats: JPG, PNG, GIF. Max size: 5MB.</html>");
+        infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        infoLabel.setBounds(10, 10, 420, 60);
+        infoPanel.add(infoLabel);
+        
+        contentPanel.add(infoPanel);
+        y += 95;
+        
+        // Buttons
+        submitButton = new JButton("SUBMIT PAYMENT");
+        submitButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        submitButton.setBackground(successColor);
+        submitButton.setForeground(Color.WHITE);
+        submitButton.setBounds(100, y, 150, 40);
+        submitButton.setBorder(null);
+        submitButton.setFocusPainted(false);
+        submitButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        submitButton.addActionListener(e -> submitPaymentProof());
+        contentPanel.add(submitButton);
+        
+        cancelButton = new JButton("CANCEL");
+        cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        cancelButton.setBackground(errorColor);
+        cancelButton.setForeground(Color.WHITE);
+        cancelButton.setBounds(270, y, 100, 40);
+        cancelButton.setBorder(null);
+        cancelButton.setFocusPainted(false);
+        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        cancelButton.addActionListener(e -> paymentDialog.dispose());
+        contentPanel.add(cancelButton);
+        
+        paymentDialog.setVisible(true);
     }
     
-    private void uploadQRCode() {
+    private void uploadProofImage() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png", "gif"));
-
-        if (fileChooser.showOpenDialog(parentFrame) == JFileChooser.APPROVE_OPTION) {
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "png", "gif", "bmp"));
+        
+        if (fileChooser.showOpenDialog(paymentDialog) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            String savedPath = saveQRCode(selectedFile.getAbsolutePath());
-            uploadedQrPath = savedPath;
-            qrFileNameLabel.setText(selectedFile.getName());
-            JOptionPane.showMessageDialog(parentFrame,
-                "QR Code uploaded successfully!",
-                "Upload Complete",
-                JOptionPane.INFORMATION_MESSAGE);
+            selectedImagePath = selectedFile.getAbsolutePath();
+            selectedImageFileName = selectedFile.getName();
+            proofFileNameLabel.setText(selectedImageFileName);
+            
+            // Validate file size (5MB max)
+            long fileSize = selectedFile.length();
+            if (fileSize > 5 * 1024 * 1024) {
+                JOptionPane.showMessageDialog(paymentDialog, 
+                    "File size exceeds 5MB. Please choose a smaller file.", 
+                    "File Too Large", 
+                    JOptionPane.WARNING_MESSAGE);
+                selectedImagePath = "";
+                selectedImageFileName = "";
+                proofFileNameLabel.setText("No file chosen");
+            }
         }
     }
     
-    private String saveQRCode(String sourcePath) {
+    private String saveProofImage() {
+        if (selectedImagePath == null || selectedImagePath.isEmpty()) {
+            return "";
+        }
+        
         try {
-            File directory = new File(QR_CODE_PATH);
-            if (!directory.exists()) directory.mkdirs();
+            File directory = new File(PROOF_IMAGE_PATH);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
             
-            File sourceFile = new File(sourcePath);
-            String fileName = "qr_" + tradeId + "_" + traderId + "_" + System.currentTimeMillis() 
-                + sourceFile.getName().substring(sourceFile.getName().lastIndexOf("."));
-            String destPath = QR_CODE_PATH + fileName;
+            // Get the original filename
+            String originalFileName = selectedImageFileName;
             
-            Files.copy(Paths.get(sourcePath), Paths.get(destPath), StandardCopyOption.REPLACE_EXISTING);
-            return "BarterZone.resources.images.qrcodes." + fileName;
+            // Check if file exists and generate unique name if needed
+            String fileNameWithoutExt = originalFileName;
+            String extension = "";
+            int dotIndex = originalFileName.lastIndexOf(".");
+            if (dotIndex > 0) {
+                fileNameWithoutExt = originalFileName.substring(0, dotIndex);
+                extension = originalFileName.substring(dotIndex);
+            }
+            
+            String destinationPath = PROOF_IMAGE_PATH + originalFileName;
+            File destFile = new File(destinationPath);
+            int counter = 1;
+            
+            // Handle duplicate filenames
+            while (destFile.exists()) {
+                String newFileName = fileNameWithoutExt + "_" + counter + extension;
+                destinationPath = PROOF_IMAGE_PATH + newFileName;
+                destFile = new File(destinationPath);
+                counter++;
+            }
+            
+            // Copy file to destination
+            Files.copy(Paths.get(selectedImagePath), Paths.get(destinationPath), StandardCopyOption.REPLACE_EXISTING);
+            
+            // Return correct path format: BarterZone/resources/images/payment_proofs/filename
+            return "BarterZone/resources/images/payment_proofs/" + destFile.getName();
+            
         } catch (IOException e) {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(paymentDialog, "Error saving image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return "";
         }
     }
     
-    public boolean submitPayment() {
-        if (adminComboBox.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(parentFrame, "Please select an admin.", "Error", JOptionPane.WARNING_MESSAGE);
-            return false;
+    private void submitPaymentProof() {
+        String paymentNumber = paymentNumberField.getText().trim();
+        String accountName = accountNameField.getText().trim();
+        
+        if (paymentNumber.isEmpty()) {
+            JOptionPane.showMessageDialog(paymentDialog, "Please enter payment number.", "Required Field", JOptionPane.WARNING_MESSAGE);
+            return;
         }
         
-        if (paymentMethodCombo.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(parentFrame, "Please select a payment method.", "Error", JOptionPane.WARNING_MESSAGE);
-            return false;
+        if (selectedImagePath.isEmpty()) {
+            JOptionPane.showMessageDialog(paymentDialog, "Please upload payment screenshot.", "Required Field", JOptionPane.WARNING_MESSAGE);
+            return;
         }
         
-        String number = accountNumberField.getText().trim();
-        if (number.isEmpty()) {
-            JOptionPane.showMessageDialog(parentFrame, "Please enter account number.", "Error", JOptionPane.WARNING_MESSAGE);
-            return false;
+        // Save the image
+        String savedImagePath = saveProofImage();
+        if (savedImagePath.isEmpty()) {
+            JOptionPane.showMessageDialog(paymentDialog, "Failed to save image. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
         
-        String accName = accountNameField.getText().trim();
-        if (accName.isEmpty()) {
-            JOptionPane.showMessageDialog(parentFrame, "Please enter account name.", "Error", JOptionPane.WARNING_MESSAGE);
-            return false;
+        // Check if payment record already exists
+        String checkSql = "SELECT COUNT(*) as count FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ?";
+        double count = db.getSingleValue(checkSql, tradeId, traderId);
+        
+        boolean success = false;
+        
+        if (count == 0) {
+            // Insert new record
+            String sql = "INSERT INTO tbl_payment_details (trade_id, trader_id, my_number, acc_name, payment_proof, payment_submitted, payment_submitted_date, created_date) "
+                    + "VALUES (?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))";
+            db.addRecord(sql, tradeId, traderId, paymentNumber, accountName, savedImagePath);
+            success = true;
+        } else {
+            // Update existing record
+            String sql = "UPDATE tbl_payment_details SET my_number = ?, acc_name = ?, payment_proof = ?, payment_submitted = 1, payment_submitted_date = datetime('now'), updated_date = datetime('now') "
+                    + "WHERE trade_id = ? AND trader_id = ?";
+            db.updateRecord(sql, paymentNumber, accountName, savedImagePath, tradeId, traderId);
+            success = true;
         }
         
-        String selectedAdmin = adminComboBox.getSelectedItem().toString();
-        String getAdminIdSql = "SELECT user_id FROM tbl_users WHERE user_fullname = ? AND user_type = 'admin'";
-        List<Map<String, Object>> admins = db.fetchRecords(getAdminIdSql, selectedAdmin);
-        int adminId = -1;
-        if (!admins.isEmpty()) {
-            adminId = Integer.parseInt(admins.get(0).get("user_id").toString());
-        }
-        
-        int confirm = JOptionPane.showConfirmDialog(parentFrame,
-            "Submit payment details?\n\n"
-            + "Admin: " + selectedAdmin + "\n"
-            + "Method: " + paymentMethodCombo.getSelectedItem() + "\n"
-            + "Number: " + number + "\n"
-            + "Name: " + accName + "\n"
-            + "Amount: ₱" + String.format("%.2f", totalAmount) + "\n\n"
-            + "Admin will verify your payment.",
-            "Confirm Payment",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-            if (myPaymentId == -1) {
-                String sql = "INSERT INTO tbl_payment_details (trade_id, trader_id, admin_id, payment_method, "
-                        + "account_number, account_name, qr_code_path, amount_paid, admin_fee, total_amount, payment_submitted) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
-                db.addRecord(sql, tradeId, traderId, adminId, paymentMethodCombo.getSelectedItem().toString(),
-                    number, accName, uploadedQrPath, totalAmount, adminFee, totalAmount);
-                
-                String getIdSql = "SELECT last_insert_rowid() as id";
-                List<Map<String, Object>> result = db.fetchRecords(getIdSql);
-                if (!result.isEmpty()) {
-                    myPaymentId = Integer.parseInt(result.get(0).get("id").toString());
-                }
-            } else {
-                String sql = "UPDATE tbl_payment_details SET admin_id = ?, payment_method = ?, "
-                        + "account_number = ?, account_name = ?, qr_code_path = ?, payment_submitted = 1, updated_date = datetime('now') "
-                        + "WHERE payment_id = ?";
-                db.updateRecord(sql, adminId, paymentMethodCombo.getSelectedItem().toString(),
-                    number, accName, uploadedQrPath, myPaymentId);
-            }
-            
-            String updateDetailSql = "UPDATE tbl_trade_details SET payment_id = ? WHERE trade_id = ? AND trader_id = ?";
-            db.updateRecord(updateDetailSql, myPaymentId, tradeId, traderId);
-            
-            JOptionPane.showMessageDialog(parentFrame,
-                "Payment submitted successfully!\n\n"
-                + "Admin will verify your payment.\n"
-                + "You will be notified once verified.",
+        if (success) {
+            JOptionPane.showMessageDialog(paymentDialog, 
+                "Payment proof submitted successfully!\n\n"
+                + "Payment Number: " + paymentNumber + "\n"
+                + "Account Name: " + accountName + "\n\n"
+                + "Admin will verify your payment.",
                 "Success",
                 JOptionPane.INFORMATION_MESSAGE);
-            
-            return true;
+            paymentDialog.dispose();
+        } else {
+            JOptionPane.showMessageDialog(paymentDialog, "Failed to submit payment. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        
-        return false;
-    }
-    
-    public boolean isPaymentVerified() {
-        loadPaymentDetails();
-        return paymentVerified;
-    }
-    
-    public boolean isPaymentSubmitted() {
-        loadPaymentDetails();
-        return paymentSubmitted;
-    }
-    
-    public boolean hasSelectedAdmin() {
-        return selectedAdminId != -1;
     }
 }

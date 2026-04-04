@@ -26,15 +26,18 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JLabel;
 import javax.swing.JButton;
+import javax.swing.JTextField;
+import javax.swing.JTextArea;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JTextArea;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 public class trades extends javax.swing.JFrame {
 
@@ -221,17 +224,13 @@ public class trades extends javax.swing.JFrame {
         if (resourcePath == null || resourcePath.trim().isEmpty()) {
             return null;
         }
-
         resourcePath = resourcePath.trim();
-
         int lastDot = resourcePath.lastIndexOf(".");
         if (lastDot == -1) {
             return null;
         }
-
         String extension = resourcePath.substring(lastDot + 1);
         String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
-
         return "src/" + pathWithoutExtension + "." + extension;
     }
 
@@ -239,17 +238,14 @@ public class trades extends javax.swing.JFrame {
         BufferedImage circularImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = circularImage.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
         Image scaledImage = sourceImage.getScaledInstance(size, size, Image.SCALE_SMOOTH);
         BufferedImage scaledBuffered = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = scaledBuffered.createGraphics();
         g2d.drawImage(scaledImage, 0, 0, size, size, null);
         g2d.dispose();
-        
         g2.setClip(new Ellipse2D.Float(0, 0, size, size));
         g2.drawImage(scaledBuffered, 0, 0, size, size, null);
         g2.dispose();
-        
         return circularImage;
     }
 
@@ -259,15 +255,12 @@ public class trades extends javax.swing.JFrame {
             if (!file.exists()) {
                 return null;
             }
-            
             BufferedImage originalImage = ImageIO.read(file);
             if (originalImage == null) {
                 return null;
             }
-            
             BufferedImage circularImage = createCircularImage(originalImage, size);
             return new ImageIcon(circularImage);
-            
         } catch (Exception e) {
             System.out.println("Error loading circular image: " + e.getMessage());
             return null;
@@ -278,16 +271,12 @@ public class trades extends javax.swing.JFrame {
         try {
             String sql = "SELECT user_profile_picture FROM tbl_users WHERE user_id = ?";
             List<Map<String, Object>> result = db.fetchRecords(sql, traderId);
-
             if (!result.isEmpty() && result.get(0).get("user_profile_picture") != null) {
                 String profilePicPath = result.get(0).get("user_profile_picture").toString().trim();
-
                 if (!profilePicPath.isEmpty()) {
                     String fullPath = convertResourcePathToFilePath(profilePicPath);
-
                     if (fullPath != null) {
                         ImageIcon circularIcon = loadAndCircleImage(fullPath, 90);
-                        
                         if (circularIcon != null && circularIcon.getIconWidth() > 0) {
                             avatarLabel.setIcon(circularIcon);
                             avatarLabel.setText("");
@@ -300,7 +289,6 @@ public class trades extends javax.swing.JFrame {
         } catch (Exception e) {
             System.out.println("Error loading profile image: " + e.getMessage());
         }
-
         avatarLabel.setIcon(null);
         if (traderName != null && !traderName.trim().isEmpty()) {
             avatarInitialLabel.setText(String.valueOf(traderName.trim().charAt(0)).toUpperCase());
@@ -394,7 +382,6 @@ public class trades extends javax.swing.JFrame {
         panel.setBackground(themeColor);
         panel.setBounds(x, y, width, height);
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         MouseAdapter panelAdapter = new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -402,20 +389,17 @@ public class trades extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
-
             @Override
             public void mouseExited(MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(themeColor);
                 }
             }
-
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleMenuClick(panel);
             }
         };
-        
         panel.addMouseListener(panelAdapter);
         sidePanel.add(panel);
         return panel;
@@ -424,7 +408,6 @@ public class trades extends javax.swing.JFrame {
     private JLabel createMenuItemIcon(JPanel panel, int x, int y, JLabel iconLabel) {
         iconLabel.setBounds(x, y, 25, 20);
         iconLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         iconLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -432,20 +415,17 @@ public class trades extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
-
             @Override
             public void mouseExited(MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(themeColor);
                 }
             }
-
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleMenuClick(panel);
             }
         });
-        
         panel.add(iconLabel);
         return iconLabel;
     }
@@ -456,7 +436,6 @@ public class trades extends javax.swing.JFrame {
         label.setForeground(Color.WHITE);
         label.setBounds(x, y, 100, 20);
         label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         label.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -464,20 +443,17 @@ public class trades extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
-
             @Override
             public void mouseExited(MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(themeColor);
                 }
             }
-
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleMenuClick(panel);
             }
         });
-        
         panel.add(label);
         return label;
     }
@@ -517,13 +493,11 @@ public class trades extends javax.swing.JFrame {
         pendingCard.setBackground(pendingColor);
         pendingCard.setBounds(10, 10, 130, 50);
         pendingCard.setBorder(new LineBorder(Color.WHITE, 2));
-
         JLabel pendingTitle = new JLabel("PENDING");
         pendingTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         pendingTitle.setForeground(Color.WHITE);
         pendingTitle.setBounds(10, 5, 100, 20);
         pendingCard.add(pendingTitle);
-
         pendingCountLabel = new JLabel("0");
         pendingCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         pendingCountLabel.setForeground(Color.WHITE);
@@ -536,13 +510,11 @@ public class trades extends javax.swing.JFrame {
         activeCard.setBackground(activeColor2);
         activeCard.setBounds(150, 10, 130, 50);
         activeCard.setBorder(new LineBorder(Color.WHITE, 2));
-
         JLabel activeTitle = new JLabel("ACTIVE");
         activeTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         activeTitle.setForeground(Color.WHITE);
         activeTitle.setBounds(10, 5, 100, 20);
         activeCard.add(activeTitle);
-
         activeCountLabel = new JLabel("0");
         activeCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         activeCountLabel.setForeground(Color.WHITE);
@@ -555,13 +527,11 @@ public class trades extends javax.swing.JFrame {
         completedCard.setBackground(completedColor);
         completedCard.setBounds(290, 10, 130, 50);
         completedCard.setBorder(new LineBorder(Color.WHITE, 2));
-
         JLabel completedTitle = new JLabel("COMPLETED");
         completedTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         completedTitle.setForeground(Color.WHITE);
         completedTitle.setBounds(10, 5, 100, 20);
         completedCard.add(completedTitle);
-
         completedCountLabel = new JLabel("0");
         completedCountLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         completedCountLabel.setForeground(Color.WHITE);
@@ -575,26 +545,21 @@ public class trades extends javax.swing.JFrame {
         myItemsCard.setBounds(430, 10, 160, 50);
         myItemsCard.setBorder(new LineBorder(Color.WHITE, 2));
         myItemsCard.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         MouseAdapter myItemsAdapter = new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent evt) {
                 openMyItems();
             }
-            
             @Override
             public void mouseEntered(MouseEvent evt) {
                 myItemsCard.setBackground(hoverColor);
             }
-            
             @Override
             public void mouseExited(MouseEvent evt) {
                 myItemsCard.setBackground(themeColor);
             }
         };
-        
         myItemsCard.addMouseListener(myItemsAdapter);
-
         JLabel myItemsTitle = new JLabel("MY ITEMS →");
         myItemsTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
         myItemsTitle.setForeground(Color.WHITE);
@@ -612,14 +577,11 @@ public class trades extends javax.swing.JFrame {
         JPanel availablePanel = new JPanel();
         availablePanel.setLayout(null);
         availablePanel.setBackground(Color.WHITE);
-
         setupAvailableTable();
         availableScrollPane = new JScrollPane(availableTable);
         availableScrollPane.setBounds(10, 10, 580, 210);
         availableScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        availableScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         availablePanel.add(availableScrollPane);
-
         JButton requestTradeButton = new JButton("REQUEST TRADE");
         requestTradeButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         requestTradeButton.setBackground(new Color(255, 140, 0));
@@ -630,20 +592,16 @@ public class trades extends javax.swing.JFrame {
         requestTradeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         requestTradeButton.addActionListener(e -> requestTrade());
         availablePanel.add(requestTradeButton);
-
         tabbedPane.addTab("Available Items", availablePanel);
 
         JPanel pendingPanel = new JPanel();
         pendingPanel.setLayout(null);
         pendingPanel.setBackground(Color.WHITE);
-
         setupPendingTable();
         pendingScrollPane = new JScrollPane(pendingTable);
         pendingScrollPane.setBounds(10, 10, 580, 210);
         pendingScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        pendingScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         pendingPanel.add(pendingScrollPane);
-
         acceptButton = new JButton("ACCEPT");
         acceptButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         acceptButton.setBackground(completedColor);
@@ -655,7 +613,6 @@ public class trades extends javax.swing.JFrame {
         acceptButton.setEnabled(false);
         acceptButton.addActionListener(e -> acceptTrade());
         pendingPanel.add(acceptButton);
-
         declineButton = new JButton("DECLINE");
         declineButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         declineButton.setBackground(disputedColor);
@@ -667,7 +624,6 @@ public class trades extends javax.swing.JFrame {
         declineButton.setEnabled(false);
         declineButton.addActionListener(e -> declineTrade());
         pendingPanel.add(declineButton);
-
         messageButton = new JButton("MESSAGE");
         messageButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         messageButton.setBackground(activeColor2);
@@ -679,38 +635,31 @@ public class trades extends javax.swing.JFrame {
         messageButton.setEnabled(false);
         messageButton.addActionListener(e -> sendMessage());
         pendingPanel.add(messageButton);
-
         tabbedPane.addTab("Pending Trades", pendingPanel);
 
         JPanel activeMainPanel = new JPanel();
         activeMainPanel.setLayout(null);
         activeMainPanel.setBackground(Color.WHITE);
-
         setupActiveTable();
         activeScrollPane = new JScrollPane(activeTable);
         activeScrollPane.setBounds(10, 10, 350, 210);
         activeScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        activeScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         activeMainPanel.add(activeScrollPane);
-
         instructionsPanel = new JPanel();
         instructionsPanel.setLayout(null);
         instructionsPanel.setBackground(new Color(245, 245, 245));
         instructionsPanel.setBorder(new LineBorder(themeColor, 2));
         instructionsPanel.setBounds(370, 10, 220, 210);
-
         JLabel instructionsTitle = new JLabel("TRADE STATUS");
         instructionsTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         instructionsTitle.setForeground(accentColor);
         instructionsTitle.setBounds(10, 5, 150, 20);
         instructionsPanel.add(instructionsTitle);
-
         selectedTradeInfoLabel = new JLabel("Select a trade");
         selectedTradeInfoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 10));
         selectedTradeInfoLabel.setForeground(new Color(102, 102, 102));
         selectedTradeInfoLabel.setBounds(10, 25, 200, 15);
         instructionsPanel.add(selectedTradeInfoLabel);
-
         instructionsArea = new javax.swing.JTextArea();
         instructionsArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         instructionsArea.setLineWrap(true);
@@ -718,13 +667,10 @@ public class trades extends javax.swing.JFrame {
         instructionsArea.setEditable(false);
         instructionsArea.setBackground(new Color(245, 245, 245));
         instructionsArea.setText("Select a trade to see options.");
-
         instructionsScrollPane = new JScrollPane(instructionsArea);
         instructionsScrollPane.setBounds(10, 45, 200, 120);
         instructionsScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        instructionsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         instructionsPanel.add(instructionsScrollPane);
-
         viewFullGuideButton = new JButton("VIEW FULL GUIDE");
         viewFullGuideButton.setFont(new Font("Segoe UI", Font.BOLD, 10));
         viewFullGuideButton.setBackground(themeColor);
@@ -736,9 +682,7 @@ public class trades extends javax.swing.JFrame {
         viewFullGuideButton.setEnabled(false);
         viewFullGuideButton.addActionListener(e -> showFullGuide());
         instructionsPanel.add(viewFullGuideButton);
-
         activeMainPanel.add(instructionsPanel);
-
         manageTradeButton = new JButton("MANAGE TRADE");
         manageTradeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         manageTradeButton.setBackground(activeColor2);
@@ -750,7 +694,6 @@ public class trades extends javax.swing.JFrame {
         manageTradeButton.setEnabled(false);
         manageTradeButton.addActionListener(e -> openManageTrade());
         activeMainPanel.add(manageTradeButton);
-
         viewTraderDetailsButton = new JButton("VIEW TRADER");
         viewTraderDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         viewTraderDetailsButton.setBackground(new Color(255, 153, 0));
@@ -762,7 +705,6 @@ public class trades extends javax.swing.JFrame {
         viewTraderDetailsButton.setEnabled(false);
         viewTraderDetailsButton.addActionListener(e -> viewTraderDetails());
         activeMainPanel.add(viewTraderDetailsButton);
-
         viewMyDetailsButton = new JButton("MY DETAILS");
         viewMyDetailsButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         viewMyDetailsButton.setBackground(completedColor);
@@ -774,25 +716,20 @@ public class trades extends javax.swing.JFrame {
         viewMyDetailsButton.setEnabled(false);
         viewMyDetailsButton.addActionListener(e -> viewMyDetails());
         activeMainPanel.add(viewMyDetailsButton);
-
         tabbedPane.addTab("Active Trades", activeMainPanel);
 
         JPanel historyPanel = new JPanel();
         historyPanel.setLayout(null);
         historyPanel.setBackground(Color.WHITE);
-
         setupCompletedTable();
         completedScrollPane = new JScrollPane(completedTable);
         completedScrollPane.setBounds(10, 10, 580, 260);
         completedScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        completedScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         historyPanel.add(completedScrollPane);
-
-        tabbedPane.addTab("History", historyPanel);
+        tabbedPane.addTab("Trade History", historyPanel);
 
         contentWrapper.add(summaryPanel);
         contentWrapper.add(tabbedPane);
-
         contentPanel.add(contentWrapper);
         contentPanel.revalidate();
         contentPanel.repaint();
@@ -806,7 +743,6 @@ public class trades extends javax.swing.JFrame {
                 return false;
             }
         };
-
         availableTable = new javax.swing.JTable(availableTableModel);
         availableTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         availableTable.setRowHeight(25);
@@ -818,11 +754,9 @@ public class trades extends javax.swing.JFrame {
         availableTable.getTableHeader().setBorder(null);
         availableTable.setSelectionBackground(new Color(184, 239, 255));
         availableTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         availableTable.getColumnModel().getColumn(0).setMinWidth(0);
         availableTable.getColumnModel().getColumn(0).setMaxWidth(0);
         availableTable.getColumnModel().getColumn(0).setWidth(0);
-
         availableTable.getColumnModel().getColumn(5).setMinWidth(0);
         availableTable.getColumnModel().getColumn(5).setMaxWidth(0);
         availableTable.getColumnModel().getColumn(5).setWidth(0);
@@ -836,7 +770,6 @@ public class trades extends javax.swing.JFrame {
                 return false;
             }
         };
-
         pendingTable = new javax.swing.JTable(pendingTableModel);
         pendingTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         pendingTable.setRowHeight(25);
@@ -848,15 +781,12 @@ public class trades extends javax.swing.JFrame {
         pendingTable.getTableHeader().setBorder(null);
         pendingTable.setSelectionBackground(new Color(255, 235, 204));
         pendingTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         pendingTable.getColumnModel().getColumn(0).setMinWidth(0);
         pendingTable.getColumnModel().getColumn(0).setMaxWidth(0);
         pendingTable.getColumnModel().getColumn(0).setWidth(0);
-
         pendingTable.getColumnModel().getColumn(6).setMinWidth(0);
         pendingTable.getColumnModel().getColumn(6).setMaxWidth(0);
         pendingTable.getColumnModel().getColumn(6).setWidth(0);
-
         pendingTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -878,7 +808,6 @@ public class trades extends javax.swing.JFrame {
                 return false;
             }
         };
-
         activeTable = new javax.swing.JTable(activeTableModel);
         activeTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         activeTable.setRowHeight(25);
@@ -890,15 +819,12 @@ public class trades extends javax.swing.JFrame {
         activeTable.getTableHeader().setBorder(null);
         activeTable.setSelectionBackground(new Color(184, 239, 255));
         activeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         activeTable.getColumnModel().getColumn(0).setMinWidth(0);
         activeTable.getColumnModel().getColumn(0).setMaxWidth(0);
         activeTable.getColumnModel().getColumn(0).setWidth(0);
-
         activeTable.getColumnModel().getColumn(6).setMinWidth(0);
         activeTable.getColumnModel().getColumn(6).setMaxWidth(0);
         activeTable.getColumnModel().getColumn(6).setWidth(0);
-
         activeTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -928,7 +854,6 @@ public class trades extends javax.swing.JFrame {
                 return false;
             }
         };
-
         completedTable = new javax.swing.JTable(completedTableModel);
         completedTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         completedTable.setRowHeight(25);
@@ -940,7 +865,6 @@ public class trades extends javax.swing.JFrame {
         completedTable.getTableHeader().setBorder(null);
         completedTable.setSelectionBackground(new Color(200, 230, 201));
         completedTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         completedTable.getColumnModel().getColumn(0).setMinWidth(0);
         completedTable.getColumnModel().getColumn(0).setMaxWidth(0);
         completedTable.getColumnModel().getColumn(0).setWidth(0);
@@ -956,7 +880,6 @@ public class trades extends javax.swing.JFrame {
 
     private void loadAvailableItems() {
         availableTableModel.setRowCount(0);
-
         String sql = "SELECT i.items_id, i.item_Name, i.item_Brand, i.item_Condition, "
                 + "u.user_fullname as owner_name, i.trader_id as owner_id "
                 + "FROM tbl_items i "
@@ -970,9 +893,7 @@ public class trades extends javax.swing.JFrame {
                 + "    WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')"
                 + ") "
                 + "ORDER BY i.created_date DESC";
-
         List<Map<String, Object>> items = db.fetchRecords(sql, traderId);
-
         for (Map<String, Object> item : items) {
             availableTableModel.addRow(new Object[]{
                 item.get("items_id"),
@@ -987,7 +908,6 @@ public class trades extends javax.swing.JFrame {
 
     private void loadPendingTrades() {
         pendingTableModel.setRowCount(0);
-
         String sql = "SELECT t.trade_id, "
                 + "CASE "
                 + "    WHEN t.offer_trader_id = ? THEN 'You' "
@@ -1009,9 +929,7 @@ public class trades extends javax.swing.JFrame {
                 + "WHERE (t.offer_trader_id = ? OR t.target_trader_id = ?) "
                 + "AND t.trade_status = 'pending' "
                 + "ORDER BY t.trade_DateRequest DESC";
-
         List<Map<String, Object>> trades = db.fetchRecords(sql, traderId, traderId, traderId, traderId, traderId);
-
         for (Map<String, Object> trade : trades) {
             pendingTableModel.addRow(new Object[]{
                 trade.get("trade_id"),
@@ -1027,7 +945,8 @@ public class trades extends javax.swing.JFrame {
 
     private void loadActiveTrades() {
         activeTableModel.setRowCount(0);
-
+        // Show trades that are NOT completed (status not 'completed')
+        // Active trades include: negotiating, arrangements_confirmed, payment_verified, items_received
         String sql = "SELECT t.trade_id, "
                 + "CASE WHEN t.offer_trader_id = ? THEN i_target.item_Name ELSE i_offer.item_Name END as their_item, "
                 + "CASE WHEN t.offer_trader_id = ? THEN u_target.user_fullname ELSE u_offer.user_fullname END as other_trader, "
@@ -1039,26 +958,29 @@ public class trades extends javax.swing.JFrame {
                 + "JOIN tbl_users u_offer ON t.offer_trader_id = u_offer.user_id "
                 + "JOIN tbl_users u_target ON t.target_trader_id = u_target.user_id "
                 + "WHERE (t.offer_trader_id = ? OR t.target_trader_id = ?) "
-                + "AND t.trade_status IN ('negotiating', 'arrangements_confirmed') "
+                + "AND t.trade_status != 'completed' "
+                + "AND t.trade_status != 'pending' "
                 + "ORDER BY t.trade_DateRequest DESC";
-
         List<Map<String, Object>> trades = db.fetchRecords(sql, traderId, traderId, traderId, traderId, traderId);
-
         for (Map<String, Object> trade : trades) {
             String status = trade.get("trade_status").toString();
             String displayStatus = "";
-            
             switch (status) {
                 case "negotiating":
                     displayStatus = "Negotiating";
                     break;
                 case "arrangements_confirmed":
-                    displayStatus = "Confirmed";
+                    displayStatus = "Arrangements Confirmed";
+                    break;
+                case "payment_verified":
+                    displayStatus = "Payment Verified";
+                    break;
+                case "items_received":
+                    displayStatus = "Items Received";
                     break;
                 default:
-                    displayStatus = "Active";
+                    displayStatus = status;
             }
-
             activeTableModel.addRow(new Object[]{
                 trade.get("trade_id"),
                 trade.get("their_item"),
@@ -1073,7 +995,6 @@ public class trades extends javax.swing.JFrame {
 
     private void loadCompletedTrades() {
         completedTableModel.setRowCount(0);
-
         String sql = "SELECT h.history_id, "
                 + "CASE WHEN h.offer_trader_id = ? THEN i_target.item_Name ELSE i_offer.item_Name END as their_item, "
                 + "CASE WHEN h.offer_trader_id = ? THEN u_target.user_fullname ELSE u_offer.user_fullname END as other_trader, "
@@ -1086,9 +1007,7 @@ public class trades extends javax.swing.JFrame {
                 + "JOIN tbl_users u_target ON h.target_trader_id = u_target.user_id "
                 + "WHERE (h.offer_trader_id = ? OR h.target_trader_id = ?) "
                 + "ORDER BY h.trade_DateCompleted DESC";
-
         List<Map<String, Object>> trades = db.fetchRecords(sql, traderId, traderId, traderId, traderId, traderId);
-
         for (Map<String, Object> trade : trades) {
             completedTableModel.addRow(new Object[]{
                 trade.get("history_id"),
@@ -1117,63 +1036,31 @@ public class trades extends javax.swing.JFrame {
         }
 
         selectedTradeInfoLabel.setText("Trade #" + selectedTradeId);
-
         String detailsSql = "SELECT * FROM tbl_trade WHERE trade_id = ?";
         List<Map<String, Object>> tradeDetails = db.fetchRecords(detailsSql, selectedTradeId);
-        
         StringBuilder info = new StringBuilder();
         info.append("TRADE DETAILS\n");
         info.append("=============\n\n");
         info.append("Your Item: ").append(selectedMyItem).append("\n");
         info.append("Their Item: ").append(selectedTheirItem).append("\n");
         info.append("Trading With: ").append(selectedOtherTraderName).append("\n\n");
-        
         if (!tradeDetails.isEmpty()) {
             Map<String, Object> trade = tradeDetails.get(0);
-            
             String method = trade.get("exchange_method") != null ? trade.get("exchange_method").toString() : "Not set";
             info.append("Exchange Method: ").append(method).append("\n");
-            
-            int mySubmitted = trade.get("my_details_submitted") != null ? 
-                Integer.parseInt(trade.get("my_details_submitted").toString()) : 0;
-            int otherSubmitted = trade.get("other_details_submitted") != null ? 
-                Integer.parseInt(trade.get("other_details_submitted").toString()) : 0;
-            
-            info.append("Your Details: ").append(mySubmitted == 1 ? "Submitted" : "Not submitted").append("\n");
-            info.append("Their Details: ").append(otherSubmitted == 1 ? "Submitted" : "Not submitted").append("\n");
-            
-            int detailsAgreed = trade.get("details_agreed") != null ? 
-                Integer.parseInt(trade.get("details_agreed").toString()) : 0;
-            info.append("Agreement: ").append(detailsAgreed == 1 ? "Both agreed" : "Waiting").append("\n");
-            
-            int myPayment = trade.get("my_payment_submitted") != null ? 
-                Integer.parseInt(trade.get("my_payment_submitted").toString()) : 0;
-            int otherPayment = trade.get("other_payment_submitted") != null ? 
-                Integer.parseInt(trade.get("other_payment_submitted").toString()) : 0;
-            int paymentVerified = trade.get("payment_verified") != null ? 
-                Integer.parseInt(trade.get("payment_verified").toString()) : 0;
-            
-            info.append("Your Payment: ").append(myPayment == 1 ? "Submitted" : "Not submitted").append("\n");
-            info.append("Their Payment: ").append(otherPayment == 1 ? "Submitted" : "Not submitted").append("\n");
-            info.append("Payment Verified: ").append(paymentVerified == 1 ? "Yes" : "Pending").append("\n");
-            
-            int myReceived = trade.get("my_item_received") != null ? 
-                Integer.parseInt(trade.get("my_item_received").toString()) : 0;
-            int otherReceived = trade.get("other_item_received") != null ? 
-                Integer.parseInt(trade.get("other_item_received").toString()) : 0;
-            
-            info.append("You Received Item: ").append(myReceived == 1 ? "Yes" : "No").append("\n");
-            info.append("They Received Item: ").append(otherReceived == 1 ? "Yes" : "No").append("\n");
+            String proposedMethod = trade.get("proposed_method") != null ? trade.get("proposed_method").toString() : "None";
+            info.append("Proposed Method: ").append(proposedMethod).append("\n");
+            int proposedBy = trade.get("proposed_by") != null ? Integer.parseInt(trade.get("proposed_by").toString()) : -1;
+            info.append("Proposed By: ").append(proposedBy == traderId ? "You" : (proposedBy == selectedOtherTraderId ? selectedOtherTraderName : "None")).append("\n");
+            int methodConfirmed = trade.get("method_confirmed") != null ? Integer.parseInt(trade.get("method_confirmed").toString()) : 0;
+            info.append("Method Confirmed: ").append(methodConfirmed == 1 ? "Yes" : "No").append("\n\n");
         }
-        
         info.append("\nAVAILABLE ACTIONS:\n");
-        info.append("Manage Trade - Set exchange method and details\n");
+        info.append("Manage Trade - Continue the trade process\n");
         info.append("View Trader - See trader's profile\n");
         info.append("My Details - View your contact information\n");
         info.append("View Full Guide - Complete step-by-step process");
-
         instructionsArea.setText(info.toString());
-        
         manageTradeButton.setEnabled(true);
         viewTraderDetailsButton.setEnabled(true);
         viewMyDetailsButton.setEnabled(true);
@@ -1185,18 +1072,15 @@ public class trades extends javax.swing.JFrame {
         guideDialog.setSize(550, 500);
         guideDialog.setLocationRelativeTo(this);
         guideDialog.getContentPane().setBackground(Color.WHITE);
-        
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(null);
         titlePanel.setBackground(themeColor);
         titlePanel.setBounds(0, 0, 550, 40);
-        
         JLabel titleLabel = new JLabel("COMPLETE TRADE GUIDE");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBounds(20, 5, 300, 30);
         titlePanel.add(titleLabel);
-        
         JButton closeButton = new JButton("CLOSE");
         closeButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         closeButton.setBackground(accentColor);
@@ -1207,7 +1091,6 @@ public class trades extends javax.swing.JFrame {
         closeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         closeButton.addActionListener(e -> guideDialog.dispose());
         titlePanel.add(closeButton);
-        
         JTextArea guideArea = new JTextArea();
         guideArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         guideArea.setEditable(false);
@@ -1220,7 +1103,6 @@ public class trades extends javax.swing.JFrame {
             "Choose between Delivery or Meetup\n" +
             "Both traders must agree on the method\n" +
             "Once agreed, you'll proceed to Step 2\n\n" +
-            
             "STEP 2: EXCHANGE DETAILS\n" +
             "------------------------\n" +
             "Enter your exchange details:\n" +
@@ -1230,74 +1112,47 @@ public class trades extends javax.swing.JFrame {
             "Both traders enter their details\n" +
             "Review each other's details\n" +
             "When both traders confirm, you proceed to Step 3\n\n" +
-            
             "STEP 3: PAYMENT PROCESSING\n" +
             "--------------------------\n" +
-            "Admin fee: 15.00\n" +
-            "Decide who will pay the admin fee:\n" +
-            "  - Fee payer pays: 215 (200 item + 15 fee)\n" +
-            "  - Other trader pays: 200\n\n" +
-            
-            "PAYMENT DETAILS - CRITICAL:\n" +
-            "You MUST provide your payment information:\n" +
-            "  - GCash number with registered name\n" +
-            "  - OR PayMaya number with registered name\n\n" +
-            
-            "WARNING: Money is NON-REFUNDABLE if sent to wrong number!\n" +
-            "  - Double-check your payment details before submitting\n" +
-            "  - Verify the number is correct and active\n" +
-            "  - Make sure the name matches your account\n\n" +
-            
+            "Admin will set payment details\n" +
+            "Submit your payment proof\n" +
+            "Admin verifies both payments\n\n" +
             "STEP 4: SHIPPING & RECEIVING\n" +
             "----------------------------\n" +
             "Ship your item (if delivery) or prepare for meetup\n" +
-            "Update tracking numbers if applicable\n" +
-            "Wait for item to arrive\n" +
             "Once you receive the item, mark as received\n" +
             "When both traders mark received, proceed to Step 5\n\n" +
-            
             "STEP 5: COMPLETION & REFUND\n" +
             "---------------------------\n" +
-            "Admin processes refunds using your provided payment details\n" +
-            "Both traders receive 200 back\n" +
-            "Admin keeps the 15 fee\n" +
+            "Admin processes refunds\n" +
+            "Admin keeps the service fee\n" +
             "Trade moves to History\n\n" +
-            
             "TRADE COMPLETED!\n\n" +
-            
             "IMPORTANT REMINDERS\n" +
             "--------------------\n" +
             "Always communicate through BarterZone messages\n" +
             "Keep all payment receipts and screenshots\n" +
             "Verify trader identity before shipping\n" +
-            "Report any suspicious activity immediately\n" +
-            "Contact admin for disputes or issues\n\n" +
-            
+            "Report any suspicious activity immediately\n\n" +
             "NEED HELP? CONTACT ADMIN"
         );
-        
         JScrollPane guideScrollPane = new JScrollPane(guideArea);
         guideScrollPane.setBounds(10, 50, 520, 400);
         guideScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         guideScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        
         guideDialog.setLayout(null);
         guideDialog.add(titlePanel);
         guideDialog.add(guideScrollPane);
-        
         guideDialog.setVisible(true);
     }
 
     private void viewTraderDetails() {
         if (selectedOtherTraderId == -1) return;
-
         String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
                      "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> traders = db.fetchRecords(sql, selectedOtherTraderId);
-
         if (!traders.isEmpty()) {
             Map<String, Object> trader = traders.get(0);
-            
             String details = "TRADER DETAILS\n" +
                     "==============\n\n" +
                     "Name: " + trader.get("user_fullname") + "\n" +
@@ -1305,10 +1160,7 @@ public class trades extends javax.swing.JFrame {
                     "Email: " + trader.get("user_email") + "\n" +
                     "Status: " + trader.get("user_status") + "\n" +
                     "Member Since: " + formatDate(trader.get("created_date"));
-
-            JOptionPane.showMessageDialog(this, details,
-                    "Trader Information",
-                    JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, details, "Trader Information", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -1316,10 +1168,8 @@ public class trades extends javax.swing.JFrame {
         String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
                      "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> users = db.fetchRecords(sql, traderId);
-
         if (!users.isEmpty()) {
             Map<String, Object> user = users.get(0);
-            
             String details = "YOUR DETAILS\n" +
                     "============\n\n" +
                     "Name: " + user.get("user_fullname") + "\n" +
@@ -1327,16 +1177,12 @@ public class trades extends javax.swing.JFrame {
                     "Email: " + user.get("user_email") + "\n" +
                     "Status: " + user.get("user_status") + "\n" +
                     "Member Since: " + formatDate(user.get("created_date"));
-
-            JOptionPane.showMessageDialog(this, details,
-                    "My Information",
-                    JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, details, "My Information", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void openManageTrade() {
         if (selectedTradeId == -1) return;
-
         manage_trades manageFrame = new manage_trades(selectedTradeId, selectedMyItem, 
             selectedTheirItem, selectedOtherTraderName, selectedOtherTraderId);
         manageFrame.setVisible(true);
@@ -1382,12 +1228,10 @@ public class trades extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Please select an item to request trade.", "No Selection", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int modelRow = availableTable.convertRowIndexToModel(selectedRow);
         int targetItemId = Integer.parseInt(availableTableModel.getValueAt(modelRow, 0).toString());
         String ownerName = availableTableModel.getValueAt(modelRow, 4).toString();
         int targetOwnerId = Integer.parseInt(availableTableModel.getValueAt(modelRow, 5).toString());
-
         showTradeRequestDialog(targetItemId, ownerName, targetOwnerId);
     }
 
@@ -1401,9 +1245,7 @@ public class trades extends javax.swing.JFrame {
                 + "    SELECT DISTINCT offer_item_id FROM tbl_trade "
                 + "    WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')"
                 + ")";
-
         List<Map<String, Object>> myItems = db.fetchRecords(sql, traderId);
-
         if (myItems.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                     "You don't have any items available for trade.\n\n"
@@ -1413,48 +1255,40 @@ public class trades extends javax.swing.JFrame {
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         String[] itemNames = new String[myItems.size()];
         Integer[] itemIds = new Integer[myItems.size()];
         for (int i = 0; i < myItems.size(); i++) {
             itemNames[i] = myItems.get(i).get("item_Name").toString();
             itemIds[i] = Integer.parseInt(myItems.get(i).get("items_id").toString());
         }
-
         JDialog tradeDialog = new JDialog(this, "Request Trade", true);
         tradeDialog.setSize(400, 300);
         tradeDialog.setLayout(null);
         tradeDialog.setLocationRelativeTo(this);
         tradeDialog.getContentPane().setBackground(Color.WHITE);
-
         JPanel titlePanel = new JPanel();
         titlePanel.setBackground(themeColor);
         titlePanel.setBounds(0, 0, 400, 40);
         titlePanel.setLayout(null);
-
         JLabel titleLabel = new JLabel("REQUEST TRADE");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBounds(20, 5, 200, 30);
         titlePanel.add(titleLabel);
         tradeDialog.add(titlePanel);
-
         JLabel infoLabel = new JLabel("Trading with: " + ownerName);
         infoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         infoLabel.setBounds(20, 60, 300, 25);
         tradeDialog.add(infoLabel);
-
         JLabel selectLabel = new JLabel("Your Item to offer:");
         selectLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         selectLabel.setBounds(20, 100, 150, 20);
         tradeDialog.add(selectLabel);
-
         JComboBox<String> itemCombo = new JComboBox<>(itemNames);
         itemCombo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         itemCombo.setBounds(20, 125, 250, 30);
         itemCombo.setBackground(Color.WHITE);
         tradeDialog.add(itemCombo);
-
         JButton sendButton = new JButton("SEND REQUEST");
         sendButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         sendButton.setBackground(activeColor2);
@@ -1463,7 +1297,6 @@ public class trades extends javax.swing.JFrame {
         sendButton.setBorder(null);
         sendButton.setFocusPainted(false);
         sendButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         sendButton.addActionListener(e -> {
             int selectedIdx = itemCombo.getSelectedIndex();
             if (selectedIdx >= 0) {
@@ -1473,7 +1306,6 @@ public class trades extends javax.swing.JFrame {
             }
         });
         tradeDialog.add(sendButton);
-
         JButton cancelButton = new JButton("CANCEL");
         cancelButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         cancelButton.setBackground(disputedColor);
@@ -1484,7 +1316,6 @@ public class trades extends javax.swing.JFrame {
         cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         cancelButton.addActionListener(e -> tradeDialog.dispose());
         tradeDialog.add(cancelButton);
-
         tradeDialog.setVisible(true);
     }
 
@@ -1493,41 +1324,27 @@ public class trades extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "You cannot trade with your own item.", "Invalid Trade", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         String checkSql = "SELECT COUNT(*) as count FROM tbl_trade WHERE "
                 + "((offer_item_id = ? AND target_item_id = ?) OR "
                 + "(offer_item_id = ? AND target_item_id = ?)) "
                 + "AND trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')";
-
         double count = db.getSingleValue(checkSql, offerItemId, targetItemId, targetItemId, offerItemId);
-
         if (count > 0) {
             JOptionPane.showMessageDialog(this,
                     "A trade with these exact items is already pending or active.",
                     "Duplicate Trade", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         String insertSql = "INSERT INTO tbl_trade (offer_trader_id, target_trader_id, offer_item_id, "
                 + "target_item_id, trade_status, trade_DateRequest) "
-                + "VALUES (?, ?, ?, ?, ?, datetime('now'))";
-
+                + "VALUES (?, ?, ?, ?, 'pending', datetime('now'))";
         try {
-            db.addRecord(insertSql,
-                    traderId,
-                    targetOwnerId,
-                    offerItemId,
-                    targetItemId,
-                    "pending"
-            );
-
+            db.addRecord(insertSql, traderId, targetOwnerId, offerItemId, targetItemId);
             JOptionPane.showMessageDialog(this,
                     "Trade request sent to " + ownerName + "!\n\n"
                     + "They will see your request in their Pending Trades.",
                     "Success", JOptionPane.INFORMATION_MESSAGE);
-
             loadAllData();
-
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "Error creating trade request: " + e.getMessage(),
@@ -1538,13 +1355,11 @@ public class trades extends javax.swing.JFrame {
     private void acceptTrade() {
         int selectedRow = pendingTable.getSelectedRow();
         if (selectedRow == -1) return;
-
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
         String requester = pendingTableModel.getValueAt(modelRow, 1).toString();
         String theirItem = pendingTableModel.getValueAt(modelRow, 2).toString();
         String myItem = pendingTableModel.getValueAt(modelRow, 3).toString();
-
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Accept this trade?\n\n"
                 + "Requester: " + requester + "\n"
@@ -1552,11 +1367,9 @@ public class trades extends javax.swing.JFrame {
                 + "Your Item: " + myItem,
                 "Confirm Accept",
                 JOptionPane.YES_NO_OPTION);
-
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "UPDATE tbl_trade SET trade_status = 'negotiating' WHERE trade_id = ?";
             db.updateRecord(sql, tradeId);
-
             JOptionPane.showMessageDialog(this,
                     "Trade accepted!\n\n"
                     + "The trade has been moved to Active Trades.\n"
@@ -1569,18 +1382,14 @@ public class trades extends javax.swing.JFrame {
     private void declineTrade() {
         int selectedRow = pendingTable.getSelectedRow();
         if (selectedRow == -1) return;
-
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
-
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Decline this trade request?", "Confirm Decline",
                 JOptionPane.YES_NO_OPTION);
-
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "DELETE FROM tbl_trade WHERE trade_id = ? AND trade_status = 'pending'";
             db.deleteRecord(sql, tradeId);
-
             JOptionPane.showMessageDialog(this, "Trade declined.", "Info", JOptionPane.INFORMATION_MESSAGE);
             loadAllData();
         }
@@ -1610,7 +1419,6 @@ public class trades extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
         if (panel == dashboardPanel) {
             trader_dashboard dashboard = new trader_dashboard(traderId, traderName);
             dashboard.setVisible(true);
@@ -1643,4 +1451,4 @@ public class trades extends javax.swing.JFrame {
             this.dispose();
         }
     }
-}
+} 
