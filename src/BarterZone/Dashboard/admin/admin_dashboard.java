@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
@@ -30,51 +31,51 @@ public class admin_dashboard extends javax.swing.JFrame {
     private JPanel sidePanel;
     private JLabel adminAvatarLetter;
     private JLabel adminNameLabel;
-    
+
     // Menu items
     private JPanel dashboardPanel;
     private JLabel dashboardLabel;
-    
+
     private JPanel manageUsersPanel;
     private JLabel manageUsersLabel;
     private JLabel usersBadge;
-    
+
     private JPanel manageAnnouncementPanel;
     private JLabel manageAnnouncementLabel;
     private JLabel announcementBadge;
-    
+
     private JPanel manageTradesPanel;
     private JLabel manageTradesLabel;
     private JLabel tradesBadge;
-    
+
     private JPanel manageReportsPanel;
     private JLabel manageReportsLabel;
     private JLabel reportsBadge;
-    
+
     private JPanel profilePanel;
     private JLabel profileLabel;
-    
+
     private JPanel logsPanel;
     private JLabel logsLabel;
     private JLabel logsBadge;
-    
+
     private JPanel logoutPanel;
     private JLabel logoutLabel;
-    
+
     // Header components
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     // Main content panel
     private JPanel contentPanel;
-    
+
     // Welcome section
     private JPanel welcomePanel;
     private JLabel welcomeLabel;
     private JLabel welcomeMessageLabel;
     private JLabel adminBadge;
-    
+
     // Stats cards
     private JPanel statsPanel;
     private JLabel statsTitle;
@@ -93,7 +94,7 @@ public class admin_dashboard extends javax.swing.JFrame {
     private JPanel totalFeesCard;
     private JLabel totalFeesValue;
     private JLabel totalFeesLabel;
-    
+
     // Quick actions panel
     private JPanel quickActionsPanel;
     private JLabel quickActionsTitle;
@@ -101,14 +102,14 @@ public class admin_dashboard extends javax.swing.JFrame {
     private JButton newAnnouncementButton;
     private JButton viewReportsButton;
     private JButton refreshDataButton;
-    
+
     // Recent activity panel
     private JPanel recentActivityPanel;
     private JLabel recentActivityTitle;
     private JPanel activityListPanel;
     private JLabel[] activityLabels;
     private String[] activities;
-    
+
     // System health panel
     private JPanel systemHealthPanel;
     private JLabel systemHealthTitle;
@@ -116,7 +117,7 @@ public class admin_dashboard extends javax.swing.JFrame {
     private JLabel serverTimeLabel;
     private JLabel uptimeLabel;
     private JLabel lastBackupLabel;
-    
+
     // Colors - Matching profile.java theme (dark blue/gold)
     private Color sideBarColor = new Color(8, 78, 128);
     private Color hoverColor = new Color(20, 100, 150);
@@ -126,13 +127,13 @@ public class admin_dashboard extends javax.swing.JFrame {
     private Color headerGradientStart = new Color(8, 78, 128);
     private Color headerGradientEnd = new Color(0, 45, 80);
     private Color cardColors[] = {
-        new Color(8, 78, 128),     // Dark blue
-        new Color(46, 125, 50),    // Green
-        new Color(255, 153, 0),    // Orange
-        new Color(106, 27, 154),   // Purple
-        new Color(255, 215, 0)     // Gold
+        new Color(8, 78, 128), // Dark blue
+        new Color(46, 125, 50), // Green
+        new Color(255, 153, 0), // Orange
+        new Color(106, 27, 154), // Purple
+        new Color(255, 215, 0) // Gold
     };
-    
+
     private JPanel activePanel = null;
 
     public admin_dashboard(int adminId, String adminName) {
@@ -140,7 +141,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         this.adminName = adminName;
         this.session = user_session.getInstance();
         this.db = new config();
-        
+
         initComponents();
         setupSidePanel();
         setupHeader();
@@ -148,9 +149,10 @@ public class admin_dashboard extends javax.swing.JFrame {
         loadStats();
         loadRecentActivities();
         updateBadges();
-        
-        setTitle("Admin Dashboard - " + adminName);
-        
+
+        setTitle("BarterZone - " + adminName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(1100, 650);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -284,7 +286,7 @@ public class admin_dashboard extends javax.swing.JFrame {
         panel.setBackground(sideBarColor);
         panel.setBounds(x, y, width, height);
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -292,18 +294,20 @@ public class admin_dashboard extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(sideBarColor);
                 }
             }
+
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 handleMenuClick(panel);
             }
         });
-        
+
         sidePanel.add(panel);
         return panel;
     }
@@ -403,32 +407,32 @@ public class admin_dashboard extends javax.swing.JFrame {
         int cardY = 40;
 
         // Total Reports Card
-        totalReportsCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight, 
-            cardColors[0], "Reports");
+        totalReportsCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight,
+                cardColors[0], "Reports");
         totalReportsValue = (JLabel) totalReportsCard.getClientProperty("valueLabel");
         totalReportsLabel = (JLabel) totalReportsCard.getClientProperty("titleLabel");
-        
+
         cardX += 160;
-        totalUsersCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight, 
-            cardColors[1], "Users");
+        totalUsersCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight,
+                cardColors[1], "Users");
         totalUsersValue = (JLabel) totalUsersCard.getClientProperty("valueLabel");
         totalUsersLabel = (JLabel) totalUsersCard.getClientProperty("titleLabel");
-        
+
         cardX += 160;
-        totalAnnouncementsCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight, 
-            cardColors[2], "Announcements");
+        totalAnnouncementsCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight,
+                cardColors[2], "Announcements");
         totalAnnouncementsValue = (JLabel) totalAnnouncementsCard.getClientProperty("valueLabel");
         totalAnnouncementsLabel = (JLabel) totalAnnouncementsCard.getClientProperty("titleLabel");
-        
+
         cardX += 160;
-        totalTradesCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight, 
-            cardColors[3], "Active Trades");
+        totalTradesCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight,
+                cardColors[3], "Active Trades");
         totalTradesValue = (JLabel) totalTradesCard.getClientProperty("valueLabel");
         totalTradesLabel = (JLabel) totalTradesCard.getClientProperty("titleLabel");
-        
+
         cardX += 160;
-        totalFeesCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight, 
-            cardColors[4], "Total Fees");
+        totalFeesCard = createStatCard(statsPanel, cardX, cardY, cardWidth, cardHeight,
+                cardColors[4], "Total Fees");
         totalFeesValue = (JLabel) totalFeesCard.getClientProperty("valueLabel");
         totalFeesLabel = (JLabel) totalFeesCard.getClientProperty("titleLabel");
 
@@ -452,8 +456,8 @@ public class admin_dashboard extends javax.swing.JFrame {
         int buttonY = 45;
         int buttonSpacing = 10;
 
-        addAdminButton = createActionButton(buttonX, buttonY, buttonWidth, buttonHeight, 
-            " Add New Admin", new Color(8, 78, 128));
+        addAdminButton = createActionButton(buttonX, buttonY, buttonWidth, buttonHeight,
+                " Add New Admin", new Color(8, 78, 128));
         addAdminButton.addActionListener(e -> {
             manage_users usersFrame = new manage_users(adminId, adminName);
             usersFrame.setVisible(true);
@@ -462,8 +466,8 @@ public class admin_dashboard extends javax.swing.JFrame {
         });
         quickActionsPanel.add(addAdminButton);
 
-        newAnnouncementButton = createActionButton(buttonX + buttonWidth + buttonSpacing, buttonY, 
-            buttonWidth, buttonHeight, " New Announcement", accentColor, new Color(8, 78, 128));
+        newAnnouncementButton = createActionButton(buttonX + buttonWidth + buttonSpacing, buttonY,
+                buttonWidth, buttonHeight, " New Announcement", accentColor, new Color(8, 78, 128));
         newAnnouncementButton.addActionListener(e -> {
             manage_announcement announcementFrame = new manage_announcement(adminId, adminName);
             announcementFrame.setVisible(true);
@@ -472,8 +476,8 @@ public class admin_dashboard extends javax.swing.JFrame {
         });
         quickActionsPanel.add(newAnnouncementButton);
 
-        viewReportsButton = createActionButton(buttonX, buttonY + buttonHeight + buttonSpacing, 
-            buttonWidth, buttonHeight, " View Pending Reports", new Color(204, 0, 0));
+        viewReportsButton = createActionButton(buttonX, buttonY + buttonHeight + buttonSpacing,
+                buttonWidth, buttonHeight, " View Pending Reports", new Color(204, 0, 0));
         viewReportsButton.addActionListener(e -> {
             manage_reports reportsFrame = new manage_reports(adminId, adminName);
             reportsFrame.setVisible(true);
@@ -482,9 +486,9 @@ public class admin_dashboard extends javax.swing.JFrame {
         });
         quickActionsPanel.add(viewReportsButton);
 
-        refreshDataButton = createActionButton(buttonX + buttonWidth + buttonSpacing, 
-            buttonY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight, 
-            " Refresh Dashboard", new Color(46, 125, 50));
+        refreshDataButton = createActionButton(buttonX + buttonWidth + buttonSpacing,
+                buttonY + buttonHeight + buttonSpacing, buttonWidth, buttonHeight,
+                " Refresh Dashboard", new Color(46, 125, 50));
         refreshDataButton.addActionListener(e -> {
             loadStats();
             loadRecentActivities();
@@ -564,29 +568,29 @@ public class admin_dashboard extends javax.swing.JFrame {
         systemHealthPanel.add(environmentLabel);
     }
 
-    private JPanel createStatCard(JPanel parent, int x, int y, int width, int height, 
-                                  Color color, String title) {
+    private JPanel createStatCard(JPanel parent, int x, int y, int width, int height,
+            Color color, String title) {
         JPanel card = new JPanel();
         card.setLayout(null);
         card.setBackground(color);
         card.setBounds(x, y, width, height);
         card.setBorder(new LineBorder(Color.WHITE, 1));
-        
+
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setBounds(8, 8, width - 16, 15);
         card.add(titleLabel);
-        
+
         JLabel valueLabel = new JLabel("0");
         valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valueLabel.setForeground(Color.WHITE);
         valueLabel.setBounds(8, 25, width - 16, 30);
         card.add(valueLabel);
-        
+
         card.putClientProperty("titleLabel", titleLabel);
         card.putClientProperty("valueLabel", valueLabel);
-        
+
         parent.add(card);
         return card;
     }
@@ -613,62 +617,72 @@ public class admin_dashboard extends javax.swing.JFrame {
             String reportsSql = "SELECT COUNT(*) as count FROM tbl_reports";
             double reportsCount = db.getSingleValue(reportsSql);
             totalReportsValue.setText(String.valueOf((int) reportsCount));
-            
+
             // Total Users
             String usersSql = "SELECT COUNT(*) as count FROM tbl_users";
             double usersCount = db.getSingleValue(usersSql);
             totalUsersValue.setText(String.valueOf((int) usersCount));
-            
+
             // Total Active Announcements
             String announcementsSql = "SELECT COUNT(*) as count FROM tbl_announcement WHERE is_active = 1";
             double announcementsCount = db.getSingleValue(announcementsSql);
             totalAnnouncementsValue.setText(String.valueOf((int) announcementsCount));
-            
-            // Total Active Trades
-            String tradesSql = "SELECT COUNT(*) as count FROM tbl_trade WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')";
+
+            // Total Active Trades (trades that are not completed)
+            String tradesSql = "SELECT COUNT(*) as count FROM tbl_trade WHERE trade_status NOT IN ('completed', 'cancelled')";
             double tradesCount = db.getSingleValue(tradesSql);
             totalTradesValue.setText(String.valueOf((int) tradesCount));
-            
-            // Total Fees (from completed trades)
-            String feesSql = "SELECT SUM(fee_amount) as total FROM tbl_trade WHERE trade_status = 'completed'";
+
+            // Total Fees - SUM of total_amount from tbl_payment_details WHERE payment_verified = 1
+            String feesSql = "SELECT COALESCE(SUM(service_fee), 0) as total FROM tbl_payment_details WHERE payment_verified = 1";
             double totalFees = db.getSingleValue(feesSql);
-            totalFeesValue.setText("₱" + String.format("%.0f", totalFees));
-            
+            totalFeesValue.setText("₱" + String.format("%.2f", totalFees));
+
         } catch (Exception e) {
             System.out.println("Error loading stats: " + e.getMessage());
+            totalFeesValue.setText("₱0.00");
         }
     }
 
     private void loadRecentActivities() {
         activityListPanel.removeAll();
-        
+
         try {
-            String sql = "SELECT action, log_date FROM tbl_logs ORDER BY log_date DESC LIMIT 4";
+            String sql = "SELECT action, description, log_date FROM tbl_logs ORDER BY log_date DESC LIMIT 5";
             List<Map<String, Object>> logs = db.fetchRecords(sql);
-            
+
             activities = new String[logs.size()];
             activityLabels = new JLabel[logs.size()];
-            
+
             int yPos = 0;
             for (int i = 0; i < logs.size(); i++) {
                 Map<String, Object> log = logs.get(i);
                 String date = formatDateTime(log.get("log_date"));
                 String action = (String) log.get("action");
-                
-                String displayText = "• " + date + " - " + action;
-                if (displayText.length() > 50) {
-                    displayText = displayText.substring(0, 47) + "...";
+                String description = (String) log.get("description");
+
+                // Use description if available, otherwise use action
+                String displayText;
+                if (description != null && !description.isEmpty()) {
+                    displayText = "• " + date + " - " + description;
+                } else {
+                    displayText = "• " + date + " - " + action;
                 }
-                
-                activityLabels[i] = new JLabel(displayText);
+
+                if (displayText.length() > 70) {
+                    // Insert line breaks for long text
+                    displayText = wrapText(displayText, 70);
+                }
+
+                activityLabels[i] = new JLabel("<html>" + displayText + "</html>");
                 activityLabels[i].setFont(new Font("Segoe UI", Font.PLAIN, 11));
                 activityLabels[i].setForeground(new Color(80, 80, 80));
-                activityLabels[i].setBounds(5, yPos, 380, 20);
+                activityLabels[i].setBounds(5, yPos, 380, getLabelHeight(displayText));
                 activityListPanel.add(activityLabels[i]);
-                
-                yPos += 22;
+
+                yPos += getLabelHeight(displayText) + 2;
             }
-            
+
             if (logs.isEmpty()) {
                 JLabel emptyLabel = new JLabel("• No recent activities");
                 emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
@@ -676,7 +690,7 @@ public class admin_dashboard extends javax.swing.JFrame {
                 emptyLabel.setBounds(5, 10, 380, 20);
                 activityListPanel.add(emptyLabel);
             }
-            
+
         } catch (Exception e) {
             JLabel errorLabel = new JLabel("• Unable to load activities");
             errorLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
@@ -684,13 +698,41 @@ public class admin_dashboard extends javax.swing.JFrame {
             errorLabel.setBounds(5, 10, 380, 20);
             activityListPanel.add(errorLabel);
         }
-        
+
         activityListPanel.revalidate();
         activityListPanel.repaint();
     }
 
+    private String wrapText(String text, int maxCharsPerLine) {
+        StringBuilder wrapped = new StringBuilder();
+        String[] words = text.split(" ");
+        StringBuilder line = new StringBuilder();
+
+        for (String word : words) {
+            if (line.length() + word.length() + 1 <= maxCharsPerLine) {
+                if (line.length() > 0) {
+                    line.append(" ");
+                }
+                line.append(word);
+            } else {
+                wrapped.append(line.toString()).append("<br>");
+                line = new StringBuilder(word);
+            }
+        }
+        wrapped.append(line.toString());
+        return wrapped.toString();
+    }
+
+    private int getLabelHeight(String text) {
+        // Count number of <br> tags to determine height
+        int brCount = text.split("<br>").length - 1;
+        return 20 + (brCount * 16);
+    }
+
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -713,7 +755,7 @@ public class admin_dashboard extends javax.swing.JFrame {
             } else {
                 reportsBadge.setVisible(false);
             }
-            
+
             // Pending Trades Badge
             String pendingTradesSql = "SELECT COUNT(*) as count FROM tbl_trade WHERE trade_status = 'pending'";
             double pendingTrades = db.getSingleValue(pendingTradesSql);
@@ -723,7 +765,7 @@ public class admin_dashboard extends javax.swing.JFrame {
             } else {
                 tradesBadge.setVisible(false);
             }
-            
+
             // New Users Badge (users created in last 24 hours)
             String newUsersSql = "SELECT COUNT(*) as count FROM tbl_users WHERE created_date >= datetime('now', '-1 day')";
             double newUsers = db.getSingleValue(newUsersSql);
@@ -733,7 +775,7 @@ public class admin_dashboard extends javax.swing.JFrame {
             } else {
                 usersBadge.setVisible(false);
             }
-            
+
             // Active Announcements Badge
             String activeAnnouncementsSql = "SELECT COUNT(*) as count FROM tbl_announcement WHERE is_active = 1";
             double activeAnnouncements = db.getSingleValue(activeAnnouncementsSql);
@@ -743,7 +785,7 @@ public class admin_dashboard extends javax.swing.JFrame {
             } else {
                 announcementBadge.setVisible(false);
             }
-            
+
             // Recent Logs Badge
             String recentLogsSql = "SELECT COUNT(*) as count FROM tbl_logs WHERE log_date >= datetime('now', '-1 day')";
             double recentLogs = db.getSingleValue(recentLogsSql);
@@ -753,7 +795,7 @@ public class admin_dashboard extends javax.swing.JFrame {
             } else {
                 logsBadge.setVisible(false);
             }
-            
+
         } catch (Exception e) {
             System.out.println("Error updating badges: " + e.getMessage());
         }
@@ -769,7 +811,7 @@ public class admin_dashboard extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             // Already on dashboard
             return;

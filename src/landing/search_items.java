@@ -43,6 +43,12 @@ public class search_items extends JFrame {
     private Color accentColor = new Color(12, 192, 223);
     private Color textColor = new Color(80, 80, 80);
     private Color cardBgColor = Color.WHITE;
+    private Color primaryColor = new Color(0, 102, 102);
+    private Color successColor = new Color(46, 125, 50);
+    private Color warningColor = new Color(255, 153, 0);
+    private Color buttonColor = new Color(12, 192, 223);
+    
+    private static final String IMAGE_BASE_PATH = "src/BarterZone/resources/images/items/";
 
     public search_items(String searchQuery, boolean isLoggedIn, int traderId, String traderName) {
         this.searchQuery = searchQuery;
@@ -54,7 +60,7 @@ public class search_items extends JFrame {
         initComponents();
         loadSearchResults();
 
-        setTitle("BarterZone");
+        setTitle("BarterZone - Search Results");
         setIconImage(new ImageIcon(getClass().getResource(
                 "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(800, 600);
@@ -98,7 +104,7 @@ public class search_items extends JFrame {
 
         searchLabel = new JLabel("Search:");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        searchLabel.setForeground(new Color(0, 102, 102));
+        searchLabel.setForeground(primaryColor);
         searchLabel.setBounds(15, 18, 70, 25);
         searchPanel.add(searchLabel);
 
@@ -119,28 +125,15 @@ public class search_items extends JFrame {
         searchButton.addActionListener(e -> performNewSearch());
         searchPanel.add(searchButton);
 
-        backButton = new JButton("← Back");
+        backButton = new JButton("Back to Home");
         backButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         backButton.setBackground(new Color(102, 102, 102));
         backButton.setForeground(Color.WHITE);
-        backButton.setBounds(660, 15, 80, 30);
+        backButton.setBounds(660, 15, 100, 30);
         backButton.setBorder(null);
         backButton.setFocusPainted(false);
         backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        // In search_items.java, update the back button action:
-
-        backButton.addActionListener(e -> {
-            if (isLoggedIn) {
-                landing landingFrame = new landing(traderId, traderName);
-                landingFrame.setVisible(true);
-                landingFrame.setLocationRelativeTo(null);
-            } else {
-                landing landingFrame = new landing();
-                landingFrame.setVisible(true);
-                landingFrame.setLocationRelativeTo(null);
-            }
-            dispose();
-        });
+        backButton.addActionListener(e -> goBackToLanding());
         searchPanel.add(backButton);
 
         // Results Panel with Scroll
@@ -154,6 +147,20 @@ public class search_items extends JFrame {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         add(scrollPane);
+    }
+    
+    private String convertResourcePathToFilePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.trim().isEmpty()) {
+            return null;
+        }
+        resourcePath = resourcePath.trim();
+        int lastDot = resourcePath.lastIndexOf(".");
+        if (lastDot == -1) {
+            return null;
+        }
+        String extension = resourcePath.substring(lastDot + 1);
+        String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
+        return "src/" + pathWithoutExtension + "." + extension;
     }
 
     private void loadSearchResults() {
@@ -178,7 +185,7 @@ public class search_items extends JFrame {
             emptyPanel.setBorder(new LineBorder(accentColor, 1));
             emptyPanel.setBounds(10, 10, 730, 100);
 
-            JLabel emptyLabel = new JLabel("No items found matching '" + searchQuery + "'");
+            JLabel emptyLabel = new JLabel("No items found matching: " + searchQuery);
             emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 16));
             emptyLabel.setForeground(textColor);
             emptyLabel.setBounds(200, 35, 400, 30);
@@ -230,20 +237,28 @@ public class search_items extends JFrame {
         imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         imageLabel.setVerticalAlignment(SwingConstants.CENTER);
 
+        // Load image properly
         if (!photoPath.isEmpty()) {
             try {
-                String filePath = "src/" + photoPath.replace(".", "/");
-                File imgFile = new File(filePath);
-                if (imgFile.exists()) {
-                    ImageIcon icon = new ImageIcon(filePath);
-                    Image img = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
-                    imageLabel.setIcon(new ImageIcon(img));
+                String filePath = convertResourcePathToFilePath(photoPath);
+                if (filePath != null) {
+                    File imgFile = new File(filePath);
+                    if (imgFile.exists()) {
+                        ImageIcon icon = new ImageIcon(filePath);
+                        Image img = icon.getImage().getScaledInstance(110, 110, Image.SCALE_SMOOTH);
+                        imageLabel.setIcon(new ImageIcon(img));
+                        imageLabel.setText("");
+                    } else {
+                        imageLabel.setText("No Image");
+                        imageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                    }
                 } else {
                     imageLabel.setText("No Image");
                     imageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
                 }
             } catch (Exception e) {
                 imageLabel.setText("No Image");
+                imageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
             }
         } else {
             imageLabel.setText("No Image");
@@ -254,7 +269,7 @@ public class search_items extends JFrame {
         // Item Details
         JLabel nameLabel = new JLabel("<html><b>" + itemName + "</b> (" + brand + ")</html>");
         nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        nameLabel.setForeground(new Color(0, 102, 102));
+        nameLabel.setForeground(primaryColor);
         nameLabel.setBounds(140, 10, 400, 25);
         card.add(nameLabel);
 
@@ -276,69 +291,83 @@ public class search_items extends JFrame {
         dateLabel.setBounds(140, 75, 200, 20);
         card.add(dateLabel);
 
-        JLabel descLabel = new JLabel("<html>Description: " + (description != null ? description : "N/A") + "</html>");
+        // Truncate description if too long
+        String displayDesc = description != null ? description : "N/A";
+        if (displayDesc.length() > 60) {
+            displayDesc = displayDesc.substring(0, 57) + "...";
+        }
+        JLabel descLabel = new JLabel("<html>Description: " + displayDesc + "</html>");
         descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         descLabel.setForeground(textColor);
         descLabel.setBounds(140, 95, 400, 40);
         card.add(descLabel);
 
-        // Action Buttons (if logged in)
+        // Action Buttons (if logged in and not owner)
         if (isLoggedIn && traderId != ownerId) {
-            int buttonY = 60;
+            int buttonWidth = 75;
+            int buttonHeight = 32;
+            int startX = 560;
+            int buttonY = 55;
+            int spacing = 5;
 
+            // Trade Button
             JButton tradeButton = new JButton("Trade");
             tradeButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            tradeButton.setBackground(new Color(255, 140, 0));
+            tradeButton.setBackground(warningColor);
             tradeButton.setForeground(Color.WHITE);
-            tradeButton.setBounds(580, buttonY, 70, 25);
+            tradeButton.setBounds(startX, buttonY, buttonWidth, buttonHeight);
             tradeButton.setBorder(null);
             tradeButton.setFocusPainted(false);
             tradeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            tradeButton.addActionListener(e -> initiateTrade(itemId, ownerId, ownerName, itemName));
+            tradeButton.addActionListener(e -> openTrades());
             card.add(tradeButton);
 
+            // Message Button
             JButton messageButton = new JButton("Message");
             messageButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            messageButton.setBackground(new Color(0, 102, 102));
+            messageButton.setBackground(primaryColor);
             messageButton.setForeground(Color.WHITE);
-            messageButton.setBounds(580, buttonY + 30, 70, 25);
+            messageButton.setBounds(startX + buttonWidth + spacing, buttonY, buttonWidth, buttonHeight);
             messageButton.setBorder(null);
             messageButton.setFocusPainted(false);
             messageButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            messageButton.addActionListener(e -> sendMessage(ownerId, ownerName));
+            messageButton.addActionListener(e -> openMessages());
             card.add(messageButton);
 
-            JButton iGiveButton = new JButton("I Give");
-            iGiveButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            iGiveButton.setBackground(new Color(32, 118, 3));
-            iGiveButton.setForeground(Color.WHITE);
-            iGiveButton.setBounds(660, buttonY, 60, 25);
-            iGiveButton.setBorder(null);
-            iGiveButton.setFocusPainted(false);
-            iGiveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            iGiveButton.addActionListener(e -> iGiveAction());
-            card.add(iGiveButton);
+            // Give Button
+            JButton giveButton = new JButton("Give");
+            giveButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            giveButton.setBackground(successColor);
+            giveButton.setForeground(Color.WHITE);
+            giveButton.setBounds(startX, buttonY + buttonHeight + spacing, buttonWidth, buttonHeight);
+            giveButton.setBorder(null);
+            giveButton.setFocusPainted(false);
+            giveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            giveButton.addActionListener(e -> openMyItems());
+            card.add(giveButton);
 
-            JButton iWantButton = new JButton("I Want");
-            iWantButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            iWantButton.setBackground(new Color(240, 128, 22));
-            iWantButton.setForeground(Color.WHITE);
-            iWantButton.setBounds(660, buttonY + 30, 60, 25);
-            iWantButton.setBorder(null);
-            iWantButton.setFocusPainted(false);
-            iWantButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            iWantButton.addActionListener(e -> iWantAction());
-            card.add(iWantButton);
+            // Want Button
+            JButton wantButton = new JButton("Want");
+            wantButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            wantButton.setBackground(accentColor);
+            wantButton.setForeground(Color.WHITE);
+            wantButton.setBounds(startX + buttonWidth + spacing, buttonY + buttonHeight + spacing, buttonWidth, buttonHeight);
+            wantButton.setBorder(null);
+            wantButton.setFocusPainted(false);
+            wantButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            wantButton.addActionListener(e -> openFindItems());
+            card.add(wantButton);
+            
         } else if (isLoggedIn && traderId == ownerId) {
             JLabel yourItemLabel = new JLabel("Your Item");
             yourItemLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            yourItemLabel.setForeground(new Color(46, 125, 50));
+            yourItemLabel.setForeground(successColor);
             yourItemLabel.setBounds(580, 60, 100, 30);
             card.add(yourItemLabel);
         } else {
             JLabel loginLabel = new JLabel("Login to trade");
             loginLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-            loginLabel.setForeground(new Color(204, 0, 0));
+            loginLabel.setForeground(errorColor);
             loginLabel.setBounds(580, 60, 150, 30);
             card.add(loginLabel);
         }
@@ -353,42 +382,67 @@ public class search_items extends JFrame {
             newSearch.setVisible(true);
             newSearch.setLocationRelativeTo(null);
             dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Please enter a search term.", "Search", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
-    private void initiateTrade(int targetItemId, int ownerId, String ownerName, String itemName) {
-        // Check if user has items to trade
-        String sql = "SELECT COUNT(*) as count FROM tbl_items WHERE trader_id = ? AND is_active = 1";
-        double itemCount = db.getSingleValue(sql, traderId);
-
-        if (itemCount == 0) {
-            JOptionPane.showMessageDialog(this,
-                    "You don't have any items to trade. Please add items first.",
-                    "No Items", JOptionPane.WARNING_MESSAGE);
-            return;
+    private void goBackToLanding() {
+        if (isLoggedIn) {
+            landing landingFrame = new landing(traderId, traderName);
+            landingFrame.setVisible(true);
+            landingFrame.setLocationRelativeTo(null);
+        } else {
+            landing landingFrame = new landing();
+            landingFrame.setVisible(true);
+            landingFrame.setLocationRelativeTo(null);
         }
-
-        // Open trade request dialog (simplified for now)
-        JOptionPane.showMessageDialog(this,
-                "Trade feature coming soon!\n\nItem: " + itemName + "\nOwner: " + ownerName,
-                "Trade Request", JOptionPane.INFORMATION_MESSAGE);
+        dispose();
     }
-
-    private void sendMessage(int receiverId, String receiverName) {
-        JOptionPane.showMessageDialog(this,
-                "Message feature coming soon!\n\nSend message to: " + receiverName,
-                "Messages", JOptionPane.INFORMATION_MESSAGE);
+    
+    private void openTrades() {
+        if (isLoggedIn && traderId != -1) {
+            BarterZone.Dashboard.trader.trades tradesFrame = new BarterZone.Dashboard.trader.trades(traderId, traderName);
+            tradesFrame.setVisible(true);
+            tradesFrame.setLocationRelativeTo(null);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Please login first to access trades.", "Login Required", JOptionPane.WARNING_MESSAGE);
+        }
     }
-
-    private void iGiveAction() {
-        JOptionPane.showMessageDialog(this,
-                "I Give feature - You can post items to give away.\nThis feature is coming soon!",
-                "I Give", JOptionPane.INFORMATION_MESSAGE);
+    
+    private void openMessages() {
+        if (isLoggedIn && traderId != -1) {
+            BarterZone.Dashboard.trader.messages messagesFrame = new BarterZone.Dashboard.trader.messages(traderId, traderName);
+            messagesFrame.setVisible(true);
+            messagesFrame.setLocationRelativeTo(null);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Please login first to access messages.", "Login Required", JOptionPane.WARNING_MESSAGE);
+        }
     }
-
-    private void iWantAction() {
-        JOptionPane.showMessageDialog(this,
-                "I Want feature - You can request items you want.\nThis feature is coming soon!",
-                "I Want", JOptionPane.INFORMATION_MESSAGE);
+    
+    private void openMyItems() {
+        if (isLoggedIn && traderId != -1) {
+            BarterZone.Dashboard.trader.myitems myItemsFrame = new BarterZone.Dashboard.trader.myitems(traderId, traderName);
+            myItemsFrame.setVisible(true);
+            myItemsFrame.setLocationRelativeTo(null);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Please login first to access your items.", "Login Required", JOptionPane.WARNING_MESSAGE);
+        }
     }
+    
+    private void openFindItems() {
+        if (isLoggedIn && traderId != -1) {
+            BarterZone.Dashboard.trader.finditems findItemsFrame = new BarterZone.Dashboard.trader.finditems(traderId, traderName);
+            findItemsFrame.setVisible(true);
+            findItemsFrame.setLocationRelativeTo(null);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(this, "Please login first to find items.", "Login Required", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
+    private Color errorColor = new Color(204, 0, 0);
 }

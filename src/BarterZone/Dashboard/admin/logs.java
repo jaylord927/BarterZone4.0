@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -40,60 +41,60 @@ public class logs extends javax.swing.JFrame {
     private JPanel sidePanel;
     private JLabel adminAvatarLetter;
     private JLabel adminNameLabel;
-    
+
     // Menu items
     private JPanel dashboardPanel;
     private JLabel dashboardLabel;
-    
+
     private JPanel manageUsersPanel;
     private JLabel manageUsersLabel;
     private JLabel usersBadge;
-    
+
     private JPanel manageAnnouncementPanel;
     private JLabel manageAnnouncementLabel;
     private JLabel announcementBadge;
-    
+
     private JPanel manageTradesPanel;
     private JLabel manageTradesLabel;
     private JLabel tradesBadge;
-    
+
     private JPanel manageReportsPanel;
     private JLabel manageReportsLabel;
     private JLabel reportsBadge;
-    
+
     private JPanel profilePanel;
     private JLabel profileLabel;
-    
+
     private JPanel logsPanel;
     private JLabel logsLabel;
     private JLabel logsBadge;
-    
+
     private JPanel logoutPanel;
     private JLabel logoutLabel;
-    
+
     // Header components
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     // Main content panel
     private JPanel contentPanel;
-    
+
     // Tabbed pane for different log types
     private JTabbedPane tabbedPane;
-    
+
     // Admin Logs Table
     private JScrollPane adminScrollPane;
     private javax.swing.JTable adminTable;
     private DefaultTableModel adminTableModel;
     private TableRowSorter<DefaultTableModel> adminRowSorter;
-    
+
     // Trader Logs Table
     private JScrollPane traderScrollPane;
     private javax.swing.JTable traderTable;
     private DefaultTableModel traderTableModel;
     private TableRowSorter<DefaultTableModel> traderRowSorter;
-    
+
     // Filter components
     private JPanel filterPanel;
     private JTextField searchField;
@@ -102,18 +103,18 @@ public class logs extends javax.swing.JFrame {
     private JButton refreshButton;
     private JButton exportButton;
     private JButton clearLogsButton;
-    
+
     // Stats panel
     private JPanel statsPanel;
     private JLabel totalAdminLogsLabel;
     private JLabel totalTraderLogsLabel;
     private JLabel todayLogsLabel;
     private JLabel weekLogsLabel;
-    
+
     // Selected log data
     private int selectedLogId = -1;
     private String selectedLogType = "";
-    
+
     // Colors - Matching profile.java theme (dark blue/gold)
     private Color sideBarColor = new Color(8, 78, 128);
     private Color hoverColor = new Color(20, 100, 150);
@@ -124,7 +125,7 @@ public class logs extends javax.swing.JFrame {
     private Color headerGradientEnd = new Color(0, 45, 80);
     private Color adminColor = new Color(8, 78, 128);
     private Color traderColor = new Color(0, 102, 102);
-    
+
     private JPanel activePanel = null;
 
     public logs(int adminId, String adminName) {
@@ -132,7 +133,7 @@ public class logs extends javax.swing.JFrame {
         this.adminName = adminName;
         this.session = user_session.getInstance();
         this.db = new config();
-        
+
         initComponents();
         setupSidePanel();
         setupHeader();
@@ -140,8 +141,10 @@ public class logs extends javax.swing.JFrame {
         loadLogsData();
         updateBadges();
         updateStats();
-        
-        setTitle("System Logs - " + adminName);
+
+        setTitle("BarterZone - " + adminName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(1100, 650);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -275,7 +278,7 @@ public class logs extends javax.swing.JFrame {
         panel.setBackground(sideBarColor);
         panel.setBounds(x, y, width, height);
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -283,18 +286,20 @@ public class logs extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(sideBarColor);
                 }
             }
+
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 handleMenuClick(panel);
             }
         });
-        
+
         sidePanel.add(panel);
         return panel;
     }
@@ -464,17 +469,17 @@ public class logs extends javax.swing.JFrame {
         tabbedPane.setBackground(new Color(245, 245, 250));
         tabbedPane.setForeground(new Color(8, 78, 128));
         tabbedPane.setBounds(20, 155, 840, 380);
-        
+
         // Initialize tables
         initializeTables();
-        
+
         tabbedPane.addTab("Admin Logs", adminScrollPane);
         tabbedPane.addTab("Trader Logs", traderScrollPane);
-        
+
         tabbedPane.addChangeListener(e -> {
             clearSelection();
         });
-        
+
         contentPanel.add(tabbedPane);
 
         // Setup search
@@ -483,10 +488,12 @@ public class logs extends javax.swing.JFrame {
             public void insertUpdate(DocumentEvent e) {
                 applyFilters();
             }
+
             @Override
             public void removeUpdate(DocumentEvent e) {
                 applyFilters();
             }
+
             @Override
             public void changedUpdate(DocumentEvent e) {
                 applyFilters();
@@ -651,7 +658,7 @@ public class logs extends javax.swing.JFrame {
         // Setup row sorters
         adminRowSorter = new TableRowSorter<>(adminTableModel);
         adminTable.setRowSorter(adminRowSorter);
-        
+
         traderRowSorter = new TableRowSorter<>(traderTableModel);
         traderTable.setRowSorter(traderRowSorter);
     }
@@ -660,19 +667,17 @@ public class logs extends javax.swing.JFrame {
         String searchText = searchField.getText().trim();
         String selectedDate = (String) dateFilter.getSelectedItem();
         String selectedAction = (String) actionFilter.getSelectedItem();
-        
+
         // Build filter for admin table
         StringBuilder adminFilterPattern = new StringBuilder();
         if (!searchText.isEmpty()) {
             adminFilterPattern.append("(?i).*").append(searchText).append(".*");
         }
-        
+
         // Apply date filter - simplified for now
         // In a real implementation, you would filter by date ranges
-        
         // Apply action filter - simplified for now
         // In a real implementation, you would filter by action type
-        
         if (adminRowSorter != null) {
             if (adminFilterPattern.length() > 0) {
                 adminRowSorter.setRowFilter(RowFilter.regexFilter(adminFilterPattern.toString(), 2, 3, 4));
@@ -680,7 +685,7 @@ public class logs extends javax.swing.JFrame {
                 adminRowSorter.setRowFilter(null);
             }
         }
-        
+
         if (traderRowSorter != null) {
             if (adminFilterPattern.length() > 0) {
                 traderRowSorter.setRowFilter(RowFilter.regexFilter(adminFilterPattern.toString(), 2, 3, 4));
@@ -726,16 +731,18 @@ public class logs extends javax.swing.JFrame {
 
     private void exportLogs() {
         JOptionPane.showMessageDialog(this,
-            "Export logs feature will generate a CSV file with all log data.\n\n"
-            + "This feature is coming soon!",
-            "Export Logs",
-            JOptionPane.INFORMATION_MESSAGE);
-        
+                "Export logs feature will generate a CSV file with all log data.\n\n"
+                + "This feature is coming soon!",
+                "Export Logs",
+                JOptionPane.INFORMATION_MESSAGE);
+
         logActivity("Exported system logs");
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -799,7 +806,7 @@ public class logs extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             admin_dashboard dashboardFrame = new admin_dashboard(adminId, adminName);
             dashboardFrame.setVisible(true);

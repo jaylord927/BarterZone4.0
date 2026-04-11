@@ -11,7 +11,9 @@ import java.awt.RenderingHints;
 import java.awt.Cursor;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
@@ -104,11 +106,16 @@ public class profile extends javax.swing.JFrame {
     private JButton changePasswordButton;
     private JButton activityLogButton;
     
+    // Recent Activity Panel
+    private JPanel activityCard;
+    private JPanel activityListPanel;
+    private JLabel[] activityLabels;
+    
     // Colors - Admin theme (dark blue/gold)
-    private Color sideBarColor = new Color(8, 78, 128); // Darker blue for admin
+    private Color sideBarColor = new Color(8, 78, 128);
     private Color hoverColor = new Color(20, 100, 150);
     private Color activeColor = new Color(0, 60, 100);
-    private Color accentColor = new Color(255, 215, 0); // Gold accent
+    private Color accentColor = new Color(255, 215, 0);
     private Color badgeColor = new Color(204, 0, 0);
     private Color headerGradientStart = new Color(8, 78, 128);
     private Color headerGradientEnd = new Color(0, 45, 80);
@@ -133,9 +140,12 @@ public class profile extends javax.swing.JFrame {
         setupContentPanel();
         loadUserData();
         loadAdminStats();
+        loadRecentActivities();
         updateBadges();
         
-        setTitle("Admin Profile - " + adminName);
+        setTitle("BarterZone - " + adminName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(1100, 650);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -496,8 +506,8 @@ public class profile extends javax.swing.JFrame {
         totalActionsValue.setBounds(valueX, startY, 250, 25);
         infoCard.add(totalActionsValue);
 
-        // Activity Card
-        JPanel activityCard = new JPanel();
+        // Activity Card (with full text visibility)
+        activityCard = new JPanel();
         activityCard.setLayout(null);
         activityCard.setBackground(Color.WHITE);
         activityCard.setBounds(540, 240, 320, 250);
@@ -510,17 +520,11 @@ public class profile extends javax.swing.JFrame {
         activityTitle.setBounds(20, 15, 200, 25);
         activityCard.add(activityTitle);
 
-        // Activity list (placeholder)
-        String[] activities = getRecentActivities();
-        int activityY = 50;
-        for (int i = 0; i < Math.min(activities.length, 5); i++) {
-            JLabel activityLabel = new JLabel("• " + activities[i]);
-            activityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            activityLabel.setForeground(new Color(80, 80, 80));
-            activityLabel.setBounds(20, activityY, 280, 20);
-            activityCard.add(activityLabel);
-            activityY += 25;
-        }
+        activityListPanel = new JPanel();
+        activityListPanel.setLayout(null);
+        activityListPanel.setBackground(Color.WHITE);
+        activityListPanel.setBounds(10, 45, 300, 195);
+        activityCard.add(activityListPanel);
 
         // Action Buttons
         editProfileButton = new JButton("EDIT PROFILE");
@@ -614,27 +618,114 @@ public class profile extends javax.swing.JFrame {
             double usersCount = db.getSingleValue(usersSql);
             usersStatValue.setText(String.valueOf((int) usersCount));
 
-            String tradesSql = "SELECT COUNT(*) as count FROM tbl_trade WHERE trade_status IN ('pending', 'negotiating', 'arrangements_confirmed')";
+            // Active Trades - trades that are not completed or cancelled
+            String tradesSql = "SELECT COUNT(*) as count FROM tbl_trade WHERE trade_status NOT IN ('completed', 'cancelled')";
             double tradesCount = db.getSingleValue(tradesSql);
             tradesStatValue.setText(String.valueOf((int) tradesCount));
 
+            // Pending Reports
             String reportsSql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status IN ('pending', 'under_review')";
             double reportsCount = db.getSingleValue(reportsSql);
             reportsStatValue.setText(String.valueOf((int) reportsCount));
 
-            String feesSql = "SELECT SUM(fee_amount) as total FROM tbl_trade WHERE trade_status = 'completed'";
+            // Total Fees - using service_fee from tbl_payment_details where payment_verified = 1
+            String feesSql = "SELECT COALESCE(SUM(service_fee), 0) as total FROM tbl_payment_details WHERE payment_verified = 1";
             double totalFees = db.getSingleValue(feesSql);
             feesStatValue.setText("₱" + String.format("%.2f", totalFees));
 
         } catch (Exception e) {
             System.out.println("Error loading admin stats: " + e.getMessage());
+            feesStatValue.setText("₱0.00");
         }
+    }
+
+    private void loadRecentActivities() {
+        activityListPanel.removeAll();
+        
+        try {
+            String sql = "SELECT action, description, log_date FROM tbl_logs WHERE admin_id = ? ORDER BY log_date DESC LIMIT 5";
+            List<Map<String, Object>> logs = db.fetchRecords(sql, adminId);
+            
+            activityLabels = new JLabel[logs.size()];
+            
+            int yPos = 0;
+            for (int i = 0; i < logs.size(); i++) {
+                Map<String, Object> log = logs.get(i);
+                String date = formatDateTime(log.get("log_date"));
+                String action = (String) log.get("action");
+                String description = (String) log.get("description");
+                
+                // Use description if available, otherwise use action
+                String displayText;
+                if (description != null && !description.isEmpty()) {
+                    displayText = "• " + date + " - " + description;
+                } else {
+                    displayText = "• " + date + " - " + action;
+                }
+                
+                // Wrap text to fit within panel width (approx 280px)
+                if (displayText.length() > 55) {
+                    displayText = wrapText(displayText, 55);
+                }
+                
+                activityLabels[i] = new JLabel("<html>" + displayText + "</html>");
+                activityLabels[i].setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                activityLabels[i].setForeground(new Color(80, 80, 80));
+                activityLabels[i].setBounds(5, yPos, 280, getLabelHeight(displayText));
+                activityListPanel.add(activityLabels[i]);
+                
+                yPos += getLabelHeight(displayText) + 2;
+            }
+            
+            if (logs.isEmpty()) {
+                JLabel emptyLabel = new JLabel("• No recent activities");
+                emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+                emptyLabel.setForeground(new Color(150, 150, 150));
+                emptyLabel.setBounds(5, 10, 280, 20);
+                activityListPanel.add(emptyLabel);
+            }
+            
+        } catch (Exception e) {
+            JLabel errorLabel = new JLabel("• Unable to load activities");
+            errorLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+            errorLabel.setForeground(new Color(204, 0, 0));
+            errorLabel.setBounds(5, 10, 280, 20);
+            activityListPanel.add(errorLabel);
+        }
+        
+        activityListPanel.revalidate();
+        activityListPanel.repaint();
+    }
+    
+    private String wrapText(String text, int maxCharsPerLine) {
+        StringBuilder wrapped = new StringBuilder();
+        String[] words = text.split(" ");
+        StringBuilder line = new StringBuilder();
+        
+        for (String word : words) {
+            if (line.length() + word.length() + 1 <= maxCharsPerLine) {
+                if (line.length() > 0) {
+                    line.append(" ");
+                }
+                line.append(word);
+            } else {
+                wrapped.append(line.toString()).append("<br>");
+                line = new StringBuilder(word);
+            }
+        }
+        wrapped.append(line.toString());
+        return wrapped.toString();
+    }
+    
+    private int getLabelHeight(String text) {
+        int brCount = text.split("<br>").length - 1;
+        return 20 + (brCount * 16);
     }
 
     private String getCreatedDate() {
         try {
             String sql = "SELECT created_date FROM tbl_users WHERE user_id = ?";
-            java.util.List<Map<String, Object>> result = db.fetchRecords(sql, adminId);
+            List<Map<String, Object>> result = db.fetchRecords(sql, adminId);
             
             if (!result.isEmpty() && result.get(0).get("created_date") != null) {
                 String dateStr = result.get(0).get("created_date").toString();
@@ -669,23 +760,16 @@ public class profile extends javax.swing.JFrame {
         }
     }
 
-    private String[] getRecentActivities() {
+    private String formatDateTime(Object dateObj) {
+        if (dateObj == null) return "-";
         try {
-            String sql = "SELECT action, log_date FROM tbl_logs WHERE admin_id = ? ORDER BY log_date DESC LIMIT 5";
-            java.util.List<Map<String, Object>> logs = db.fetchRecords(sql, adminId);
-            
-            String[] activities = new String[logs.size()];
-            for (int i = 0; i < logs.size(); i++) {
-                Map<String, Object> log = logs.get(i);
-                String date = log.get("log_date").toString();
-                if (date.length() >= 10) {
-                    date = date.substring(0, 10);
-                }
-                activities[i] = date + " - " + log.get("action");
+            String dateStr = dateObj.toString();
+            if (dateStr.length() >= 16) {
+                return dateStr.substring(0, 16).replace("T", " ");
             }
-            return activities;
+            return dateStr;
         } catch (Exception e) {
-            return new String[]{"No recent activities"};
+            return "-";
         }
     }
 
@@ -768,21 +852,29 @@ public class profile extends javax.swing.JFrame {
     }
 
     private void editProfile() {
-        JOptionPane.showMessageDialog(this, 
-            "Edit Profile feature will open edit_profile.java",
-            "Edit Profile", JOptionPane.INFORMATION_MESSAGE);
+        edit_profile editProfileFrame = new edit_profile(adminId, adminName);
+        editProfileFrame.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        editProfileFrame.setVisible(true);
+        loadUserData();
+        loadAdminStats();
+        loadRecentActivities();
     }
 
     private void changePassword() {
-        JOptionPane.showMessageDialog(this, 
-            "Change Password feature coming soon!",
-            "Change Password", JOptionPane.INFORMATION_MESSAGE);
+        change_password changePasswordFrame = new change_password(adminId, adminName);
+        changePasswordFrame.setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
+        changePasswordFrame.setVisible(true);
+        loadUserData();
+        loadAdminStats();
+        loadRecentActivities();
     }
 
     private void viewActivityLog() {
-        JOptionPane.showMessageDialog(this, 
-            "Activity Log feature will open logs.java",
-            "Activity Log", JOptionPane.INFORMATION_MESSAGE);
+        // Open logs.java
+        logs logsFrame = new logs(adminId, adminName);
+        logsFrame.setVisible(true);
+        logsFrame.setLocationRelativeTo(null);
+        this.dispose();
     }
 
     private void logout() {

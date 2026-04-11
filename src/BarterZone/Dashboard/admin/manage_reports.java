@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -40,62 +41,64 @@ public class manage_reports extends javax.swing.JFrame {
     private JPanel sidePanel;
     private JLabel adminAvatarLetter;
     private JLabel adminNameLabel;
-    
+
     // Menu items
     private JPanel dashboardPanel;
     private JLabel dashboardLabel;
-    
+
     private JPanel manageUsersPanel;
     private JLabel manageUsersLabel;
     private JLabel usersBadge;
-    
+
     private JPanel manageAnnouncementPanel;
     private JLabel manageAnnouncementLabel;
     private JLabel announcementBadge;
-    
+
     private JPanel manageTradesPanel;
     private JLabel manageTradesLabel;
     private JLabel tradesBadge;
-    
+
     private JPanel manageReportsPanel;
     private JLabel manageReportsLabel;
     private JLabel reportsBadge;
-    
+
     private JPanel profilePanel;
     private JLabel profileLabel;
-    
+
     private JPanel logsPanel;
     private JLabel logsLabel;
     private JLabel logsBadge;
-    
+
     private JPanel logoutPanel;
     private JLabel logoutLabel;
-    
+
     // Header components
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     // Main content panel
     private JPanel contentPanel;
-    
+
     // Filter components
     private JPanel filterPanel;
     private JTextField searchField;
     private JComboBox<String> statusFilter;
     private JButton refreshButton;
-    
+
+    // Stats labels
+    private JLabel totalLabel;
+    private JLabel pendingCount;
+    private JLabel underReviewCount;
+    private JLabel resolvedCount;
+    private JLabel dismissedCount;
+
     // Reports table
     private JScrollPane tableScrollPane;
     private javax.swing.JTable reportsTable;
     private DefaultTableModel tableModel;
     private TableRowSorter<DefaultTableModel> rowSorter;
-    
-    // Report details panel
-    private JPanel detailsPanel;
-    private JTextArea reportDetailsArea;
-    private JScrollPane detailsScrollPane;
-    
+
     // Action buttons panel
     private JPanel actionPanel;
     private JButton markUnderReviewButton;
@@ -104,12 +107,12 @@ public class manage_reports extends javax.swing.JFrame {
     private JButton contactReporterButton;
     private JButton contactReportedButton;
     private JButton viewTradeButton;
-    
+
     // Selected report data
     private int selectedReportId = -1;
     private String selectedReportStatus = "";
-    
-    // Colors - Matching profile.java theme (dark blue/gold)
+
+    // Colors - Admin theme (dark blue/gold)
     private Color sideBarColor = new Color(8, 78, 128);
     private Color hoverColor = new Color(20, 100, 150);
     private Color activeColor = new Color(0, 60, 100);
@@ -120,7 +123,8 @@ public class manage_reports extends javax.swing.JFrame {
     private Color pendingColor = new Color(255, 153, 0);
     private Color underReviewColor = new Color(0, 102, 102);
     private Color resolvedColor = new Color(46, 125, 50);
-    
+    private Color dismissedColor = new Color(102, 102, 102);
+
     private JPanel activePanel = null;
 
     public manage_reports(int adminId, String adminName) {
@@ -128,15 +132,18 @@ public class manage_reports extends javax.swing.JFrame {
         this.adminName = adminName;
         this.session = user_session.getInstance();
         this.db = new config();
-        
+
         initComponents();
         setupSidePanel();
         setupHeader();
         setupContentPanel();
         loadReportsData();
         updateBadges();
-        
-        setTitle("Manage Reports - " + adminName);
+        updateStatsCounts();
+
+        setTitle("BarterZone - " + adminName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(1100, 650);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -270,7 +277,7 @@ public class manage_reports extends javax.swing.JFrame {
         panel.setBackground(sideBarColor);
         panel.setBounds(x, y, width, height);
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -278,18 +285,20 @@ public class manage_reports extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(sideBarColor);
                 }
             }
+
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 handleMenuClick(panel);
             }
         });
-        
+
         sidePanel.add(panel);
         return panel;
     }
@@ -344,31 +353,31 @@ public class manage_reports extends javax.swing.JFrame {
         filterPanel.setLayout(null);
         filterPanel.setBackground(Color.WHITE);
         filterPanel.setBorder(new LineBorder(accentColor, 1));
-        filterPanel.setBounds(20, 15, 840, 70);
+        filterPanel.setBounds(20, 15, 840, 90);
         contentPanel.add(filterPanel);
 
         JLabel searchLabel = new JLabel("Search:");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         searchLabel.setForeground(new Color(8, 78, 128));
-        searchLabel.setBounds(15, 25, 60, 25);
+        searchLabel.setBounds(15, 15, 60, 25);
         filterPanel.add(searchLabel);
 
         searchField = new JTextField();
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        searchField.setBounds(80, 25, 200, 25);
+        searchField.setBounds(80, 15, 200, 25);
         searchField.setBorder(new LineBorder(new Color(200, 200, 200)));
         filterPanel.add(searchField);
 
         JLabel statusLabel = new JLabel("Status:");
         statusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         statusLabel.setForeground(new Color(8, 78, 128));
-        statusLabel.setBounds(300, 25, 50, 25);
+        statusLabel.setBounds(300, 15, 50, 25);
         filterPanel.add(statusLabel);
 
         String[] statuses = {"All Reports", "Pending", "Under Review", "Resolved"};
         statusFilter = new JComboBox<>(statuses);
         statusFilter.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        statusFilter.setBounds(355, 25, 120, 25);
+        statusFilter.setBounds(355, 15, 120, 25);
         statusFilter.setBackground(Color.WHITE);
         statusFilter.setBorder(new LineBorder(new Color(200, 200, 200)));
         statusFilter.addActionListener(e -> applyFilter());
@@ -378,79 +387,63 @@ public class manage_reports extends javax.swing.JFrame {
         refreshButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         refreshButton.setBackground(accentColor);
         refreshButton.setForeground(new Color(8, 78, 128));
-        refreshButton.setBounds(490, 25, 90, 25);
+        refreshButton.setBounds(490, 15, 90, 25);
         refreshButton.setBorder(null);
         refreshButton.setFocusPainted(false);
         refreshButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> {
             loadReportsData();
             applyFilter();
+            updateStatsCounts();
         });
         filterPanel.add(refreshButton);
 
-        // Stats Summary
-        JLabel totalLabel = new JLabel("Total: " + getTotalReports());
+        // Stats Summary - All counts fully visible
+        totalLabel = new JLabel("Total: 0");
         totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         totalLabel.setForeground(new Color(8, 78, 128));
-        totalLabel.setBounds(600, 25, 80, 25);
+        totalLabel.setBounds(15, 55, 80, 25);
         filterPanel.add(totalLabel);
 
-        JLabel pendingCount = new JLabel("Pending: " + getPendingCount());
+        pendingCount = new JLabel("Pending: 0");
         pendingCount.setFont(new Font("Segoe UI", Font.BOLD, 12));
         pendingCount.setForeground(pendingColor);
-        pendingCount.setBounds(690, 25, 80, 25);
+        pendingCount.setBounds(105, 55, 90, 25);
         filterPanel.add(pendingCount);
 
-        JLabel resolvedCount = new JLabel("Resolved: " + getResolvedCount());
+        underReviewCount = new JLabel("Under Review: 0");
+        underReviewCount.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        underReviewCount.setForeground(underReviewColor);
+        underReviewCount.setBounds(205, 55, 120, 25);
+        filterPanel.add(underReviewCount);
+
+        resolvedCount = new JLabel("Resolved: 0");
         resolvedCount.setFont(new Font("Segoe UI", Font.BOLD, 12));
         resolvedCount.setForeground(resolvedColor);
-        resolvedCount.setBounds(780, 25, 80, 25);
+        resolvedCount.setBounds(335, 55, 90, 25);
         filterPanel.add(resolvedCount);
+
+        dismissedCount = new JLabel("Dismissed: 0");
+        dismissedCount.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        dismissedCount.setForeground(dismissedColor);
+        dismissedCount.setBounds(435, 55, 100, 25);
+        filterPanel.add(dismissedCount);
 
         // Reports Table
         setupTable();
         tableScrollPane = new JScrollPane(reportsTable);
-        tableScrollPane.setBounds(20, 95, 550, 340);
+        tableScrollPane.setBounds(20, 115, 840, 280);
         tableScrollPane.setBorder(new LineBorder(accentColor, 1));
         tableScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         tableScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         contentPanel.add(tableScrollPane);
-
-        // Report Details Panel
-        detailsPanel = new JPanel();
-        detailsPanel.setLayout(null);
-        detailsPanel.setBackground(Color.WHITE);
-        detailsPanel.setBorder(new LineBorder(accentColor, 1));
-        detailsPanel.setBounds(580, 95, 280, 340);
-        contentPanel.add(detailsPanel);
-
-        JLabel detailsTitle = new JLabel("Report Details");
-        detailsTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        detailsTitle.setForeground(new Color(8, 78, 128));
-        detailsTitle.setBounds(10, 10, 150, 25);
-        detailsPanel.add(detailsTitle);
-
-        reportDetailsArea = new JTextArea();
-        reportDetailsArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        reportDetailsArea.setEditable(false);
-        reportDetailsArea.setLineWrap(true);
-        reportDetailsArea.setWrapStyleWord(true);
-        reportDetailsArea.setBackground(new Color(250, 250, 250));
-        reportDetailsArea.setText("Select a report to view details");
-
-        detailsScrollPane = new JScrollPane(reportDetailsArea);
-        detailsScrollPane.setBounds(10, 40, 260, 290);
-        detailsScrollPane.setBorder(new LineBorder(new Color(200, 200, 200)));
-        detailsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        detailsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        detailsPanel.add(detailsScrollPane);
 
         // Action Buttons Panel
         actionPanel = new JPanel();
         actionPanel.setLayout(null);
         actionPanel.setBackground(Color.WHITE);
         actionPanel.setBorder(new LineBorder(accentColor, 1));
-        actionPanel.setBounds(20, 445, 840, 90);
+        actionPanel.setBounds(20, 410, 840, 120);
         contentPanel.add(actionPanel);
 
         JLabel actionLabel = new JLabel("Actions:");
@@ -459,19 +452,18 @@ public class manage_reports extends javax.swing.JFrame {
         actionLabel.setBounds(15, 15, 70, 25);
         actionPanel.add(actionLabel);
 
-        // Calculate button positions - 6 buttons with proper spacing
-        int buttonWidth = 120;
+        // Button dimensions
+        int buttonWidth = 130;
         int buttonHeight = 35;
         int startX = 100;
-        int yPos = 15;
         int spacing = 10;
 
-        // Mark Under Review Button
+        // Row 1 - 4 buttons
         markUnderReviewButton = new JButton("Mark Under Review");
         markUnderReviewButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         markUnderReviewButton.setBackground(underReviewColor);
         markUnderReviewButton.setForeground(Color.WHITE);
-        markUnderReviewButton.setBounds(startX, yPos, buttonWidth, buttonHeight);
+        markUnderReviewButton.setBounds(startX, 15, buttonWidth, buttonHeight);
         markUnderReviewButton.setBorder(null);
         markUnderReviewButton.setFocusPainted(false);
         markUnderReviewButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -479,12 +471,11 @@ public class manage_reports extends javax.swing.JFrame {
         markUnderReviewButton.addActionListener(e -> markUnderReview());
         actionPanel.add(markUnderReviewButton);
 
-        // Resolve Report Button
         resolveReportButton = new JButton("Resolve Report");
         resolveReportButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         resolveReportButton.setBackground(resolvedColor);
         resolveReportButton.setForeground(Color.WHITE);
-        resolveReportButton.setBounds(startX + (buttonWidth + spacing), yPos, buttonWidth, buttonHeight);
+        resolveReportButton.setBounds(startX + buttonWidth + spacing, 15, buttonWidth, buttonHeight);
         resolveReportButton.setBorder(null);
         resolveReportButton.setFocusPainted(false);
         resolveReportButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -492,12 +483,11 @@ public class manage_reports extends javax.swing.JFrame {
         resolveReportButton.addActionListener(e -> resolveReport());
         actionPanel.add(resolveReportButton);
 
-        // Dismiss Report Button
         dismissReportButton = new JButton("Dismiss Report");
         dismissReportButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        dismissReportButton.setBackground(new Color(102, 102, 102));
+        dismissReportButton.setBackground(dismissedColor);
         dismissReportButton.setForeground(Color.WHITE);
-        dismissReportButton.setBounds(startX + (buttonWidth + spacing) * 2, yPos, buttonWidth, buttonHeight);
+        dismissReportButton.setBounds(startX + (buttonWidth + spacing) * 2, 15, buttonWidth, buttonHeight);
         dismissReportButton.setBorder(null);
         dismissReportButton.setFocusPainted(false);
         dismissReportButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -505,12 +495,11 @@ public class manage_reports extends javax.swing.JFrame {
         dismissReportButton.addActionListener(e -> dismissReport());
         actionPanel.add(dismissReportButton);
 
-        // Contact Reporter Button
         contactReporterButton = new JButton("Contact Reporter");
         contactReporterButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        contactReporterButton.setBackground(new Color(8, 78, 128));
+        contactReporterButton.setBackground(sideBarColor);
         contactReporterButton.setForeground(Color.WHITE);
-        contactReporterButton.setBounds(startX + (buttonWidth + spacing) * 3, yPos, buttonWidth, buttonHeight);
+        contactReporterButton.setBounds(startX + (buttonWidth + spacing) * 3, 15, buttonWidth, buttonHeight);
         contactReporterButton.setBorder(null);
         contactReporterButton.setFocusPainted(false);
         contactReporterButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -518,12 +507,12 @@ public class manage_reports extends javax.swing.JFrame {
         contactReporterButton.addActionListener(e -> contactReporter());
         actionPanel.add(contactReporterButton);
 
-        // Contact Reported Button
+        // Row 2 - 2 buttons (Contact Reported and View Trade)
         contactReportedButton = new JButton("Contact Reported");
         contactReportedButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         contactReportedButton.setBackground(new Color(255, 153, 0));
         contactReportedButton.setForeground(Color.WHITE);
-        contactReportedButton.setBounds(startX + (buttonWidth + spacing) * 4, yPos, buttonWidth, buttonHeight);
+        contactReportedButton.setBounds(startX, 65, buttonWidth, buttonHeight);
         contactReportedButton.setBorder(null);
         contactReportedButton.setFocusPainted(false);
         contactReportedButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -531,12 +520,11 @@ public class manage_reports extends javax.swing.JFrame {
         contactReportedButton.addActionListener(e -> contactReported());
         actionPanel.add(contactReportedButton);
 
-        // View Trade Button
         viewTradeButton = new JButton("View Trade");
         viewTradeButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         viewTradeButton.setBackground(accentColor);
-        viewTradeButton.setForeground(new Color(8, 78, 128));
-        viewTradeButton.setBounds(startX + (buttonWidth + spacing) * 5, yPos, buttonWidth, buttonHeight);
+        viewTradeButton.setForeground(sideBarColor);
+        viewTradeButton.setBounds(startX + buttonWidth + spacing, 65, buttonWidth, buttonHeight);
         viewTradeButton.setBorder(null);
         viewTradeButton.setFocusPainted(false);
         viewTradeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -550,10 +538,12 @@ public class manage_reports extends javax.swing.JFrame {
             public void insertUpdate(DocumentEvent e) {
                 applySearch();
             }
+
             @Override
             public void removeUpdate(DocumentEvent e) {
                 applySearch();
             }
+
             @Override
             public void changedUpdate(DocumentEvent e) {
                 applySearch();
@@ -624,8 +614,10 @@ public class manage_reports extends javax.swing.JFrame {
 
         for (Map<String, Object> report : reports) {
             String status = (String) report.get("report_status");
-            if (status == null) status = "pending";
-            
+            if (status == null) {
+                status = "pending";
+            }
+
             tableModel.addRow(new Object[]{
                 report.get("report_id"),
                 formatDate(report.get("report_date")),
@@ -660,39 +652,39 @@ public class manage_reports extends javax.swing.JFrame {
             Map<String, Object> report = reports.get(0);
 
             StringBuilder details = new StringBuilder();
-            details.append("═══════════════════════════════════════\n");
-            details.append("           REPORT DETAILS\n");
-            details.append("═══════════════════════════════════════\n\n");
-            
+            details.append("=== REPORT DETAILS ===\n\n");
+
             details.append("Report ID: ").append(report.get("report_id")).append("\n");
             details.append("Date Filed: ").append(formatDateTime(report.get("report_date"))).append("\n");
             details.append("Status: ").append(report.get("report_status")).append("\n\n");
-            
-            details.append("━━━━━━━━━━ REPORTER INFORMATION ━━━━━━━━━━\n");
+
+            details.append("--- REPORTER INFORMATION ---\n");
             details.append("Name: ").append(report.get("reporter_name")).append("\n");
             details.append("Username: ").append(report.get("reporter_username")).append("\n");
             details.append("Email: ").append(report.get("reporter_email")).append("\n\n");
-            
-            details.append("━━━━━━━━ REPORTED USER INFORMATION ━━━━━━━━\n");
+
+            details.append("--- REPORTED USER INFORMATION ---\n");
             details.append("Name: ").append(report.get("reported_name")).append("\n");
             details.append("Username: ").append(report.get("reported_username")).append("\n");
             details.append("Email: ").append(report.get("reported_email")).append("\n\n");
-            
-            details.append("━━━━━━━━━━━━ REPORT DETAILS ━━━━━━━━━━━━━\n");
+
+            details.append("--- REPORT DETAILS ---\n");
             details.append("Reason: ").append(report.get("report_reason")).append("\n\n");
             details.append("Description:\n").append(report.get("report_description")).append("\n\n");
-            
+
             if (report.get("admin_notes") != null && !report.get("admin_notes").toString().isEmpty()) {
-                details.append("━━━━━━━━━━━━ ADMIN NOTES ━━━━━━━━━━━━━\n");
+                details.append("--- ADMIN NOTES ---\n");
                 details.append(report.get("admin_notes")).append("\n\n");
             }
-            
+
             if (report.get("resolved_date") != null) {
                 details.append("Resolved Date: ").append(formatDateTime(report.get("resolved_date"))).append("\n");
             }
 
-            reportDetailsArea.setText(details.toString());
-            reportDetailsArea.setCaretPosition(0);
+            // Show the report details in a dialog
+            JOptionPane.showMessageDialog(this, details.toString(),
+                    "Report Details - ID: " + selectedReportId,
+                    JOptionPane.INFORMATION_MESSAGE);
 
             // Enable/disable buttons based on status
             boolean isPending = "pending".equals(selectedReportStatus);
@@ -711,8 +703,7 @@ public class manage_reports extends javax.swing.JFrame {
     private void clearSelection() {
         selectedReportId = -1;
         selectedReportStatus = "";
-        reportDetailsArea.setText("Select a report to view details");
-        
+
         markUnderReviewButton.setEnabled(false);
         resolveReportButton.setEnabled(false);
         dismissReportButton.setEnabled(false);
@@ -723,7 +714,7 @@ public class manage_reports extends javax.swing.JFrame {
 
     private void applyFilter() {
         String filter = (String) statusFilter.getSelectedItem();
-        
+
         if (filter.equals("All Reports")) {
             rowSorter.setRowFilter(null);
         } else if (filter.equals("Pending")) {
@@ -744,33 +735,70 @@ public class manage_reports extends javax.swing.JFrame {
         }
     }
 
+    private void updateStatsCounts() {
+        try {
+            // Total reports
+            String totalSql = "SELECT COUNT(*) as count FROM tbl_reports";
+            double total = db.getSingleValue(totalSql);
+            totalLabel.setText("Total: " + (int) total);
+
+            // Pending reports
+            String pendingSql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status = 'pending'";
+            double pending = db.getSingleValue(pendingSql);
+            pendingCount.setText("Pending: " + (int) pending);
+
+            // Under Review reports
+            String underReviewSql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status = 'under_review'";
+            double underReview = db.getSingleValue(underReviewSql);
+            underReviewCount.setText("Under Review: " + (int) underReview);
+
+            // Resolved reports
+            String resolvedSql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status = 'resolved' AND admin_notes NOT LIKE '%dismissed%'";
+            double resolved = db.getSingleValue(resolvedSql);
+            resolvedCount.setText("Resolved: " + (int) resolved);
+
+            // Dismissed reports
+            String dismissedSql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status = 'resolved' AND admin_notes LIKE '%dismissed%'";
+            double dismissed = db.getSingleValue(dismissedSql);
+            dismissedCount.setText("Dismissed: " + (int) dismissed);
+
+        } catch (Exception e) {
+            System.out.println("Error updating stats counts: " + e.getMessage());
+        }
+    }
+
     private void markUnderReview() {
-        if (selectedReportId == -1) return;
+        if (selectedReportId == -1) {
+            return;
+        }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Mark this report as Under Review?\n\n"
-            + "Report ID: " + selectedReportId,
-            "Mark Under Review",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE);
+                "Mark this report as Under Review?\n\n"
+                + "Report ID: " + selectedReportId,
+                "Mark Under Review",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "UPDATE tbl_reports SET report_status = 'under_review' WHERE report_id = ?";
             db.updateRecord(sql, selectedReportId);
 
             JOptionPane.showMessageDialog(this,
-                "Report marked as Under Review.",
-                "Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                    "Report marked as Under Review.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
 
             logActivity("Marked report #" + selectedReportId + " as under review");
             loadReportsData();
+            updateStatsCounts();
             clearSelection();
         }
     }
 
     private void resolveReport() {
-        if (selectedReportId == -1) return;
+        if (selectedReportId == -1) {
+            return;
+        }
 
         JPanel panel = new JPanel();
         panel.setLayout(null);
@@ -792,14 +820,14 @@ public class manage_reports extends javax.swing.JFrame {
         panel.add(actionLabel);
 
         JComboBox<String> actionCombo = new JComboBox<>(new String[]{
-            "Warning issued", "Account suspended", "Account banned", 
+            "Warning issued", "Account suspended", "Account banned",
             "Trade cancelled", "Refund processed", "No action needed"
         });
         actionCombo.setBounds(130, 180, 240, 25);
         panel.add(actionCombo);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Resolve Report", 
-            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Resolve Report",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
             String resolution = resolutionArea.getText().trim();
@@ -810,96 +838,106 @@ public class manage_reports extends javax.swing.JFrame {
             db.updateRecord(sql, notes, selectedReportId);
 
             JOptionPane.showMessageDialog(this,
-                "Report resolved successfully!",
-                "Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                    "Report resolved successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
 
             logActivity("Resolved report #" + selectedReportId + " - " + action);
             loadReportsData();
+            updateStatsCounts();
             clearSelection();
         }
     }
 
     private void dismissReport() {
-        if (selectedReportId == -1) return;
+        if (selectedReportId == -1) {
+            return;
+        }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Dismiss this report?\n\n"
-            + "Report ID: " + selectedReportId + "\n\n"
-            + "This will mark the report as dismissed with no action taken.",
-            "Dismiss Report",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
+                "Dismiss this report?\n\n"
+                + "Report ID: " + selectedReportId + "\n\n"
+                + "This will mark the report as dismissed with no action taken.",
+                "Dismiss Report",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "UPDATE tbl_reports SET report_status = 'resolved', admin_notes = 'Report dismissed - no action taken', resolved_date = datetime('now') WHERE report_id = ?";
             db.updateRecord(sql, selectedReportId);
 
             JOptionPane.showMessageDialog(this,
-                "Report dismissed.",
-                "Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                    "Report dismissed.",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
 
             logActivity("Dismissed report #" + selectedReportId);
             loadReportsData();
+            updateStatsCounts();
             clearSelection();
         }
     }
 
     private void contactReporter() {
-        if (selectedReportId == -1) return;
+        if (selectedReportId == -1) {
+            return;
+        }
 
         String sql = "SELECT reporter_id FROM tbl_reports WHERE report_id = ?";
         List<Map<String, Object>> result = db.fetchRecords(sql, selectedReportId);
 
         if (!result.isEmpty()) {
             int reporterId = Integer.parseInt(result.get(0).get("reporter_id").toString());
-            
+
             JOptionPane.showMessageDialog(this,
-                "Opening message interface with reporter...\n\n"
-                + "This will open the messaging system to contact the reporter.",
-                "Contact Reporter",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            // Here you would open the messaging system
+                    "Opening message interface with reporter...\n\n"
+                    + "This will open the messaging system to contact the reporter.",
+                    "Contact Reporter",
+                    JOptionPane.INFORMATION_MESSAGE);
+
             logActivity("Contacted reporter for report #" + selectedReportId);
         }
     }
 
     private void contactReported() {
-        if (selectedReportId == -1) return;
+        if (selectedReportId == -1) {
+            return;
+        }
 
         String sql = "SELECT reported_trader_id FROM tbl_reports WHERE report_id = ?";
         List<Map<String, Object>> result = db.fetchRecords(sql, selectedReportId);
 
         if (!result.isEmpty()) {
             int reportedId = Integer.parseInt(result.get(0).get("reported_trader_id").toString());
-            
+
             JOptionPane.showMessageDialog(this,
-                "Opening message interface with reported user...\n\n"
-                + "This will open the messaging system to contact the reported user.",
-                "Contact Reported User",
-                JOptionPane.INFORMATION_MESSAGE);
-            
-            // Here you would open the messaging system
+                    "Opening message interface with reported user...\n\n"
+                    + "This will open the messaging system to contact the reported user.",
+                    "Contact Reported User",
+                    JOptionPane.INFORMATION_MESSAGE);
+
             logActivity("Contacted reported user for report #" + selectedReportId);
         }
     }
 
     private void viewRelatedTrade() {
-        if (selectedReportId == -1) return;
+        if (selectedReportId == -1) {
+            return;
+        }
 
         JOptionPane.showMessageDialog(this,
-            "Viewing related trade...\n\n"
-            + "This will open the trade management interface for the related trade.",
-            "View Trade",
-            JOptionPane.INFORMATION_MESSAGE);
-        
-        // Here you would open the trade management for the related trade
+                "Viewing related trade...\n\n"
+                + "This will open the trade management interface for the related trade.",
+                "View Trade",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        logActivity("Viewed related trade for report #" + selectedReportId);
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -912,7 +950,9 @@ public class manage_reports extends javax.swing.JFrame {
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -921,33 +961,6 @@ public class manage_reports extends javax.swing.JFrame {
             return dateStr;
         } catch (Exception e) {
             return "-";
-        }
-    }
-
-    private int getTotalReports() {
-        try {
-            String sql = "SELECT COUNT(*) as count FROM tbl_reports";
-            return (int) db.getSingleValue(sql);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private int getPendingCount() {
-        try {
-            String sql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status IN ('pending', 'under_review')";
-            return (int) db.getSingleValue(sql);
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private int getResolvedCount() {
-        try {
-            String sql = "SELECT COUNT(*) as count FROM tbl_reports WHERE report_status = 'resolved'";
-            return (int) db.getSingleValue(sql);
-        } catch (Exception e) {
-            return 0;
         }
     }
 
@@ -1003,7 +1016,7 @@ public class manage_reports extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             admin_dashboard dashboardFrame = new admin_dashboard(adminId, adminName);
             dashboardFrame.setVisible(true);

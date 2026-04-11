@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -41,45 +42,45 @@ public class manage_announcement extends javax.swing.JFrame {
     private JPanel sidePanel;
     private JLabel adminAvatarLetter;
     private JLabel adminNameLabel;
-    
+
     // Menu items
     private JPanel dashboardPanel;
     private JLabel dashboardLabel;
-    
+
     private JPanel manageUsersPanel;
     private JLabel manageUsersLabel;
     private JLabel usersBadge;
-    
+
     private JPanel manageAnnouncementPanel;
     private JLabel manageAnnouncementLabel;
     private JLabel announcementBadge;
-    
+
     private JPanel manageTradesPanel;
     private JLabel manageTradesLabel;
     private JLabel tradesBadge;
-    
+
     private JPanel manageReportsPanel;
     private JLabel manageReportsLabel;
     private JLabel reportsBadge;
-    
+
     private JPanel profilePanel;
     private JLabel profileLabel;
-    
+
     private JPanel logsPanel;
     private JLabel logsLabel;
     private JLabel logsBadge;
-    
+
     private JPanel logoutPanel;
     private JLabel logoutLabel;
-    
+
     // Header components
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     // Main content panel
     private JPanel contentPanel;
-    
+
     // Announcement form panel
     private JPanel formPanel;
     private JTextField titleField;
@@ -91,21 +92,21 @@ public class manage_announcement extends javax.swing.JFrame {
     private JButton updateButton;
     private JButton deleteButton;
     private JButton clearButton;
-    
+
     // Announcements table
     private JScrollPane tableScrollPane;
     private javax.swing.JTable announcementsTable;
     private DefaultTableModel tableModel;
     private TableRowSorter<DefaultTableModel> rowSorter;
-    
+
     // Search panel
     private JPanel searchPanel;
     private JTextField searchField;
     private JButton refreshButton;
-    
+
     // Selected announcement data
     private int selectedAnnouncementId = -1;
-    
+
     // Colors - Admin theme (dark blue/gold)
     private Color sideBarColor = new Color(8, 78, 128);
     private Color hoverColor = new Color(20, 100, 150);
@@ -115,7 +116,7 @@ public class manage_announcement extends javax.swing.JFrame {
     private Color headerGradientStart = new Color(8, 78, 128);
     private Color headerGradientEnd = new Color(0, 45, 80);
     private Color formBgColor = new Color(250, 250, 250);
-    
+
     private JPanel activePanel = null;
 
     public manage_announcement(int adminId, String adminName) {
@@ -123,15 +124,17 @@ public class manage_announcement extends javax.swing.JFrame {
         this.adminName = adminName;
         this.session = user_session.getInstance();
         this.db = new config();
-        
+
         initComponents();
         setupSidePanel();
         setupHeader();
         setupContentPanel();
         loadAnnouncements();
         updateBadges();
-        
-        setTitle("Manage Announcements - " + adminName);
+
+        setTitle("BarterZone - " + adminName);
+        setIconImage(new ImageIcon(getClass().getResource(
+                "/BarterZone/resources/icon/logo.png")).getImage());
         setSize(1100, 650);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -265,7 +268,7 @@ public class manage_announcement extends javax.swing.JFrame {
         panel.setBackground(sideBarColor);
         panel.setBounds(x, y, width, height);
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
@@ -273,18 +276,20 @@ public class manage_announcement extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(sideBarColor);
                 }
             }
+
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 handleMenuClick(panel);
             }
         });
-        
+
         sidePanel.add(panel);
         return panel;
     }
@@ -505,10 +510,12 @@ public class manage_announcement extends javax.swing.JFrame {
             public void insertUpdate(DocumentEvent e) {
                 applySearch();
             }
+
             @Override
             public void removeUpdate(DocumentEvent e) {
                 applySearch();
             }
+
             @Override
             public void changedUpdate(DocumentEvent e) {
                 applySearch();
@@ -629,9 +636,9 @@ public class manage_announcement extends javax.swing.JFrame {
 
         if (title.isEmpty() || message.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                "Please enter both title and message.",
-                "Incomplete Information",
-                JOptionPane.WARNING_MESSAGE);
+                    "Please enter both title and message.",
+                    "Incomplete Information",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -641,9 +648,9 @@ public class manage_announcement extends javax.swing.JFrame {
         db.addRecord(sql, adminId, title, message, type, isActive ? 1 : 0);
 
         JOptionPane.showMessageDialog(this,
-            "Announcement created successfully!",
-            "Success",
-            JOptionPane.INFORMATION_MESSAGE);
+                "Announcement created successfully!",
+                "Success",
+                JOptionPane.INFORMATION_MESSAGE);
 
         logActivity("Created announcement: " + title);
         loadAnnouncements();
@@ -651,7 +658,9 @@ public class manage_announcement extends javax.swing.JFrame {
     }
 
     private void updateAnnouncement() {
-        if (selectedAnnouncementId == -1) return;
+        if (selectedAnnouncementId == -1) {
+            return;
+        }
 
         String title = titleField.getText().trim();
         String message = messageArea.getText().trim();
@@ -660,16 +669,16 @@ public class manage_announcement extends javax.swing.JFrame {
 
         if (title.isEmpty() || message.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                "Please enter both title and message.",
-                "Incomplete Information",
-                JOptionPane.WARNING_MESSAGE);
+                    "Please enter both title and message.",
+                    "Incomplete Information",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Update this announcement?\n\n" + title,
-            "Confirm Update",
-            JOptionPane.YES_NO_OPTION);
+                "Update this announcement?\n\n" + title,
+                "Confirm Update",
+                JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "UPDATE tbl_announcement SET title = ?, message = ?, type = ?, is_active = ? "
@@ -678,9 +687,9 @@ public class manage_announcement extends javax.swing.JFrame {
             db.updateRecord(sql, title, message, type, isActive ? 1 : 0, selectedAnnouncementId);
 
             JOptionPane.showMessageDialog(this,
-                "Announcement updated successfully!",
-                "Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                    "Announcement updated successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
 
             logActivity("Updated announcement ID: " + selectedAnnouncementId);
             loadAnnouncements();
@@ -689,22 +698,24 @@ public class manage_announcement extends javax.swing.JFrame {
     }
 
     private void deleteAnnouncement() {
-        if (selectedAnnouncementId == -1) return;
+        if (selectedAnnouncementId == -1) {
+            return;
+        }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Delete this announcement?\n\nTitle: " + titleField.getText() + "\n\nThis action cannot be undone!",
-            "Confirm Delete",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
+                "Delete this announcement?\n\nTitle: " + titleField.getText() + "\n\nThis action cannot be undone!",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "DELETE FROM tbl_announcement WHERE announcement_id = ?";
             db.deleteRecord(sql, selectedAnnouncementId);
 
             JOptionPane.showMessageDialog(this,
-                "Announcement deleted successfully!",
-                "Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                    "Announcement deleted successfully!",
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
 
             logActivity("Deleted announcement ID: " + selectedAnnouncementId);
             loadAnnouncements();
@@ -731,7 +742,9 @@ public class manage_announcement extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -795,7 +808,7 @@ public class manage_announcement extends javax.swing.JFrame {
 
     private void handleMenuClick(JPanel panel) {
         setActivePanel(panel);
-        
+
         if (panel == dashboardPanel) {
             admin_dashboard dashboardFrame = new admin_dashboard(adminId, adminName);
             dashboardFrame.setVisible(true);
