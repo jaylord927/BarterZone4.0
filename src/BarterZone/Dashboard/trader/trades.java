@@ -51,41 +51,41 @@ public class trades extends javax.swing.JFrame {
     private JPanel avatarContainer;
     private JLabel avatarLabel;
     private JLabel avatarInitialLabel;
-    
+
     private JPanel dashboardPanel;
     private JLabel dashboardIcon;
     private JLabel dashboardLabel;
-    
+
     private JPanel myItemsPanel;
     private JLabel myItemsIcon;
     private JLabel myItemsLabel;
-    
+
     private JPanel findItemsPanel;
     private JLabel findItemsIcon;
     private JLabel findItemsLabel;
-    
+
     private JPanel tradesPanel;
     private JLabel tradesIcon;
     private JLabel tradesLabel;
-    
+
     private JPanel messagesPanel;
     private JLabel messagesIcon;
     private JLabel messagesLabel;
-    
+
     private JPanel reportsPanel;
     private JLabel reportsIcon;
     private JLabel reportsLabel;
-    
+
     private JPanel settingsPanel;
     private JLabel settingsIcon;
     private JLabel settingsLabel;
-    
+
     private JPanel headerPanel;
     private JLabel headerTitle;
     private JLabel currentDateLabel;
-    
+
     private JPanel contentPanel;
-    
+
     private javax.swing.JTabbedPane tabbedPane;
 
     private DefaultTableModel availableTableModel;
@@ -128,14 +128,14 @@ public class trades extends javax.swing.JFrame {
     private Color textColor = new Color(80, 80, 80);
     private Color accentColor = new Color(0, 102, 102);
     private Color initialColor = new Color(0, 102, 102);
-    
+
     private Color pendingColor = new Color(255, 153, 0);
     private Color activeColor2 = new Color(0, 102, 102);
     private Color completedColor = new Color(46, 125, 50);
     private Color disputedColor = new Color(204, 0, 0);
-    
+
     private JPanel activePanel = null;
-    
+
     private int selectedTradeId = -1;
     private int selectedOtherTraderId = -1;
     private String selectedOtherTraderName = "";
@@ -149,7 +149,7 @@ public class trades extends javax.swing.JFrame {
         this.session = user_session.getInstance();
         this.db = new config();
         this.iconManager = IconManager.getInstance();
-        
+
         initComponents();
         initializeIconLabels();
         loadAndResizeIcons();
@@ -332,7 +332,7 @@ public class trades extends javax.swing.JFrame {
             avatarInitialLabel.setText(String.valueOf(traderName.charAt(0)).toUpperCase());
         }
         sidePanel.add(avatarInitialLabel);
-        
+
         loadProfileAvatar();
 
         int menuY = 155;
@@ -389,12 +389,14 @@ public class trades extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(themeColor);
                 }
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleMenuClick(panel);
@@ -415,12 +417,14 @@ public class trades extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(themeColor);
                 }
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleMenuClick(panel);
@@ -443,12 +447,14 @@ public class trades extends javax.swing.JFrame {
                     panel.setBackground(hoverColor);
                 }
             }
+
             @Override
             public void mouseExited(MouseEvent e) {
                 if (panel != activePanel) {
                     panel.setBackground(themeColor);
                 }
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 handleMenuClick(panel);
@@ -550,10 +556,12 @@ public class trades extends javax.swing.JFrame {
             public void mouseClicked(MouseEvent evt) {
                 openMyItems();
             }
+
             @Override
             public void mouseEntered(MouseEvent evt) {
                 myItemsCard.setBackground(hoverColor);
             }
+
             @Override
             public void mouseExited(MouseEvent evt) {
                 myItemsCard.setBackground(themeColor);
@@ -908,20 +916,14 @@ public class trades extends javax.swing.JFrame {
 
     private void loadPendingTrades() {
         pendingTableModel.setRowCount(0);
+
         String sql = "SELECT t.trade_id, "
-                + "CASE "
-                + "    WHEN t.offer_trader_id = ? THEN 'You' "
-                + "    ELSE u_offer.user_fullname "
-                + "END as requester, "
-                + "CASE "
-                + "    WHEN t.offer_trader_id = ? THEN i_offer.item_Name "
-                + "    ELSE i_target.item_Name "
-                + "END as their_item, "
-                + "CASE "
-                + "    WHEN t.offer_trader_id = ? THEN i_target.item_Name "
-                + "    ELSE i_offer.item_Name "
-                + "END as my_item, "
-                + "t.trade_DateRequest as date, t.trade_status "
+                + "u_offer.user_fullname as requester_name, "
+                + "i_offer.item_Name as offer_item_name, "
+                + "i_target.item_Name as target_item_name, "
+                + "t.trade_DateRequest as date, "
+                + "t.offer_trader_id, "
+                + "t.target_trader_id "
                 + "FROM tbl_trade t "
                 + "JOIN tbl_items i_offer ON t.offer_item_id = i_offer.items_id "
                 + "JOIN tbl_items i_target ON t.target_item_id = i_target.items_id "
@@ -929,16 +931,39 @@ public class trades extends javax.swing.JFrame {
                 + "WHERE (t.offer_trader_id = ? OR t.target_trader_id = ?) "
                 + "AND t.trade_status = 'pending' "
                 + "ORDER BY t.trade_DateRequest DESC";
-        List<Map<String, Object>> trades = db.fetchRecords(sql, traderId, traderId, traderId, traderId, traderId);
+
+        List<Map<String, Object>> trades = db.fetchRecords(sql, traderId, traderId);
+
         for (Map<String, Object> trade : trades) {
+            int tradeId = Integer.parseInt(trade.get("trade_id").toString());
+            int offerTraderId = Integer.parseInt(trade.get("offer_trader_id").toString());
+            int targetTraderId = Integer.parseInt(trade.get("target_trader_id").toString());
+            String requesterName = trade.get("requester_name").toString();
+            String offerItemName = trade.get("offer_item_name").toString();
+            String targetItemName = trade.get("target_item_name").toString();
+
+            String myItem = "";
+            String theirItem = "";
+            String displayRequester = "";
+
+            if (traderId == offerTraderId) {
+                displayRequester = "You";
+                myItem = offerItemName;
+                theirItem = targetItemName;
+            } else {
+                displayRequester = requesterName;
+                myItem = targetItemName;
+                theirItem = offerItemName;
+            }
+
             pendingTableModel.addRow(new Object[]{
-                trade.get("trade_id"),
-                trade.get("requester"),
-                trade.get("their_item"),
-                trade.get("my_item"),
+                tradeId,
+                displayRequester,
+                theirItem,
+                myItem,
                 formatDate(trade.get("date")),
                 "Pending",
-                trade.get("trade_id")
+                tradeId
             });
         }
     }
@@ -1097,44 +1122,44 @@ public class trades extends javax.swing.JFrame {
         guideArea.setLineWrap(true);
         guideArea.setWrapStyleWord(true);
         guideArea.setText(
-            "STEP 1: PROPOSE EXCHANGE METHOD\n" +
-            "--------------------------------\n" +
-            "Click 'Manage Trade' button\n" +
-            "Choose between Delivery or Meetup\n" +
-            "Both traders must agree on the method\n" +
-            "Once agreed, you'll proceed to Step 2\n\n" +
-            "STEP 2: EXCHANGE DETAILS\n" +
-            "------------------------\n" +
-            "Enter your exchange details:\n" +
-            "  - For Delivery: Address, courier, tracking, special instructions\n" +
-            "  - For Meetup: Location, date, time, contact info\n" +
-            "  - OPTIONAL: You can share Google Maps link for meetup location\n" +
-            "Both traders enter their details\n" +
-            "Review each other's details\n" +
-            "When both traders confirm, you proceed to Step 3\n\n" +
-            "STEP 3: PAYMENT PROCESSING\n" +
-            "--------------------------\n" +
-            "Admin will set payment details\n" +
-            "Submit your payment proof\n" +
-            "Admin verifies both payments\n\n" +
-            "STEP 4: SHIPPING & RECEIVING\n" +
-            "----------------------------\n" +
-            "Ship your item (if delivery) or prepare for meetup\n" +
-            "Once you receive the item, mark as received\n" +
-            "When both traders mark received, proceed to Step 5\n\n" +
-            "STEP 5: COMPLETION & REFUND\n" +
-            "---------------------------\n" +
-            "Admin processes refunds\n" +
-            "Admin keeps the service fee\n" +
-            "Trade moves to History\n\n" +
-            "TRADE COMPLETED!\n\n" +
-            "IMPORTANT REMINDERS\n" +
-            "--------------------\n" +
-            "Always communicate through BarterZone messages\n" +
-            "Keep all payment receipts and screenshots\n" +
-            "Verify trader identity before shipping\n" +
-            "Report any suspicious activity immediately\n\n" +
-            "NEED HELP? CONTACT ADMIN"
+                "STEP 1: PROPOSE EXCHANGE METHOD\n"
+                + "--------------------------------\n"
+                + "Click 'Manage Trade' button\n"
+                + "Choose between Delivery or Meetup\n"
+                + "Both traders must agree on the method\n"
+                + "Once agreed, you'll proceed to Step 2\n\n"
+                + "STEP 2: EXCHANGE DETAILS\n"
+                + "------------------------\n"
+                + "Enter your exchange details:\n"
+                + "  - For Delivery: Address, courier, tracking, special instructions\n"
+                + "  - For Meetup: Location, date, time, contact info\n"
+                + "  - OPTIONAL: You can share Google Maps link for meetup location\n"
+                + "Both traders enter their details\n"
+                + "Review each other's details\n"
+                + "When both traders confirm, you proceed to Step 3\n\n"
+                + "STEP 3: PAYMENT PROCESSING\n"
+                + "--------------------------\n"
+                + "Admin will set payment details\n"
+                + "Submit your payment proof\n"
+                + "Admin verifies both payments\n\n"
+                + "STEP 4: SHIPPING & RECEIVING\n"
+                + "----------------------------\n"
+                + "Ship your item (if delivery) or prepare for meetup\n"
+                + "Once you receive the item, mark as received\n"
+                + "When both traders mark received, proceed to Step 5\n\n"
+                + "STEP 5: COMPLETION & REFUND\n"
+                + "---------------------------\n"
+                + "Admin processes refunds\n"
+                + "Admin keeps the service fee\n"
+                + "Trade moves to History\n\n"
+                + "TRADE COMPLETED!\n\n"
+                + "IMPORTANT REMINDERS\n"
+                + "--------------------\n"
+                + "Always communicate through BarterZone messages\n"
+                + "Keep all payment receipts and screenshots\n"
+                + "Verify trader identity before shipping\n"
+                + "Report any suspicious activity immediately\n\n"
+                + "NEED HELP? CONTACT ADMIN"
         );
         JScrollPane guideScrollPane = new JScrollPane(guideArea);
         guideScrollPane.setBounds(10, 50, 520, 400);
@@ -1147,44 +1172,48 @@ public class trades extends javax.swing.JFrame {
     }
 
     private void viewTraderDetails() {
-        if (selectedOtherTraderId == -1) return;
-        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
-                     "FROM tbl_users WHERE user_id = ?";
+        if (selectedOtherTraderId == -1) {
+            return;
+        }
+        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date "
+                + "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> traders = db.fetchRecords(sql, selectedOtherTraderId);
         if (!traders.isEmpty()) {
             Map<String, Object> trader = traders.get(0);
-            String details = "TRADER DETAILS\n" +
-                    "==============\n\n" +
-                    "Name: " + trader.get("user_fullname") + "\n" +
-                    "Username: " + trader.get("user_username") + "\n" +
-                    "Email: " + trader.get("user_email") + "\n" +
-                    "Status: " + trader.get("user_status") + "\n" +
-                    "Member Since: " + formatDate(trader.get("created_date"));
+            String details = "TRADER DETAILS\n"
+                    + "==============\n\n"
+                    + "Name: " + trader.get("user_fullname") + "\n"
+                    + "Username: " + trader.get("user_username") + "\n"
+                    + "Email: " + trader.get("user_email") + "\n"
+                    + "Status: " + trader.get("user_status") + "\n"
+                    + "Member Since: " + formatDate(trader.get("created_date"));
             JOptionPane.showMessageDialog(this, details, "Trader Information", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void viewMyDetails() {
-        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date " +
-                     "FROM tbl_users WHERE user_id = ?";
+        String sql = "SELECT user_fullname, user_username, user_email, user_status, created_date "
+                + "FROM tbl_users WHERE user_id = ?";
         List<Map<String, Object>> users = db.fetchRecords(sql, traderId);
         if (!users.isEmpty()) {
             Map<String, Object> user = users.get(0);
-            String details = "YOUR DETAILS\n" +
-                    "============\n\n" +
-                    "Name: " + user.get("user_fullname") + "\n" +
-                    "Username: " + user.get("user_username") + "\n" +
-                    "Email: " + user.get("user_email") + "\n" +
-                    "Status: " + user.get("user_status") + "\n" +
-                    "Member Since: " + formatDate(user.get("created_date"));
+            String details = "YOUR DETAILS\n"
+                    + "============\n\n"
+                    + "Name: " + user.get("user_fullname") + "\n"
+                    + "Username: " + user.get("user_username") + "\n"
+                    + "Email: " + user.get("user_email") + "\n"
+                    + "Status: " + user.get("user_status") + "\n"
+                    + "Member Since: " + formatDate(user.get("created_date"));
             JOptionPane.showMessageDialog(this, details, "My Information", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void openManageTrade() {
-        if (selectedTradeId == -1) return;
-        manage_trades manageFrame = new manage_trades(selectedTradeId, selectedMyItem, 
-            selectedTheirItem, selectedOtherTraderName, selectedOtherTraderId);
+        if (selectedTradeId == -1) {
+            return;
+        }
+        manage_trades manageFrame = new manage_trades(selectedTradeId, selectedMyItem,
+                selectedTheirItem, selectedOtherTraderName, selectedOtherTraderId);
         manageFrame.setVisible(true);
         manageFrame.setLocationRelativeTo(null);
         this.dispose();
@@ -1197,7 +1226,9 @@ public class trades extends javax.swing.JFrame {
     }
 
     private String formatDate(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 10) {
@@ -1210,7 +1241,9 @@ public class trades extends javax.swing.JFrame {
     }
 
     private String formatDateTime(Object dateObj) {
-        if (dateObj == null) return "-";
+        if (dateObj == null) {
+            return "-";
+        }
         try {
             String dateStr = dateObj.toString();
             if (dateStr.length() >= 16) {
@@ -1247,11 +1280,11 @@ public class trades extends javax.swing.JFrame {
                 + ")";
         List<Map<String, Object>> myItems = db.fetchRecords(sql, traderId);
         if (myItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this, 
+            JOptionPane.showMessageDialog(this,
                     "You don't have any items available for trade.\n\n"
                     + "All your items may be already in active/completed trades.\n"
                     + "Add new items in 'My Items' to start trading.",
-                    "No Items Available", 
+                    "No Items Available",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -1354,12 +1387,32 @@ public class trades extends javax.swing.JFrame {
 
     private void acceptTrade() {
         int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) return;
+        if (selectedRow == -1) {
+            return;
+        }
+
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
         String requester = pendingTableModel.getValueAt(modelRow, 1).toString();
         String theirItem = pendingTableModel.getValueAt(modelRow, 2).toString();
         String myItem = pendingTableModel.getValueAt(modelRow, 3).toString();
+
+        String checkSql = "SELECT offer_trader_id FROM tbl_trade WHERE trade_id = ?";
+        List<Map<String, Object>> result = db.fetchRecords(checkSql, tradeId);
+
+        if (!result.isEmpty()) {
+            int offerTraderId = Integer.parseInt(result.get(0).get("offer_trader_id").toString());
+
+            if (traderId == offerTraderId) {
+                JOptionPane.showMessageDialog(this,
+                        "You cannot accept your own trade request.\n\n"
+                        + "This trade was initiated by you. Please wait for the other trader to respond.",
+                        "Cannot Accept Own Trade",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Accept this trade?\n\n"
                 + "Requester: " + requester + "\n"
@@ -1367,21 +1420,27 @@ public class trades extends javax.swing.JFrame {
                 + "Your Item: " + myItem,
                 "Confirm Accept",
                 JOptionPane.YES_NO_OPTION);
+
         if (confirm == JOptionPane.YES_OPTION) {
             String sql = "UPDATE tbl_trade SET trade_status = 'negotiating' WHERE trade_id = ?";
             db.updateRecord(sql, tradeId);
+
             JOptionPane.showMessageDialog(this,
                     "Trade accepted!\n\n"
                     + "The trade has been moved to Active Trades.\n"
                     + "You can now negotiate exchange details.",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
+                    "Success",
+                    JOptionPane.INFORMATION_MESSAGE);
+
             loadAllData();
         }
     }
 
     private void declineTrade() {
         int selectedRow = pendingTable.getSelectedRow();
-        if (selectedRow == -1) return;
+        if (selectedRow == -1) {
+            return;
+        }
         int modelRow = pendingTable.convertRowIndexToModel(selectedRow);
         int tradeId = Integer.parseInt(pendingTableModel.getValueAt(modelRow, 6).toString());
         int confirm = JOptionPane.showConfirmDialog(this,
@@ -1451,4 +1510,4 @@ public class trades extends javax.swing.JFrame {
             this.dispose();
         }
     }
-} 
+}

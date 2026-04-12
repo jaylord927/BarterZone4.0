@@ -38,6 +38,7 @@ public class trades_step5 {
     private JLabel otherRefundNameLabel;
     private JButton viewMyQrCodeButton;
     private JButton viewAdminProofButton;
+    private JButton viewAdminRefundProofButton;
     private JButton markRefundedButton;
     private JLabel refundOverallStatusLabel;
     private JTextArea adminMessageArea;
@@ -70,6 +71,7 @@ public class trades_step5 {
     private Color infoColor = new Color(33, 150, 243);
     private Color textColor = new Color(80, 80, 80);
     private Color bgColor = new Color(250, 250, 250);
+    private Color borderColor = new Color(200, 200, 200);
     
     public trades_step5(int tradeId, int traderId, String traderName, int otherTraderId, String otherTraderName,
                         config db, JFrame parent, Runnable onStateChanged, JButton proceedButton) {
@@ -122,7 +124,7 @@ public class trades_step5 {
         myQrCodePreviewLabel = new JLabel();
         myQrCodePreviewLabel.setHorizontalAlignment(JLabel.CENTER);
         myQrCodePreviewLabel.setVerticalAlignment(JLabel.CENTER);
-        myQrCodePreviewLabel.setBorder(new LineBorder(new Color(200, 200, 200)));
+        myQrCodePreviewLabel.setBorder(new LineBorder(borderColor, 1));
         myQrCodePreviewLabel.setText("No QR Code");
         myQrCodePreviewLabel.setBackground(Color.WHITE);
         myQrCodePreviewLabel.setOpaque(true);
@@ -136,7 +138,19 @@ public class trades_step5 {
         viewMyQrCodeButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         viewMyQrCodeButton.setEnabled(false);
         
-        viewAdminProofButton = new JButton("VIEW ADMIN PROOF");
+        // VIEW PROOF BUTTON - This is the button that traders will click to see admin's refund proof
+        viewAdminRefundProofButton = new JButton("VIEW PROOF");
+        viewAdminRefundProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        viewAdminRefundProofButton.setBackground(new Color(255, 140, 0)); // Orange color to stand out
+        viewAdminRefundProofButton.setForeground(Color.WHITE);
+        viewAdminRefundProofButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        viewAdminRefundProofButton.setFocusPainted(false);
+        viewAdminRefundProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        viewAdminRefundProofButton.setEnabled(false);
+        viewAdminRefundProofButton.addActionListener(e -> viewAdminRefundProof());
+        
+        // Keep old button for compatibility but hide it
+        viewAdminProofButton = new JButton("VIEW ADMIN MESSAGE");
         viewAdminProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         viewAdminProofButton.setBackground(infoColor);
         viewAdminProofButton.setForeground(Color.WHITE);
@@ -144,6 +158,7 @@ public class trades_step5 {
         viewAdminProofButton.setFocusPainted(false);
         viewAdminProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         viewAdminProofButton.setEnabled(false);
+        viewAdminProofButton.setVisible(false); // Hide this button
         
         markRefundedButton = new JButton("MARK AS REFUNDED");
         markRefundedButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -161,7 +176,7 @@ public class trades_step5 {
         adminMessageArea.setEditable(false);
         adminMessageArea.setBackground(new Color(245, 245, 245));
         adminMessageScroll = new JScrollPane(adminMessageArea);
-        adminMessageScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
+        adminMessageScroll.setBorder(new LineBorder(borderColor, 1));
         
         adminProofStatusLabel = new JLabel();
         adminProofStatusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -212,16 +227,16 @@ public class trades_step5 {
         // Update admin reply section with current trader's data only
         updateAdminReplySection();
         
-        // Enable view admin proof button if proof exists for current trader
+        // Enable VIEW PROOF button if admin proof exists for THIS trader
         boolean hasAdminProof = (myAdminProofPath != null && !myAdminProofPath.isEmpty());
-        viewAdminProofButton.setEnabled(hasAdminProof);
+        viewAdminRefundProofButton.setEnabled(hasAdminProof);
         
         // Update proof status label
         if (hasAdminProof) {
-            adminProofStatusLabel.setText("Proof attached - Click VIEW to see");
+            adminProofStatusLabel.setText("Refund proof attached");
             adminProofStatusLabel.setForeground(successColor);
         } else {
-            adminProofStatusLabel.setText("No proof attached yet");
+            adminProofStatusLabel.setText("No refund proof yet");
             adminProofStatusLabel.setForeground(warningColor);
         }
         
@@ -273,19 +288,46 @@ public class trades_step5 {
     }
     
     private void updateAdminReplySection() {
-        // Only show admin reply for the current logged-in trader
+        // Only show THIS trader's admin message
         boolean hasAdminMessage = (myAdminMessage != null && !myAdminMessage.isEmpty());
-        boolean hasAdminProof = (myAdminProofPath != null && !myAdminProofPath.isEmpty());
         
-        if (hasAdminMessage || hasAdminProof) {
-            if (hasAdminMessage) {
-                adminMessageArea.setText(myAdminMessage);
-                adminMessageArea.setCaretPosition(0);
-            } else {
-                adminMessageArea.setText("No message from admin.");
-            }
+        if (hasAdminMessage) {
+            adminMessageArea.setText(myAdminMessage);
+            adminMessageArea.setCaretPosition(0);
         } else {
-            adminMessageArea.setText("No admin response yet. Please wait for the admin to process your refund.");
+            adminMessageArea.setText("No message from admin yet.");
+        }
+    }
+    
+    // NEW METHOD: View Admin Refund Proof from refund_proof column (only for THIS trader)
+    private void viewAdminRefundProof() {
+        if (myAdminProofPath == null || myAdminProofPath.isEmpty()) {
+            JOptionPane.showMessageDialog(parent, "No admin refund proof available for this trade.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        String fullPath = convertResourcePathToFilePath(myAdminProofPath);
+        if (fullPath == null) {
+            JOptionPane.showMessageDialog(parent, "Invalid proof path format.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
+            File proofFile = new File(fullPath);
+            if (proofFile.exists()) {
+                ImageIcon proofIcon = new ImageIcon(fullPath);
+                Image scaledImage = proofIcon.getImage().getScaledInstance(600, 600, Image.SCALE_SMOOTH);
+                JOptionPane.showMessageDialog(parent, new JLabel(new ImageIcon(scaledImage)), 
+                    "Admin Refund Proof - Trade #" + tradeId, JOptionPane.PLAIN_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(parent, 
+                    "Admin refund proof image not found.\nExpected location: " + fullPath, 
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(parent, 
+                "Error loading admin refund proof: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -461,7 +503,7 @@ public class trades_step5 {
         
         y += 400;
         
-        // ========== ADMIN REPLY SECTION (CURRENT TRADER ONLY) ==========
+        // ========== ADMIN REPLY SECTION (FIXED - Button placed beside message) ==========
         adminReplyPanel = new JPanel();
         adminReplyPanel.setLayout(null);
         adminReplyPanel.setBackground(new Color(220, 240, 255));
@@ -475,28 +517,33 @@ public class trades_step5 {
         
         int arY = 25;
         
-        // Admin Message Section
+        // Admin Message Section - Label
         JLabel messageTitle = new JLabel("Admin Message:");
         messageTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        messageTitle.setBounds(20, arY, 120, 25);
+        messageTitle.setBounds(20, arY, 100, 25);
         adminReplyPanel.add(messageTitle);
         
-        adminMessageScroll.setBounds(150, arY, 550, 80);
+        // Message area - positioned to leave space for the button on the right
+        adminMessageScroll.setBounds(130, arY, 500, 80);
         adminReplyPanel.add(adminMessageScroll);
+        
+        // VIEW PROOF BUTTON - Placed to the right of the message area (BESIDE the admin message)
+        viewAdminRefundProofButton.setBounds(650, arY + 25, 120, 35);
+        adminReplyPanel.add(viewAdminRefundProofButton);
         arY += 95;
         
-        // Admin Proof Section
-        JLabel proofTitle = new JLabel("Admin Proof:");
+        // Proof status label (below the button area)
+        JLabel proofTitle = new JLabel("Proof Status:");
         proofTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        proofTitle.setBounds(20, arY, 120, 25);
+        proofTitle.setBounds(20, arY, 100, 25);
         adminReplyPanel.add(proofTitle);
         
-        adminProofStatusLabel.setBounds(150, arY, 200, 25);
+        adminProofStatusLabel.setBounds(130, arY, 200, 25);
         adminReplyPanel.add(adminProofStatusLabel);
+        arY += 40;
         
-        viewAdminProofButton.setBounds(370, arY, 160, 30);
-        viewAdminProofButton.addActionListener(e -> viewAdminProof());
-        adminReplyPanel.add(viewAdminProofButton);
+        // Note: Only THIS trader's data is shown (myAdminMessage and myAdminProofPath)
+        // No mixing of trader1 and trader2 data
         
         // ========== OVERALL REFUND STATUS PANEL ==========
         JPanel statusPanel = new JPanel();
@@ -555,8 +602,8 @@ public class trades_step5 {
             return;
         }
         
-        JDialog refundDialog = new JDialog(parent, "Add Refund Details", true);
-        refundDialog.setSize(550, 600);
+        JDialog refundDialog = new JDialog(parent, "ADD REFUND DETAILS", true);
+        refundDialog.setSize(550, 550);
         refundDialog.setLayout(null);
         refundDialog.setLocationRelativeTo(parent);
         refundDialog.getContentPane().setBackground(Color.WHITE);
@@ -576,7 +623,7 @@ public class trades_step5 {
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(null);
         contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBounds(10, 60, 530, 490);
+        contentPanel.setBounds(10, 60, 530, 440);
         refundDialog.add(contentPanel);
         
         int y = 20;
@@ -593,7 +640,7 @@ public class trades_step5 {
         JTextField accountNumberField = new JTextField();
         accountNumberField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         accountNumberField.setBounds(fieldX, y, fieldWidth, 35);
-        accountNumberField.setBorder(new LineBorder(new Color(200, 200, 200)));
+        accountNumberField.setBorder(new LineBorder(borderColor, 1));
         contentPanel.add(accountNumberField);
         y += 50;
         
@@ -606,7 +653,7 @@ public class trades_step5 {
         JTextField accountNameField = new JTextField();
         accountNameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         accountNameField.setBounds(fieldX, y, fieldWidth, 35);
-        accountNameField.setBorder(new LineBorder(new Color(200, 200, 200)));
+        accountNameField.setBorder(new LineBorder(borderColor, 1));
         contentPanel.add(accountNameField);
         y += 55;
         
@@ -635,7 +682,7 @@ public class trades_step5 {
         // QR Code Preview
         JLabel qrPreviewLabel = new JLabel();
         qrPreviewLabel.setBounds(fieldX, y, 100, 100);
-        qrPreviewLabel.setBorder(new LineBorder(new Color(200, 200, 200)));
+        qrPreviewLabel.setBorder(new LineBorder(borderColor, 1));
         qrPreviewLabel.setHorizontalAlignment(JLabel.CENTER);
         qrPreviewLabel.setVerticalAlignment(JLabel.CENTER);
         qrPreviewLabel.setText("Preview");
@@ -644,21 +691,58 @@ public class trades_step5 {
         contentPanel.add(qrPreviewLabel);
         y += 115;
         
-        // Refund Reason Field
-        JLabel reasonLabel = new JLabel("Refund Reason (Optional):");
-        reasonLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        reasonLabel.setBounds(20, y, 180, 35);
-        contentPanel.add(reasonLabel);
+        // Confirmation Section
+        JLabel confirmTitle = new JLabel("CONFIRMATION");
+        confirmTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        confirmTitle.setForeground(accentColor);
+        confirmTitle.setBounds(20, y, 200, 25);
+        contentPanel.add(confirmTitle);
+        y += 35;
         
-        JTextArea reasonArea = new JTextArea();
-        reasonArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        reasonArea.setLineWrap(true);
-        reasonArea.setWrapStyleWord(true);
-        JScrollPane reasonScroll = new JScrollPane(reasonArea);
-        reasonScroll.setBounds(fieldX, y, fieldWidth, 70);
-        reasonScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
-        contentPanel.add(reasonScroll);
-        y += 85;
+        // Confirmation Account Number
+        JLabel confirmNumberLabel = new JLabel("Account Number:");
+        confirmNumberLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        confirmNumberLabel.setBounds(40, y, 120, 25);
+        contentPanel.add(confirmNumberLabel);
+        
+        JLabel confirmNumberValue = new JLabel();
+        confirmNumberValue.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        confirmNumberValue.setForeground(successColor);
+        confirmNumberValue.setBounds(170, y, 300, 25);
+        contentPanel.add(confirmNumberValue);
+        y += 30;
+        
+        // Confirmation Account Name
+        JLabel confirmNameLabel = new JLabel("Account Name:");
+        confirmNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        confirmNameLabel.setBounds(40, y, 120, 25);
+        contentPanel.add(confirmNameLabel);
+        
+        JLabel confirmNameValue = new JLabel();
+        confirmNameValue.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        confirmNameValue.setForeground(successColor);
+        confirmNameValue.setBounds(170, y, 300, 25);
+        contentPanel.add(confirmNameValue);
+        y += 50;
+        
+        // Update confirmation fields when typing
+        accountNumberField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            private void update() {
+                confirmNumberValue.setText(accountNumberField.getText().trim().isEmpty() ? "-" : accountNumberField.getText().trim());
+            }
+        });
+        
+        accountNameField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { update(); }
+            private void update() {
+                confirmNameValue.setText(accountNameField.getText().trim().isEmpty() ? "-" : accountNameField.getText().trim());
+            }
+        });
         
         final String[] uploadedQrPath = {""};
         
@@ -700,11 +784,9 @@ public class trades_step5 {
                 return;
             }
             
-            String reason = reasonArea.getText().trim();
-            
-            String sql = "INSERT INTO tbl_refund (trade_id, user_id, account_number, account_name, qr_code_path, refund_reason, created_date) "
-                    + "VALUES (?, ?, ?, ?, ?, ?, datetime('now'))";
-            db.addRecord(sql, tradeId, traderId, accountNumber, accountName, uploadedQrPath[0], reason);
+            String sql = "INSERT INTO tbl_refund (trade_id, user_id, account_number, account_name, qr_code_path, created_date) "
+                    + "VALUES (?, ?, ?, ?, ?, datetime('now'))";
+            db.addRecord(sql, tradeId, traderId, accountNumber, accountName, uploadedQrPath[0]);
             
             JOptionPane.showMessageDialog(refundDialog, "Refund details submitted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
             refundDialog.dispose();
@@ -782,32 +864,6 @@ public class trades_step5 {
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(parent, "Error loading QR Code: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
-    private void viewAdminProof() {
-        if (myAdminProofPath == null || myAdminProofPath.isEmpty()) {
-            JOptionPane.showMessageDialog(parent, "No admin proof available.", "Info", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        
-        String fullPath = convertResourcePathToFilePath(myAdminProofPath);
-        if (fullPath == null) {
-            JOptionPane.showMessageDialog(parent, "Invalid admin proof path.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        try {
-            File proofFile = new File(fullPath);
-            if (proofFile.exists()) {
-                ImageIcon proofIcon = new ImageIcon(fullPath);
-                Image scaledImage = proofIcon.getImage().getScaledInstance(600, 600, Image.SCALE_SMOOTH);
-                JOptionPane.showMessageDialog(parent, new JLabel(new ImageIcon(scaledImage)), "Admin Refund Proof", JOptionPane.PLAIN_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(parent, "Admin proof image not found at: " + fullPath, "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(parent, "Error loading admin proof: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     

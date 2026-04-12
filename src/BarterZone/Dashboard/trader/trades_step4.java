@@ -91,10 +91,7 @@ public class trades_step4 {
         container.setBounds(0, 0, 940, 650);
         
         int y = 20;
-        
-        // Determine which column this trader should update
-        // If current trader is the proposer (traderId == proposedBy), they update my_item_received
-        // If current trader is the target (traderId != proposedBy), they update other_item_received
+                
         boolean iAmProposer = (traderId == proposedBy);
         String traderRole = iAmProposer ? "Proposer" : "Receiver";
         String myColumnName = iAmProposer ? "my_item_received" : "other_item_received";
@@ -147,7 +144,7 @@ public class trades_step4 {
         }
         
         if (iHaveConfirmed) {
-            myStatusIcon.setText("[OK]");
+            myStatusIcon.setText("[V]");
             myStatusIcon.setForeground(successColor);
             myReceiveStatusLabel.setText("You have confirmed receiving the item from " + otherTraderName + ".");
             myReceiveStatusLabel.setForeground(successColor);
@@ -224,7 +221,7 @@ public class trades_step4 {
         }
         
         if (otherHasConfirmed) {
-            otherStatusIcon.setText("[OK]");
+            otherStatusIcon.setText("[V]");
             otherStatusIcon.setForeground(successColor);
             otherReceiveStatusLabel.setText(otherTraderName + " has confirmed receiving the item from you.");
             otherReceiveStatusLabel.setForeground(successColor);

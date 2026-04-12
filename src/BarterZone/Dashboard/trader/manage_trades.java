@@ -530,6 +530,7 @@ public class manage_trades extends javax.swing.JFrame {
                 stepPanel.add(step5Manager.buildPanel());
                 break;
             case 6:
+                step6Manager.setTradeInfo(tradeId);  
                 stepPanel.add(step6Manager.buildPanel(proceedButton, backStepButton, cancelTradeButton));
                 break;
         }

@@ -112,7 +112,10 @@ public class manage_trades extends javax.swing.JFrame {
     private JPanel verifyPaymentsPanel;
     private JComboBox<String> verifyTradeComboBox;
     private JPanel tradersPaymentPanel;
-
+    private JLabel trader1ItemLabel;
+    private JLabel trader2ItemLabel;
+    private JLabel trader1ProofInfoLabel;
+    private JLabel trader2ProofInfoLabel;
     private JPanel trader1Panel;
     private JLabel trader1NameLabel;
     private JLabel trader1PaymentNumberLabel;
@@ -161,7 +164,10 @@ public class manage_trades extends javax.swing.JFrame {
     private JPanel refundManagementPanel;
     private JComboBox<String> refundTradeComboBox;
     private JPanel refundTradersPanel;
-
+    private JButton trader1ViewPaymentProofButton;
+    private JButton trader2ViewPaymentProofButton;
+    private JLabel trader1RefundItemLabel;
+    private JLabel trader2RefundItemLabel;
     private JPanel trader1RefundPanel;
     private JLabel trader1RefundNameLabel;
     private JLabel trader1RefundAccountNumberLabel;
@@ -468,13 +474,20 @@ public class manage_trades extends javax.swing.JFrame {
 
         methodsTable = new javax.swing.JTable(methodsTableModel);
         methodsTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        methodsTable.setRowHeight(30);
+        methodsTable.setRowHeight(40);
         methodsTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         methodsTable.getTableHeader().setBackground(sideBarColor);
         methodsTable.getTableHeader().setForeground(Color.WHITE);
         methodsTable.setSelectionBackground(new Color(255, 235, 204));
         methodsTable.getColumnModel().getColumn(0).setMinWidth(0);
         methodsTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        methodsTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set column widths
+        methodsTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        methodsTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        methodsTable.getColumnModel().getColumn(3).setPreferredWidth(150);
+        methodsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
 
         methodsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -508,7 +521,7 @@ public class manage_trades extends javax.swing.JFrame {
         });
 
         methodsScrollPane = new JScrollPane(methodsTable);
-        methodsScrollPane.setBounds(20, 90, 800, 200);
+        methodsScrollPane.setBounds(20, 90, 800, 180);
         paymentMethodsPanel.add(methodsScrollPane);
 
         // Form Panel - Left side for input fields
@@ -516,7 +529,7 @@ public class manage_trades extends javax.swing.JFrame {
         formPanel.setLayout(null);
         formPanel.setBackground(new Color(250, 250, 250));
         formPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        formPanel.setBounds(20, 310, 550, 250);
+        formPanel.setBounds(20, 285, 550, 260);
         paymentMethodsPanel.add(formPanel);
 
         int y = 20;
@@ -598,7 +611,7 @@ public class manage_trades extends javax.swing.JFrame {
         buttonPanel.setLayout(null);
         buttonPanel.setBackground(new Color(250, 250, 250));
         buttonPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        buttonPanel.setBounds(590, 310, 230, 250);
+        buttonPanel.setBounds(590, 285, 230, 260);
         paymentMethodsPanel.add(buttonPanel);
 
         JLabel actionTitle = new JLabel("Actions");
@@ -607,17 +620,19 @@ public class manage_trades extends javax.swing.JFrame {
         actionTitle.setBounds(15, 15, 100, 25);
         buttonPanel.add(actionTitle);
 
-        int btnY = 55;
+        // Calculate button positions - 4 buttons vertically stacked
         int btnWidth = 180;
         int btnHeight = 40;
         int btnX = 25;
         int btnSpacing = 15;
+        int startY = 55;
 
+        // ADD METHOD Button
         addMethodButton = new JButton("ADD METHOD");
         addMethodButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         addMethodButton.setBackground(successColor);
         addMethodButton.setForeground(Color.WHITE);
-        addMethodButton.setBounds(btnX, btnY, btnWidth, btnHeight);
+        addMethodButton.setBounds(btnX, startY, btnWidth, btnHeight);
         addMethodButton.setBorder(null);
         addMethodButton.setFocusPainted(false);
         addMethodButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -637,13 +652,13 @@ public class manage_trades extends javax.swing.JFrame {
             );
         });
         buttonPanel.add(addMethodButton);
-        btnY += btnHeight + btnSpacing;
 
+        // UPDATE METHOD Button
         updateMethodButton = new JButton("UPDATE METHOD");
         updateMethodButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         updateMethodButton.setBackground(warningColor);
         updateMethodButton.setForeground(Color.WHITE);
-        updateMethodButton.setBounds(btnX, btnY, btnWidth, btnHeight);
+        updateMethodButton.setBounds(btnX, startY + btnHeight + btnSpacing, btnWidth, btnHeight);
         updateMethodButton.setBorder(null);
         updateMethodButton.setFocusPainted(false);
         updateMethodButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -664,13 +679,13 @@ public class manage_trades extends javax.swing.JFrame {
             );
         });
         buttonPanel.add(updateMethodButton);
-        btnY += btnHeight + btnSpacing;
 
+        // ACTIVATE Button
         activateMethodButton = new JButton("ACTIVATE");
         activateMethodButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         activateMethodButton.setBackground(successColor);
         activateMethodButton.setForeground(Color.WHITE);
-        activateMethodButton.setBounds(btnX, btnY, btnWidth, btnHeight);
+        activateMethodButton.setBounds(btnX, startY + (btnHeight + btnSpacing) * 2, btnWidth, btnHeight);
         activateMethodButton.setBorder(null);
         activateMethodButton.setFocusPainted(false);
         activateMethodButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -684,13 +699,13 @@ public class manage_trades extends javax.swing.JFrame {
             });
         });
         buttonPanel.add(activateMethodButton);
-        btnY += btnHeight + btnSpacing;
 
+        // DEACTIVATE Button
         deleteMethodButton = new JButton("DEACTIVATE");
         deleteMethodButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         deleteMethodButton.setBackground(errorColor);
         deleteMethodButton.setForeground(Color.WHITE);
-        deleteMethodButton.setBounds(btnX, btnY, btnWidth, btnHeight);
+        deleteMethodButton.setBounds(btnX, startY + (btnHeight + btnSpacing) * 3, btnWidth, btnHeight);
         deleteMethodButton.setBorder(null);
         deleteMethodButton.setFocusPainted(false);
         deleteMethodButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -718,23 +733,48 @@ public class manage_trades extends javax.swing.JFrame {
 
     private void viewQrCode() {
         if (selectedMethodQrPath == null || selectedMethodQrPath.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "QR code image file not found.", "No QR Code", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No QR Code available for this payment method.", "QR Code Not Found", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
-            String fullPath = "src/" + selectedMethodQrPath;
+
+            String fullPath = convertResourcePathToFilePath(selectedMethodQrPath);
+
+            if (fullPath == null) {
+                JOptionPane.showMessageDialog(this, "Invalid QR Code path format.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             File qrFile = new File(fullPath);
             if (qrFile.exists()) {
                 ImageIcon qrIcon = new ImageIcon(fullPath);
                 Image scaledImage = qrIcon.getImage().getScaledInstance(300, 300, Image.SCALE_SMOOTH);
                 JOptionPane.showMessageDialog(this, new JLabel(new ImageIcon(scaledImage)), "QR Code - " + methodNameField.getText(), JOptionPane.PLAIN_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(this, "QR code image file not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "QR Code image file not found at: " + fullPath, "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "QR code image file not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error loading QR Code: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private String convertResourcePathToFilePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.trim().isEmpty()) {
+            return null;
+        }
+
+        resourcePath = resourcePath.trim();
+
+        int lastDot = resourcePath.lastIndexOf(".");
+        if (lastDot == -1) {
+            return null;
+        }
+
+        String extension = resourcePath.substring(lastDot + 1);
+        String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
+
+        return "src/" + pathWithoutExtension + "." + extension;
     }
 
     private void loadPaymentMethods() {
@@ -768,99 +808,153 @@ public class manage_trades extends javax.swing.JFrame {
         titleLabel.setBounds(20, 20, 300, 30);
         tradeSetupPanel.add(titleLabel);
 
+        JLabel descLabel = new JLabel("Configure payment method and fee for selected trade");
+        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        descLabel.setForeground(new Color(102, 102, 102));
+        descLabel.setBounds(20, 55, 400, 20);
+        tradeSetupPanel.add(descLabel);
+
+        // Select Trade Section
+        JPanel selectTradePanel = new JPanel();
+        selectTradePanel.setLayout(null);
+        selectTradePanel.setBackground(new Color(250, 250, 250));
+        selectTradePanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
+        selectTradePanel.setBounds(20, 90, 800, 60);
+        tradeSetupPanel.add(selectTradePanel);
+
         JLabel selectLabel = new JLabel("Select Trade:");
         selectLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        selectLabel.setBounds(20, 70, 100, 30);
-        tradeSetupPanel.add(selectLabel);
+        selectLabel.setBounds(15, 18, 100, 25);
+        selectTradePanel.add(selectLabel);
 
         tradeComboBox = new JComboBox<>();
         tradeComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tradeComboBox.setBounds(130, 70, 300, 30);
+        tradeComboBox.setBounds(120, 15, 350, 30);
+        tradeComboBox.setBackground(Color.WHITE);
+        tradeComboBox.setBorder(new LineBorder(new Color(200, 200, 200)));
         tradeComboBox.addActionListener(e -> loadTradeDetails());
-        tradeSetupPanel.add(tradeComboBox);
+        selectTradePanel.add(tradeComboBox);
 
+        JLabel infoNote = new JLabel("Select a trade to configure payment settings");
+        infoNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        infoNote.setForeground(infoColor);
+        infoNote.setBounds(490, 20, 290, 20);
+        selectTradePanel.add(infoNote);
+
+        // Trade Information Panel
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(null);
         infoPanel.setBackground(new Color(250, 250, 250));
         infoPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        infoPanel.setBounds(20, 120, 800, 150);
+        infoPanel.setBounds(20, 165, 800, 140);
         tradeSetupPanel.add(infoPanel);
 
+        JLabel infoTitle = new JLabel("Trade Information");
+        infoTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        infoTitle.setForeground(sideBarColor);
+        infoTitle.setBounds(15, 10, 200, 25);
+        infoPanel.add(infoTitle);
+
         tradeInfoLabel = new JLabel();
-        tradeInfoLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        tradeInfoLabel.setBounds(15, 10, 770, 25);
+        tradeInfoLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tradeInfoLabel.setBounds(15, 40, 770, 25);
         infoPanel.add(tradeInfoLabel);
 
         trader1Label = new JLabel();
         trader1Label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader1Label.setBounds(15, 40, 350, 25);
+        trader1Label.setBounds(15, 70, 350, 25);
         infoPanel.add(trader1Label);
 
         trader2Label = new JLabel();
         trader2Label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader2Label.setBounds(15, 65, 350, 25);
+        trader2Label.setBounds(15, 95, 350, 25);
         infoPanel.add(trader2Label);
 
         item1Label = new JLabel();
         item1Label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        item1Label.setBounds(400, 40, 350, 25);
+        item1Label.setBounds(400, 70, 350, 25);
         infoPanel.add(item1Label);
 
         item2Label = new JLabel();
         item2Label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        item2Label.setBounds(400, 65, 350, 25);
+        item2Label.setBounds(400, 95, 350, 25);
         infoPanel.add(item2Label);
 
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(null);
-        formPanel.setBackground(new Color(250, 250, 250));
-        formPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        formPanel.setBounds(20, 290, 800, 220);
-        tradeSetupPanel.add(formPanel);
+        // Payment Settings Panel
+        JPanel paymentSettingsPanel = new JPanel();
+        paymentSettingsPanel.setLayout(null);
+        paymentSettingsPanel.setBackground(Color.WHITE);
+        paymentSettingsPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
+        paymentSettingsPanel.setBounds(20, 320, 800, 200);
+        tradeSetupPanel.add(paymentSettingsPanel);
 
-        int y = 25;
+        JLabel settingsTitle = new JLabel("Payment Settings");
+        settingsTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        settingsTitle.setForeground(sideBarColor);
+        settingsTitle.setBounds(15, 10, 200, 25);
+        paymentSettingsPanel.add(settingsTitle);
+
+        int y = 55;
         int labelWidth = 150;
         int fieldWidth = 250;
         int fieldX = 180;
 
-        JLabel methodLabel = new JLabel("Select Payment Method:*");
-        methodLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        // Payment Method
+        JLabel methodLabel = new JLabel("Payment Method:");
+        methodLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         methodLabel.setBounds(20, y, labelWidth, 30);
-        formPanel.add(methodLabel);
+        paymentSettingsPanel.add(methodLabel);
 
         paymentMethodCombo = new JComboBox<>();
         paymentMethodCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        paymentMethodCombo.setBounds(fieldX, y, fieldWidth, 30);
-        formPanel.add(paymentMethodCombo);
-        y += 50;
+        paymentMethodCombo.setBounds(fieldX, y, fieldWidth, 35);
+        paymentMethodCombo.setBackground(Color.WHITE);
+        paymentMethodCombo.setBorder(new LineBorder(new Color(200, 200, 200)));
+        paymentSettingsPanel.add(paymentMethodCombo);
+        y += 55;
 
-        JLabel feeLabel = new JLabel("Service Fee (₱):*");
-        feeLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        // Service Fee
+        JLabel feeLabel = new JLabel("Service Fee (PHP):");
+        feeLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         feeLabel.setBounds(20, y, labelWidth, 30);
-        formPanel.add(feeLabel);
+        paymentSettingsPanel.add(feeLabel);
 
         serviceFeeField = new JTextField("15.00");
         serviceFeeField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         serviceFeeField.setBounds(fieldX, y, fieldWidth, 35);
-        formPanel.add(serviceFeeField);
-        y += 50;
+        serviceFeeField.setBorder(new LineBorder(new Color(200, 200, 200)));
+        paymentSettingsPanel.add(serviceFeeField);
+        y += 55;
 
-        JLabel totalLabel = new JLabel("Total Amount (₱):*");
-        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        // Total Amount
+        JLabel totalLabel = new JLabel("Total Amount (PHP):");
+        totalLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         totalLabel.setBounds(20, y, labelWidth, 30);
-        formPanel.add(totalLabel);
+        paymentSettingsPanel.add(totalLabel);
 
         totalAmountField = new JTextField("215.00");
         totalAmountField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         totalAmountField.setBounds(fieldX, y, fieldWidth, 35);
-        formPanel.add(totalAmountField);
-        y += 70;
+        totalAmountField.setBorder(new LineBorder(new Color(200, 200, 200)));
+        paymentSettingsPanel.add(totalAmountField);
+
+        // Separator line
+        JSeparator separator = new JSeparator();
+        separator.setBounds(20, y + 50, 760, 2);
+        paymentSettingsPanel.add(separator);
+
+        // Save Button Panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(null);
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBounds(20, 535, 800, 70);
+        tradeSetupPanel.add(buttonPanel);
 
         saveTradePaymentButton = new JButton("SAVE TRADE PAYMENT SETTINGS");
         saveTradePaymentButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         saveTradePaymentButton.setBackground(successColor);
         saveTradePaymentButton.setForeground(Color.WHITE);
-        saveTradePaymentButton.setBounds(250, y, 300, 45);
+        saveTradePaymentButton.setBounds(250, 15, 300, 45);
         saveTradePaymentButton.setBorder(null);
         saveTradePaymentButton.setFocusPainted(false);
         saveTradePaymentButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -869,7 +963,13 @@ public class manage_trades extends javax.swing.JFrame {
                     paymentMethodCombo, serviceFeeField, totalAmountField, this);
             logActivity("Saved payment settings for Trade #" + selectedTradeId);
         });
-        formPanel.add(saveTradePaymentButton);
+        buttonPanel.add(saveTradePaymentButton);
+
+        JLabel buttonNote = new JLabel("Note: Settings will be applied to both traders");
+        buttonNote.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        buttonNote.setForeground(infoColor);
+        buttonNote.setBounds(250, 65, 300, 20);
+        buttonPanel.add(buttonNote);
 
         paymentMethodsManager.loadPaymentMethodsForCombo(paymentMethodCombo);
     }
@@ -917,11 +1017,12 @@ public class manage_trades extends javax.swing.JFrame {
             selectedOfferTraderName = trade.get("offer_trader").toString();
             selectedTargetTraderName = trade.get("target_trader").toString();
 
-            tradeInfoLabel.setText("Trade #" + selectedTradeId);
-            trader1Label.setText("Trader 1: " + selectedOfferTraderName);
-            trader2Label.setText("Trader 2: " + selectedTargetTraderName);
-            item1Label.setText("Item: " + trade.get("offer_item"));
-            item2Label.setText("Item: " + trade.get("target_item"));
+            // Format display text
+            tradeInfoLabel.setText("<html><b>Trade #" + selectedTradeId + "</b> - Status: Active</html>");
+            trader1Label.setText("<html><b>Trader 1:</b> " + selectedOfferTraderName + "</html>");
+            trader2Label.setText("<html><b>Trader 2:</b> " + selectedTargetTraderName + "</html>");
+            item1Label.setText("<html><b>Item 1:</b> " + trade.get("offer_item") + "</html>");
+            item2Label.setText("<html><b>Item 2:</b> " + trade.get("target_item") + "</html>");
 
             paymentManager.loadTradePaymentInfo(selectedTradeId, selectedOfferTraderId,
                     new JLabel(), new JLabel(), paymentMethodCombo);
@@ -955,25 +1056,37 @@ public class manage_trades extends javax.swing.JFrame {
         tradersPaymentPanel.setLayout(null);
         tradersPaymentPanel.setBackground(new Color(250, 250, 250));
         tradersPaymentPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        tradersPaymentPanel.setBounds(20, 120, 800, 400);
+        tradersPaymentPanel.setBounds(20, 120, 840, 480);
         verifyPaymentsPanel.add(tradersPaymentPanel);
 
-        // Trader 1 Panel
+        // Trader 1 Panel - Wider to accommodate full text
         trader1Panel = new JPanel();
         trader1Panel.setLayout(null);
         trader1Panel.setBackground(Color.WHITE);
         trader1Panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "TRADER 1"));
-        trader1Panel.setBounds(20, 20, 360, 350);
+        trader1Panel.setBounds(20, 20, 385, 420);
         tradersPaymentPanel.add(trader1Panel);
 
-        int py = 30;
+        int py = 25;
 
         trader1NameLabel = new JLabel();
         trader1NameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         trader1NameLabel.setForeground(sideBarColor);
-        trader1NameLabel.setBounds(15, py, 330, 25);
+        trader1NameLabel.setBounds(15, py, 355, 25);
         trader1Panel.add(trader1NameLabel);
-        py += 40;
+        py += 35;
+
+        // Item label
+        JLabel itemTitle1 = new JLabel("Item:");
+        itemTitle1.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        itemTitle1.setBounds(15, py, 50, 25);
+        trader1Panel.add(itemTitle1);
+
+        trader1ItemLabel = new JLabel("-");
+        trader1ItemLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        trader1ItemLabel.setBounds(70, py, 300, 25);
+        trader1Panel.add(trader1ItemLabel);
+        py += 30;
 
         JLabel paymentNumTitle = new JLabel("Payment Number:");
         paymentNumTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -982,9 +1095,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader1PaymentNumberLabel = new JLabel("-");
         trader1PaymentNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader1PaymentNumberLabel.setBounds(145, py, 200, 25);
+        trader1PaymentNumberLabel.setBounds(145, py, 225, 25);
         trader1Panel.add(trader1PaymentNumberLabel);
-        py += 35;
+        py += 30;
 
         JLabel accNameTitle = new JLabel("Account Name:");
         accNameTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -993,9 +1106,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader1AccountNameLabel = new JLabel("-");
         trader1AccountNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader1AccountNameLabel.setBounds(145, py, 200, 25);
+        trader1AccountNameLabel.setBounds(145, py, 225, 25);
         trader1Panel.add(trader1AccountNameLabel);
-        py += 40;
+        py += 35;
 
         trader1ViewProofButton = new JButton("View Payment Proof");
         trader1ViewProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1013,7 +1126,7 @@ public class manage_trades extends javax.swing.JFrame {
         trader1MarkPaidButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         trader1MarkPaidButton.setBackground(successColor);
         trader1MarkPaidButton.setForeground(Color.WHITE);
-        trader1MarkPaidButton.setBounds(185, py, 150, 35);
+        trader1MarkPaidButton.setBounds(200, py, 170, 35);
         trader1MarkPaidButton.setBorder(null);
         trader1MarkPaidButton.setFocusPainted(false);
         trader1MarkPaidButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1029,25 +1142,45 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader1StatusLabel = new JLabel();
         trader1StatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        trader1StatusLabel.setBounds(15, py, 330, 25);
+        trader1StatusLabel.setBounds(15, py, 355, 25);
         trader1Panel.add(trader1StatusLabel);
 
-        // Trader 2 Panel
+        // Add proof info label
+        py += 30;
+        trader1ProofInfoLabel = new JLabel();
+        trader1ProofInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        trader1ProofInfoLabel.setForeground(new Color(100, 100, 100));
+        trader1ProofInfoLabel.setBounds(15, py, 355, 20);
+        trader1Panel.add(trader1ProofInfoLabel);
+
+        // Trader 2 Panel - Wider to accommodate full text
         trader2Panel = new JPanel();
         trader2Panel.setLayout(null);
         trader2Panel.setBackground(Color.WHITE);
         trader2Panel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "TRADER 2"));
-        trader2Panel.setBounds(420, 20, 360, 350);
+        trader2Panel.setBounds(430, 20, 385, 420);
         tradersPaymentPanel.add(trader2Panel);
 
-        py = 30;
+        py = 25;
 
         trader2NameLabel = new JLabel();
         trader2NameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         trader2NameLabel.setForeground(sideBarColor);
-        trader2NameLabel.setBounds(15, py, 330, 25);
+        trader2NameLabel.setBounds(15, py, 355, 25);
         trader2Panel.add(trader2NameLabel);
-        py += 40;
+        py += 35;
+
+        // Item label
+        JLabel itemTitle2 = new JLabel("Item:");
+        itemTitle2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        itemTitle2.setBounds(15, py, 50, 25);
+        trader2Panel.add(itemTitle2);
+
+        trader2ItemLabel = new JLabel("-");
+        trader2ItemLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        trader2ItemLabel.setBounds(70, py, 300, 25);
+        trader2Panel.add(trader2ItemLabel);
+        py += 30;
 
         JLabel paymentNumTitle2 = new JLabel("Payment Number:");
         paymentNumTitle2.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1056,9 +1189,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader2PaymentNumberLabel = new JLabel("-");
         trader2PaymentNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader2PaymentNumberLabel.setBounds(145, py, 200, 25);
+        trader2PaymentNumberLabel.setBounds(145, py, 225, 25);
         trader2Panel.add(trader2PaymentNumberLabel);
-        py += 35;
+        py += 30;
 
         JLabel accNameTitle2 = new JLabel("Account Name:");
         accNameTitle2.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1067,9 +1200,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader2AccountNameLabel = new JLabel("-");
         trader2AccountNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader2AccountNameLabel.setBounds(145, py, 200, 25);
+        trader2AccountNameLabel.setBounds(145, py, 225, 25);
         trader2Panel.add(trader2AccountNameLabel);
-        py += 40;
+        py += 35;
 
         trader2ViewProofButton = new JButton("View Payment Proof");
         trader2ViewProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1087,7 +1220,7 @@ public class manage_trades extends javax.swing.JFrame {
         trader2MarkPaidButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         trader2MarkPaidButton.setBackground(successColor);
         trader2MarkPaidButton.setForeground(Color.WHITE);
-        trader2MarkPaidButton.setBounds(185, py, 150, 35);
+        trader2MarkPaidButton.setBounds(200, py, 170, 35);
         trader2MarkPaidButton.setBorder(null);
         trader2MarkPaidButton.setFocusPainted(false);
         trader2MarkPaidButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1103,23 +1236,37 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader2StatusLabel = new JLabel();
         trader2StatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        trader2StatusLabel.setBounds(15, py, 330, 25);
+        trader2StatusLabel.setBounds(15, py, 355, 25);
         trader2Panel.add(trader2StatusLabel);
+
+        // Add proof info label
+        py += 30;
+        trader2ProofInfoLabel = new JLabel();
+        trader2ProofInfoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        trader2ProofInfoLabel.setForeground(new Color(100, 100, 100));
+        trader2ProofInfoLabel.setBounds(15, py, 355, 20);
+        trader2Panel.add(trader2ProofInfoLabel);
 
         overallStatusLabel = new JLabel();
         overallStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        overallStatusLabel.setBounds(20, 380, 760, 30);
+        overallStatusLabel.setBounds(20, 440, 800, 30);
         tradersPaymentPanel.add(overallStatusLabel);
     }
 
     private void loadTradesForVerifyDropdown() {
         verifyTradeComboBox.removeAllItems();
-        String sql = "SELECT t.trade_id, 'Trade #' || t.trade_id || ' - ' || u1.user_fullname || ' ↔ ' || u2.user_fullname as display "
+
+        // FIXED: Show trades where BOTH traders have submitted payment (payment_submitted = 1)
+        // This ensures trades with submitted payment details appear in the dropdown
+        String sql = "SELECT DISTINCT t.trade_id, 'Trade #' || t.trade_id || ' - ' || u1.user_fullname || ' ↔ ' || u2.user_fullname as display "
                 + "FROM tbl_trade t "
                 + "LEFT JOIN tbl_users u1 ON t.offer_trader_id = u1.user_id "
                 + "LEFT JOIN tbl_users u2 ON t.target_trader_id = u2.user_id "
-                + "WHERE t.trade_status NOT IN ('completed', 'payment_verified', 'items_received', 'refund_pending') "
+                + "WHERE EXISTS (SELECT 1 FROM tbl_payment_details p1 WHERE p1.trade_id = t.trade_id AND p1.trader_id = t.offer_trader_id AND p1.payment_submitted = 1) "
+                + "AND EXISTS (SELECT 1 FROM tbl_payment_details p2 WHERE p2.trade_id = t.trade_id AND p2.trader_id = t.target_trader_id AND p2.payment_submitted = 1) "
+                + "AND t.trade_status NOT IN ('completed', 'cancelled') "
                 + "ORDER BY t.trade_id DESC";
+
         List<Map<String, Object>> trades = db.fetchRecords(sql);
 
         for (Map<String, Object> trade : trades) {
@@ -1139,11 +1286,15 @@ public class manage_trades extends javax.swing.JFrame {
         int tradeId = Integer.parseInt(tradeIdStr);
         selectedTradeId = tradeId;
 
+        // Get trade details including items
         String sql = "SELECT t.offer_trader_id, t.target_trader_id, "
-                + "u1.user_fullname as offer_trader_name, u2.user_fullname as target_trader_name "
+                + "u1.user_fullname as offer_trader_name, u2.user_fullname as target_trader_name, "
+                + "i1.item_Name as offer_item_name, i2.item_Name as target_item_name "
                 + "FROM tbl_trade t "
                 + "LEFT JOIN tbl_users u1 ON t.offer_trader_id = u1.user_id "
                 + "LEFT JOIN tbl_users u2 ON t.target_trader_id = u2.user_id "
+                + "LEFT JOIN tbl_items i1 ON t.offer_item_id = i1.items_id "
+                + "LEFT JOIN tbl_items i2 ON t.target_item_id = i2.items_id "
                 + "WHERE t.trade_id = ?";
 
         List<Map<String, Object>> result = db.fetchRecords(sql, tradeId);
@@ -1154,22 +1305,27 @@ public class manage_trades extends javax.swing.JFrame {
             selectedOfferTraderName = trade.get("offer_trader_name").toString();
             selectedTargetTraderName = trade.get("target_trader_name").toString();
 
+            String offerItemName = trade.get("offer_item_name") != null ? trade.get("offer_item_name").toString() : "Unknown Item";
+            String targetItemName = trade.get("target_item_name") != null ? trade.get("target_item_name").toString() : "Unknown Item";
+
             trader1NameLabel.setText(selectedOfferTraderName);
             trader2NameLabel.setText(selectedTargetTraderName);
+            trader1ItemLabel.setText(offerItemName);
+            trader2ItemLabel.setText(targetItemName);
 
             int[] paymentIdHolder1 = new int[]{trader1PaymentId};
             int[] paymentIdHolder2 = new int[]{trader2PaymentId};
 
+            // Load Trader 1 payment data with proof info
             paymentManager.loadPaymentVerificationData(tradeId, selectedOfferTraderId,
                     trader1PaymentNumberLabel, trader1AccountNameLabel, trader1StatusLabel,
-                    trader1ViewProofButton, trader1MarkPaidButton, paymentIdHolder1);
-
+                    trader1ViewProofButton, trader1MarkPaidButton, paymentIdHolder1, trader1ProofInfoLabel);
             trader1PaymentId = paymentIdHolder1[0];
 
+            // Load Trader 2 payment data with proof info
             paymentManager.loadPaymentVerificationData(tradeId, selectedTargetTraderId,
                     trader2PaymentNumberLabel, trader2AccountNameLabel, trader2StatusLabel,
-                    trader2ViewProofButton, trader2MarkPaidButton, paymentIdHolder2);
-
+                    trader2ViewProofButton, trader2MarkPaidButton, paymentIdHolder2, trader2ProofInfoLabel);
             trader2PaymentId = paymentIdHolder2[0];
 
             paymentManager.checkOverallVerificationStatus(tradeId, overallStatusLabel);
@@ -1178,16 +1334,20 @@ public class manage_trades extends javax.swing.JFrame {
 
     private void resetVerificationPanel() {
         trader1NameLabel.setText("");
+        trader1ItemLabel.setText("-");
         trader1PaymentNumberLabel.setText("-");
         trader1AccountNameLabel.setText("-");
         trader1StatusLabel.setText("");
+        trader1ProofInfoLabel.setText("");
         trader1ViewProofButton.setEnabled(false);
         trader1MarkPaidButton.setEnabled(false);
 
         trader2NameLabel.setText("");
+        trader2ItemLabel.setText("-");
         trader2PaymentNumberLabel.setText("-");
         trader2AccountNameLabel.setText("-");
         trader2StatusLabel.setText("");
+        trader2ProofInfoLabel.setText("");
         trader2ViewProofButton.setEnabled(false);
         trader2MarkPaidButton.setEnabled(false);
 
@@ -1578,7 +1738,7 @@ public class manage_trades extends javax.swing.JFrame {
         refundTradersPanel.setLayout(null);
         refundTradersPanel.setBackground(new Color(250, 250, 250));
         refundTradersPanel.setBorder(new LineBorder(new Color(200, 200, 200), 1));
-        refundTradersPanel.setBounds(20, 120, 800, 420);
+        refundTradersPanel.setBounds(20, 120, 840, 470);
         refundManagementPanel.add(refundTradersPanel);
 
         // Trader 1 Refund Panel
@@ -1586,17 +1746,29 @@ public class manage_trades extends javax.swing.JFrame {
         trader1RefundPanel.setLayout(null);
         trader1RefundPanel.setBackground(Color.WHITE);
         trader1RefundPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "TRADER 1 REFUND"));
-        trader1RefundPanel.setBounds(20, 20, 360, 370);
+        trader1RefundPanel.setBounds(20, 20, 385, 420);
         refundTradersPanel.add(trader1RefundPanel);
 
-        int rp = 25;
+        int rp = 20;
 
         trader1RefundNameLabel = new JLabel();
         trader1RefundNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         trader1RefundNameLabel.setForeground(sideBarColor);
-        trader1RefundNameLabel.setBounds(15, rp, 330, 25);
+        trader1RefundNameLabel.setBounds(15, rp, 355, 25);
         trader1RefundPanel.add(trader1RefundNameLabel);
-        rp += 40;
+        rp += 35;
+
+        // Item label for Trader 1
+        JLabel itemLabel1 = new JLabel("Item:");
+        itemLabel1.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        itemLabel1.setBounds(15, rp, 50, 25);
+        trader1RefundPanel.add(itemLabel1);
+
+        trader1RefundItemLabel = new JLabel("-");
+        trader1RefundItemLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        trader1RefundItemLabel.setBounds(70, rp, 300, 25);
+        trader1RefundPanel.add(trader1RefundItemLabel);
+        rp += 30;
 
         JLabel accNumTitle = new JLabel("Account Number:");
         accNumTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1605,9 +1777,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader1RefundAccountNumberLabel = new JLabel("-");
         trader1RefundAccountNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader1RefundAccountNumberLabel.setBounds(145, rp, 200, 25);
+        trader1RefundAccountNumberLabel.setBounds(145, rp, 225, 25);
         trader1RefundPanel.add(trader1RefundAccountNumberLabel);
-        rp += 35;
+        rp += 30;
 
         JLabel accNameTitle = new JLabel("Account Name:");
         accNameTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1616,9 +1788,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader1RefundAccountNameLabel = new JLabel("-");
         trader1RefundAccountNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader1RefundAccountNameLabel.setBounds(145, rp, 200, 25);
+        trader1RefundAccountNameLabel.setBounds(145, rp, 225, 25);
         trader1RefundPanel.add(trader1RefundAccountNameLabel);
-        rp += 40;
+        rp += 35;
 
         // Message area for admin message
         JTextArea trader1MessageArea = new JTextArea();
@@ -1628,21 +1800,43 @@ public class manage_trades extends javax.swing.JFrame {
         trader1MessageArea.setEditable(false);
         trader1MessageArea.setBackground(new Color(245, 245, 245));
         JScrollPane trader1MessageScroll = new JScrollPane(trader1MessageArea);
-        trader1MessageScroll.setBounds(15, rp, 330, 50);
+        trader1MessageScroll.setBounds(15, rp, 355, 50);
         trader1MessageScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
         trader1RefundPanel.add(trader1MessageScroll);
-        rp += 60;
+        rp += 65;
 
         JLabel proofStatusLabel1 = new JLabel();
         proofStatusLabel1.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         proofStatusLabel1.setBounds(15, rp, 200, 25);
         trader1RefundPanel.add(proofStatusLabel1);
+        rp += 30;
 
-        trader1UploadProofButton = new JButton("Add Refund Proof");
-        trader1UploadProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        // Button Panel for Trader 1 - Three buttons side by side
+        JPanel trader1ButtonPanel = new JPanel();
+        trader1ButtonPanel.setLayout(null);
+        trader1ButtonPanel.setBackground(Color.WHITE);
+        trader1ButtonPanel.setBounds(15, rp, 355, 45);
+        trader1RefundPanel.add(trader1ButtonPanel);
+
+        // View Payment Proof Button
+        trader1ViewPaymentProofButton = new JButton("View Payment");
+        trader1ViewPaymentProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        trader1ViewPaymentProofButton.setBackground(new Color(33, 150, 243));
+        trader1ViewPaymentProofButton.setForeground(Color.WHITE);
+        trader1ViewPaymentProofButton.setBounds(0, 5, 110, 35);
+        trader1ViewPaymentProofButton.setBorder(null);
+        trader1ViewPaymentProofButton.setFocusPainted(false);
+        trader1ViewPaymentProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        trader1ViewPaymentProofButton.setEnabled(false);
+        trader1ViewPaymentProofButton.addActionListener(e -> viewPaymentProofForTrader(selectedOfferTraderId, selectedTradeId));
+        trader1ButtonPanel.add(trader1ViewPaymentProofButton);
+
+        // Add Refund Proof Button
+        trader1UploadProofButton = new JButton("Add Refund");
+        trader1UploadProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         trader1UploadProofButton.setBackground(themeColor);
         trader1UploadProofButton.setForeground(Color.WHITE);
-        trader1UploadProofButton.setBounds(15, rp + 30, 160, 35);
+        trader1UploadProofButton.setBounds(120, 5, 110, 35);
         trader1UploadProofButton.setBorder(null);
         trader1UploadProofButton.setFocusPainted(false);
         trader1UploadProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1654,13 +1848,14 @@ public class manage_trades extends javax.swing.JFrame {
                 logActivity("Added refund proof for " + trader1RefundNameLabel.getText() + " in Trade #" + selectedTradeId);
             });
         });
-        trader1RefundPanel.add(trader1UploadProofButton);
+        trader1ButtonPanel.add(trader1UploadProofButton);
 
-        trader1MarkRefundedButton = new JButton("Mark as Refunded");
-        trader1MarkRefundedButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        // Mark as Refunded Button
+        trader1MarkRefundedButton = new JButton("Mark Refunded");
+        trader1MarkRefundedButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         trader1MarkRefundedButton.setBackground(successColor);
         trader1MarkRefundedButton.setForeground(Color.WHITE);
-        trader1MarkRefundedButton.setBounds(185, rp + 30, 150, 35);
+        trader1MarkRefundedButton.setBounds(240, 5, 115, 35);
         trader1MarkRefundedButton.setBorder(null);
         trader1MarkRefundedButton.setFocusPainted(false);
         trader1MarkRefundedButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1671,12 +1866,12 @@ public class manage_trades extends javax.swing.JFrame {
                 logActivity("Marked refund as processed for " + trader1RefundNameLabel.getText() + " in Trade #" + selectedTradeId);
             });
         });
-        trader1RefundPanel.add(trader1MarkRefundedButton);
-        rp += 80;
+        trader1ButtonPanel.add(trader1MarkRefundedButton);
+        rp += 55;
 
         trader1RefundStatusLabel = new JLabel();
         trader1RefundStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        trader1RefundStatusLabel.setBounds(15, rp, 330, 25);
+        trader1RefundStatusLabel.setBounds(15, rp, 355, 25);
         trader1RefundPanel.add(trader1RefundStatusLabel);
 
         // Trader 2 Refund Panel
@@ -1684,17 +1879,29 @@ public class manage_trades extends javax.swing.JFrame {
         trader2RefundPanel.setLayout(null);
         trader2RefundPanel.setBackground(Color.WHITE);
         trader2RefundPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(accentColor), "TRADER 2 REFUND"));
-        trader2RefundPanel.setBounds(420, 20, 360, 370);
+        trader2RefundPanel.setBounds(430, 20, 385, 420);
         refundTradersPanel.add(trader2RefundPanel);
 
-        rp = 25;
+        rp = 20;
 
         trader2RefundNameLabel = new JLabel();
         trader2RefundNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         trader2RefundNameLabel.setForeground(sideBarColor);
-        trader2RefundNameLabel.setBounds(15, rp, 330, 25);
+        trader2RefundNameLabel.setBounds(15, rp, 355, 25);
         trader2RefundPanel.add(trader2RefundNameLabel);
-        rp += 40;
+        rp += 35;
+
+        // Item label for Trader 2
+        JLabel itemLabel2 = new JLabel("Item:");
+        itemLabel2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        itemLabel2.setBounds(15, rp, 50, 25);
+        trader2RefundPanel.add(itemLabel2);
+
+        trader2RefundItemLabel = new JLabel("-");
+        trader2RefundItemLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        trader2RefundItemLabel.setBounds(70, rp, 300, 25);
+        trader2RefundPanel.add(trader2RefundItemLabel);
+        rp += 30;
 
         JLabel accNumTitle2 = new JLabel("Account Number:");
         accNumTitle2.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1703,9 +1910,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader2RefundAccountNumberLabel = new JLabel("-");
         trader2RefundAccountNumberLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader2RefundAccountNumberLabel.setBounds(145, rp, 200, 25);
+        trader2RefundAccountNumberLabel.setBounds(145, rp, 225, 25);
         trader2RefundPanel.add(trader2RefundAccountNumberLabel);
-        rp += 35;
+        rp += 30;
 
         JLabel accNameTitle2 = new JLabel("Account Name:");
         accNameTitle2.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -1714,9 +1921,9 @@ public class manage_trades extends javax.swing.JFrame {
 
         trader2RefundAccountNameLabel = new JLabel("-");
         trader2RefundAccountNameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        trader2RefundAccountNameLabel.setBounds(145, rp, 200, 25);
+        trader2RefundAccountNameLabel.setBounds(145, rp, 225, 25);
         trader2RefundPanel.add(trader2RefundAccountNameLabel);
-        rp += 40;
+        rp += 35;
 
         // Message area for admin message
         JTextArea trader2MessageArea = new JTextArea();
@@ -1726,21 +1933,43 @@ public class manage_trades extends javax.swing.JFrame {
         trader2MessageArea.setEditable(false);
         trader2MessageArea.setBackground(new Color(245, 245, 245));
         JScrollPane trader2MessageScroll = new JScrollPane(trader2MessageArea);
-        trader2MessageScroll.setBounds(15, rp, 330, 50);
+        trader2MessageScroll.setBounds(15, rp, 355, 50);
         trader2MessageScroll.setBorder(new LineBorder(new Color(200, 200, 200)));
         trader2RefundPanel.add(trader2MessageScroll);
-        rp += 60;
+        rp += 65;
 
         JLabel proofStatusLabel2 = new JLabel();
         proofStatusLabel2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         proofStatusLabel2.setBounds(15, rp, 200, 25);
         trader2RefundPanel.add(proofStatusLabel2);
+        rp += 30;
 
-        trader2UploadProofButton = new JButton("Add Refund Proof");
-        trader2UploadProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        // Button Panel for Trader 2 - Three buttons side by side
+        JPanel trader2ButtonPanel = new JPanel();
+        trader2ButtonPanel.setLayout(null);
+        trader2ButtonPanel.setBackground(Color.WHITE);
+        trader2ButtonPanel.setBounds(15, rp, 355, 45);
+        trader2RefundPanel.add(trader2ButtonPanel);
+
+        // View Payment Proof Button
+        trader2ViewPaymentProofButton = new JButton("View Payment");
+        trader2ViewPaymentProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        trader2ViewPaymentProofButton.setBackground(new Color(33, 150, 243));
+        trader2ViewPaymentProofButton.setForeground(Color.WHITE);
+        trader2ViewPaymentProofButton.setBounds(0, 5, 110, 35);
+        trader2ViewPaymentProofButton.setBorder(null);
+        trader2ViewPaymentProofButton.setFocusPainted(false);
+        trader2ViewPaymentProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        trader2ViewPaymentProofButton.setEnabled(false);
+        trader2ViewPaymentProofButton.addActionListener(e -> viewPaymentProofForTrader(selectedTargetTraderId, selectedTradeId));
+        trader2ButtonPanel.add(trader2ViewPaymentProofButton);
+
+        // Add Refund Proof Button
+        trader2UploadProofButton = new JButton("Add Refund");
+        trader2UploadProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         trader2UploadProofButton.setBackground(themeColor);
         trader2UploadProofButton.setForeground(Color.WHITE);
-        trader2UploadProofButton.setBounds(15, rp + 30, 160, 35);
+        trader2UploadProofButton.setBounds(120, 5, 110, 35);
         trader2UploadProofButton.setBorder(null);
         trader2UploadProofButton.setFocusPainted(false);
         trader2UploadProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1751,13 +1980,14 @@ public class manage_trades extends javax.swing.JFrame {
                 logActivity("Added refund proof for " + trader2RefundNameLabel.getText() + " in Trade #" + selectedTradeId);
             });
         });
-        trader2RefundPanel.add(trader2UploadProofButton);
+        trader2ButtonPanel.add(trader2UploadProofButton);
 
-        trader2MarkRefundedButton = new JButton("Mark as Refunded");
-        trader2MarkRefundedButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        // Mark as Refunded Button
+        trader2MarkRefundedButton = new JButton("Mark Refunded");
+        trader2MarkRefundedButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
         trader2MarkRefundedButton.setBackground(successColor);
         trader2MarkRefundedButton.setForeground(Color.WHITE);
-        trader2MarkRefundedButton.setBounds(185, rp + 30, 150, 35);
+        trader2MarkRefundedButton.setBounds(240, 5, 115, 35);
         trader2MarkRefundedButton.setBorder(null);
         trader2MarkRefundedButton.setFocusPainted(false);
         trader2MarkRefundedButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1768,29 +1998,73 @@ public class manage_trades extends javax.swing.JFrame {
                 logActivity("Marked refund as processed for " + trader2RefundNameLabel.getText() + " in Trade #" + selectedTradeId);
             });
         });
-        trader2RefundPanel.add(trader2MarkRefundedButton);
-        rp += 80;
+        trader2ButtonPanel.add(trader2MarkRefundedButton);
+        rp += 55;
 
         trader2RefundStatusLabel = new JLabel();
         trader2RefundStatusLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        trader2RefundStatusLabel.setBounds(15, rp, 330, 25);
+        trader2RefundStatusLabel.setBounds(15, rp, 355, 25);
         trader2RefundPanel.add(trader2RefundStatusLabel);
 
         refundOverallLabel = new JLabel();
         refundOverallLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        refundOverallLabel.setBounds(20, 400, 600, 30);
+        refundOverallLabel.setBounds(20, 445, 600, 25);
         refundTradersPanel.add(refundOverallLabel);
 
         autoCompleteButton = new JButton("AUTO-COMPLETE TRADE");
         autoCompleteButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         autoCompleteButton.setBackground(accentColor);
         autoCompleteButton.setForeground(sideBarColor);
-        autoCompleteButton.setBounds(630, 400, 150, 30);
+        autoCompleteButton.setBounds(650, 445, 170, 30);
         autoCompleteButton.setBorder(null);
         autoCompleteButton.setFocusPainted(false);
         autoCompleteButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         autoCompleteButton.addActionListener(e -> checkAndCompleteTrade());
         refundTradersPanel.add(autoCompleteButton);
+    }
+
+    private void viewPaymentProofForTrader(int traderId, int tradeId) {
+        if (tradeId == -1 || traderId == -1) {
+            JOptionPane.showMessageDialog(this, "No trade selected or invalid trader.", "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sql = "SELECT payment_proof FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ?";
+        List<Map<String, Object>> result = db.fetchRecords(sql, tradeId, traderId);
+
+        if (result.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No payment record found for this trader.", "Not Found", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String proofPath = result.get(0).get("payment_proof") != null ? result.get(0).get("payment_proof").toString() : "";
+
+        if (proofPath.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No payment proof image uploaded for this trader.", "No Proof", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            // Convert resource path to file system path
+            String fullPath = convertResourcePathToFilePath(proofPath);
+
+            if (fullPath == null) {
+                JOptionPane.showMessageDialog(this, "Invalid proof path format.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            File imgFile = new File(fullPath);
+            if (imgFile.exists()) {
+                ImageIcon icon = new ImageIcon(fullPath);
+                Image scaledImage = icon.getImage().getScaledInstance(600, 600, Image.SCALE_SMOOTH);
+                JOptionPane.showMessageDialog(this, new JLabel(new ImageIcon(scaledImage)),
+                        "Payment Proof - Trader ID: " + traderId, JOptionPane.PLAIN_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Payment proof image not found at: " + fullPath, "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error loading payment proof: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void loadRefundData() {
@@ -1805,11 +2079,15 @@ public class manage_trades extends javax.swing.JFrame {
         int tradeId = Integer.parseInt(tradeIdStr);
         selectedTradeId = tradeId;
 
+        // Include item names in the query
         String sql = "SELECT t.offer_trader_id, t.target_trader_id, "
-                + "u1.user_fullname as offer_trader_name, u2.user_fullname as target_trader_name "
+                + "u1.user_fullname as offer_trader_name, u2.user_fullname as target_trader_name, "
+                + "i1.item_Name as offer_item_name, i2.item_Name as target_item_name "
                 + "FROM tbl_trade t "
                 + "LEFT JOIN tbl_users u1 ON t.offer_trader_id = u1.user_id "
                 + "LEFT JOIN tbl_users u2 ON t.target_trader_id = u2.user_id "
+                + "LEFT JOIN tbl_items i1 ON t.offer_item_id = i1.items_id "
+                + "LEFT JOIN tbl_items i2 ON t.target_item_id = i2.items_id "
                 + "WHERE t.trade_id = ?";
 
         List<Map<String, Object>> result = db.fetchRecords(sql, tradeId);
@@ -1820,8 +2098,13 @@ public class manage_trades extends javax.swing.JFrame {
             selectedOfferTraderName = trade.get("offer_trader_name").toString();
             selectedTargetTraderName = trade.get("target_trader_name").toString();
 
+            String offerItemName = trade.get("offer_item_name") != null ? trade.get("offer_item_name").toString() : "Unknown";
+            String targetItemName = trade.get("target_item_name") != null ? trade.get("target_item_name").toString() : "Unknown";
+
             trader1RefundNameLabel.setText(selectedOfferTraderName);
             trader2RefundNameLabel.setText(selectedTargetTraderName);
+            trader1RefundItemLabel.setText(offerItemName);
+            trader2RefundItemLabel.setText(targetItemName);
 
             int[] refundIdHolder1 = new int[]{trader1RefundId};
             int[] refundIdHolder2 = new int[]{trader2RefundId};
@@ -1870,20 +2153,33 @@ public class manage_trades extends javax.swing.JFrame {
                     trader1RefundAccountNumberLabel, trader1RefundAccountNameLabel,
                     trader1RefundStatusLabel, trader1UploadProofButton, trader1MarkRefundedButton,
                     trader1MessageArea, proofStatusLabel1, refundIdHolder1);
-
             trader1RefundId = refundIdHolder1[0];
 
             refundManager.loadTraderRefundData(tradeId, selectedTargetTraderId, selectedTargetTraderName,
                     trader2RefundAccountNumberLabel, trader2RefundAccountNameLabel,
                     trader2RefundStatusLabel, trader2UploadProofButton, trader2MarkRefundedButton,
                     trader2MessageArea, proofStatusLabel2, refundIdHolder2);
-
             trader2RefundId = refundIdHolder2[0];
+
+            // Enable View Payment Proof buttons if payment exists
+            enableViewPaymentProofButtons(selectedOfferTraderId, selectedTargetTraderId, tradeId);
 
             refundManager.checkOverallRefundStatus(tradeId, refundOverallLabel, this, () -> {
                 checkAndCompleteTrade();
             });
         }
+    }
+
+    private void enableViewPaymentProofButtons(int offerTraderId, int targetTraderId, int tradeId) {
+        // Check Trader 1 (offer trader)
+        String sql1 = "SELECT payment_proof FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ? AND payment_proof IS NOT NULL AND payment_proof != ''";
+        List<Map<String, Object>> result1 = db.fetchRecords(sql1, tradeId, offerTraderId);
+        trader1ViewPaymentProofButton.setEnabled(!result1.isEmpty());
+
+        // Check Trader 2 (target trader)
+        String sql2 = "SELECT payment_proof FROM tbl_payment_details WHERE trade_id = ? AND trader_id = ? AND payment_proof IS NOT NULL AND payment_proof != ''";
+        List<Map<String, Object>> result2 = db.fetchRecords(sql2, tradeId, targetTraderId);
+        trader2ViewPaymentProofButton.setEnabled(!result2.isEmpty());
     }
 
     private void checkAndCompleteTrade() {
@@ -1959,18 +2255,22 @@ public class manage_trades extends javax.swing.JFrame {
 
     private void resetRefundPanel() {
         trader1RefundNameLabel.setText("");
+        trader1RefundItemLabel.setText("-");
         trader1RefundAccountNumberLabel.setText("-");
         trader1RefundAccountNameLabel.setText("-");
         trader1RefundStatusLabel.setText("");
         trader1UploadProofButton.setEnabled(false);
         trader1MarkRefundedButton.setEnabled(false);
+        trader1ViewPaymentProofButton.setEnabled(false);
 
         trader2RefundNameLabel.setText("");
+        trader2RefundItemLabel.setText("-");
         trader2RefundAccountNumberLabel.setText("-");
         trader2RefundAccountNameLabel.setText("-");
         trader2RefundStatusLabel.setText("");
         trader2UploadProofButton.setEnabled(false);
         trader2MarkRefundedButton.setEnabled(false);
+        trader2ViewPaymentProofButton.setEnabled(false);
 
         refundOverallLabel.setText("");
         trader1RefundId = -1;

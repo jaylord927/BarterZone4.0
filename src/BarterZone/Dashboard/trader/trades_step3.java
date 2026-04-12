@@ -64,6 +64,21 @@ public class trades_step3 {
     private Color textColor = new Color(80, 80, 80);
     private Color bgColor = new Color(250, 250, 250);
     
+    // Helper method to convert resource path to file path
+    private String convertResourcePathToFilePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.trim().isEmpty()) {
+            return null;
+        }
+        resourcePath = resourcePath.trim();
+        int lastDot = resourcePath.lastIndexOf(".");
+        if (lastDot == -1) {
+            return null;
+        }
+        String extension = resourcePath.substring(lastDot + 1);
+        String pathWithoutExtension = resourcePath.substring(0, lastDot).replace(".", "/");
+        return "src/" + pathWithoutExtension + "." + extension;
+    }
+    
     public trades_step3(int tradeId, int traderId, String traderName, int otherTraderId, String otherTraderName,
                         config db, JFrame parent, Runnable onStateChanged, JButton proceedButton) {
         this.tradeId = tradeId;
@@ -110,29 +125,29 @@ public class trades_step3 {
         viewQrCodeButton.addActionListener(e -> viewQrCode());
         
         addPaymentProofButton = new JButton("ADD PAYMENT PROOF");
-        addPaymentProofButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        addPaymentProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         addPaymentProofButton.setBackground(themeColor);
         addPaymentProofButton.setForeground(Color.WHITE);
-        addPaymentProofButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        addPaymentProofButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         addPaymentProofButton.setFocusPainted(false);
         addPaymentProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addPaymentProofButton.addActionListener(e -> openStep3SubmitDialog());
         
         viewMyProofButton = new JButton("VIEW MY PROOF");
-        viewMyProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        viewMyProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         viewMyProofButton.setBackground(infoColor);
         viewMyProofButton.setForeground(Color.WHITE);
-        viewMyProofButton.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        viewMyProofButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         viewMyProofButton.setFocusPainted(false);
         viewMyProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         viewMyProofButton.setVisible(false);
         viewMyProofButton.addActionListener(e -> viewUploadedProof(uploadedProofPath));
         
         viewOtherProofButton = new JButton("VIEW THEIR PROOF");
-        viewOtherProofButton.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        viewOtherProofButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
         viewOtherProofButton.setBackground(infoColor);
         viewOtherProofButton.setForeground(Color.WHITE);
-        viewOtherProofButton.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        viewOtherProofButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
         viewOtherProofButton.setFocusPainted(false);
         viewOtherProofButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         viewOtherProofButton.setVisible(false);
@@ -257,14 +272,19 @@ public class trades_step3 {
         }
         
         try {
-            String fullPath = "src/" + currentQrCodePath;
+            String fullPath = convertResourcePathToFilePath(currentQrCodePath);
+            if (fullPath == null) {
+                JOptionPane.showMessageDialog(parent, "Invalid QR Code path format.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             File qrFile = new File(fullPath);
             if (qrFile.exists()) {
                 ImageIcon qrIcon = new ImageIcon(fullPath);
                 Image scaledImage = qrIcon.getImage().getScaledInstance(300, 300, Image.SCALE_SMOOTH);
                 JOptionPane.showMessageDialog(parent, new JLabel(new ImageIcon(scaledImage)), "Payment QR Code", JOptionPane.PLAIN_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(parent, "QR Code image file not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parent, "QR Code image file not found at: " + fullPath, "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(parent, "Error loading QR Code: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -293,11 +313,10 @@ public class trades_step3 {
         
         int py = 30;
         int labelWidth = 160;
-        int fieldWidth = 300;
+        int fieldWidth = 250;
         int fieldX = 190;
-        int buttonX = 510;
         
-        // Payment Method Selection
+        // Payment Method Selection Row - Dropdown and View QR Code side by side
         JLabel methodSelectLabel = new JLabel("Select Payment Method:");
         methodSelectLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
         methodSelectLabel.setBounds(20, py, labelWidth, 35);
@@ -305,9 +324,12 @@ public class trades_step3 {
         
         paymentMethodCombo.setBounds(fieldX, py, fieldWidth, 35);
         paymentInfoPanel.add(paymentMethodCombo);
-        py += 50;
         
-        // Payment Method
+        viewQrCodeButton.setBounds(fieldX + fieldWidth + 15, py, 130, 35);
+        paymentInfoPanel.add(viewQrCodeButton);
+        py += 55;
+        
+        // Payment Method Details
         JLabel methodDetailTitle = new JLabel("Payment Method:");
         methodDetailTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         methodDetailTitle.setBounds(20, py, labelWidth, 25);
@@ -335,10 +357,6 @@ public class trades_step3 {
         
         accountNameLabel.setBounds(fieldX, py, fieldWidth, 25);
         paymentInfoPanel.add(accountNameLabel);
-        
-        // View QR Code Button - aligned with the fields
-        viewQrCodeButton.setBounds(buttonX, py - 85, 150, 35);
-        paymentInfoPanel.add(viewQrCodeButton);
         py += 40;
         
         // Separator
@@ -384,14 +402,22 @@ public class trades_step3 {
             "YOUR PAYMENT PROOF",
             TitledBorder.LEFT, TitledBorder.TOP,
             new Font("Segoe UI", Font.BOLD, 14), accentColor));
-        yourProofPanel.setBounds(20, y + 300, 440, 230);
+        yourProofPanel.setBounds(20, y + 300, 440, 250);
         container.add(yourProofPanel);
         
         int ypY = 25;
         
-        // Add Payment Proof Button
-        addPaymentProofButton.setBounds(110, ypY, 220, 45);
+        // Button row - ADD PAYMENT PROOF and VIEW MY PROOF side by side
+        int buttonWidth = 190;
+        int buttonHeight = 40;
+        int buttonSpacing = 20;
+        int buttonStartX = (440 - (buttonWidth * 2 + buttonSpacing)) / 2;
+        
+        addPaymentProofButton.setBounds(buttonStartX, ypY, buttonWidth, buttonHeight);
         yourProofPanel.add(addPaymentProofButton);
+        
+        viewMyProofButton.setBounds(buttonStartX + buttonWidth + buttonSpacing, ypY, buttonWidth, buttonHeight);
+        yourProofPanel.add(viewMyProofButton);
         ypY += 60;
         
         // Payment Number Display
@@ -402,7 +428,7 @@ public class trades_step3 {
         
         paymentNumberValueLabel.setBounds(150, ypY, 250, 25);
         yourProofPanel.add(paymentNumberValueLabel);
-        ypY += 30;
+        ypY += 35;
         
         // Account Name Display
         JLabel accNameDisplayTitle = new JLabel("Account Name:");
@@ -432,11 +458,6 @@ public class trades_step3 {
         }
         myPaymentStatusLabel.setBounds(150, ypY, 250, 25);
         yourProofPanel.add(myPaymentStatusLabel);
-        ypY += 40;
-        
-        // View My Proof Button
-        viewMyProofButton.setBounds(110, ypY, 220, 30);
-        yourProofPanel.add(viewMyProofButton);
         
         // ========== OTHER TRADER PAYMENT STATUS SECTION ==========
         JPanel otherProofPanel = new JPanel();
@@ -447,12 +468,20 @@ public class trades_step3 {
             otherTraderName.toUpperCase() + "'S PAYMENT STATUS",
             TitledBorder.LEFT, TitledBorder.TOP,
             new Font("Segoe UI", Font.BOLD, 14), accentColor));
-        otherProofPanel.setBounds(480, y + 300, 440, 230);
+        otherProofPanel.setBounds(480, y + 300, 440, 250);
         container.add(otherProofPanel);
         
         int opY = 25;
         
-        // Other Trader Payment Number
+        // Button row - Same as YOUR PAYMENT PROOF section (with VIEW THEIR PROOF)
+        viewOtherProofButton.setBounds(buttonStartX, opY, buttonWidth, buttonHeight);
+        otherProofPanel.add(viewOtherProofButton);
+        
+        // Placeholder to maintain spacing (no ADD PAYMENT PROOF button in other trader section)
+        // The VIEW THEIR PROOF button takes the left position, right side is empty but maintains layout
+        opY += 60;
+        
+        // Payment Number - Aligned with YOUR PAYMENT PROOF section
         JLabel otherPaymentNumTitle = new JLabel("Payment Number:");
         otherPaymentNumTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         otherPaymentNumTitle.setBounds(20, opY, 120, 25);
@@ -460,9 +489,9 @@ public class trades_step3 {
         
         otherPaymentNumberValueLabel.setBounds(150, opY, 250, 25);
         otherProofPanel.add(otherPaymentNumberValueLabel);
-        opY += 30;
+        opY += 35;
         
-        // Other Trader Account Name
+        // Account Name - Aligned with YOUR PAYMENT PROOF section
         JLabel otherAccNameTitle = new JLabel("Account Name:");
         otherAccNameTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         otherAccNameTitle.setBounds(20, opY, 120, 25);
@@ -472,7 +501,7 @@ public class trades_step3 {
         otherProofPanel.add(otherAccountNameValueLabel);
         opY += 40;
         
-        // Other Trader Payment Status
+        // Payment Status - Aligned with YOUR PAYMENT PROOF section
         JLabel otherPaymentStatTitle = new JLabel("Payment Status:");
         otherPaymentStatTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
         otherPaymentStatTitle.setBounds(20, opY, 120, 25);
@@ -490,11 +519,6 @@ public class trades_step3 {
         }
         otherPaymentStatusLabel.setBounds(150, opY, 250, 25);
         otherProofPanel.add(otherPaymentStatusLabel);
-        opY += 40;
-        
-        // View Other Proof Button
-        viewOtherProofButton.setBounds(110, opY, 220, 30);
-        otherProofPanel.add(viewOtherProofButton);
         
         // ========== OVERALL PAYMENT STATUS SECTION ==========
         JPanel statusPanel = new JPanel();
@@ -505,7 +529,7 @@ public class trades_step3 {
             "OVERALL PAYMENT STATUS",
             TitledBorder.LEFT, TitledBorder.TOP,
             new Font("Segoe UI", Font.BOLD, 14), accentColor));
-        statusPanel.setBounds(20, y + 550, 900, 70);
+        statusPanel.setBounds(20, y + 570, 900, 70);
         container.add(statusPanel);
         
         paymentStatusLabel.setBounds(20, 22, 860, 30);
@@ -561,15 +585,19 @@ public class trades_step3 {
         }
         
         try {
-            String fullPath = "src/" + proofPath;
-            File imgFile = new File(fullPath);
+            String fullPath = convertResourcePathToFilePath(proofPath);
+            if (fullPath == null) {
+                JOptionPane.showMessageDialog(parent, "Invalid proof path format.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             
+            File imgFile = new File(fullPath);
             if (imgFile.exists()) {
                 ImageIcon icon = new ImageIcon(fullPath);
                 Image img = icon.getImage().getScaledInstance(500, 500, Image.SCALE_SMOOTH);
                 JOptionPane.showMessageDialog(parent, new JLabel(new ImageIcon(img)), "Payment Proof", JOptionPane.PLAIN_MESSAGE);
             } else {
-                JOptionPane.showMessageDialog(parent, "Proof image not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parent, "Proof image not found at: " + fullPath, "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(parent, "Error loading image: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
